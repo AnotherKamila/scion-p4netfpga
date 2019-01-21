@@ -1,0 +1,85 @@
+* Timeline/Snippets
+  everything will take 2x as long ==> 6 months :D
+*** [1/3] week 1: Getting started
+***** DONE read Seyedali's documentation
+      CLOSED: [2019-01-20 Sun 12:07]
+      ==> background brain
+***** TODO complete & run & test one of the tutorial NetFPGA projects
+      Doing =switch_calc=
+******* 0. Artillery Preparation
+         1. Edit ~~/projects/P4-NetFPGA-live/tools/settings.sh~
+         2. (in tmux) ~cd $P4_PROJECT_DIR~
+         3. (emacs) ~e /scion-netfpga:...~ (will be in recent files next time)
+
+***** TODO set up repo skeleton
+*** [0/3] week 2: deploy (existing) P4 router                       :intraAS:
+    this is probably an over-estimate: it hopefully won't take a week
+***** TODO find it
+      the LB article has the reference probably
+***** TODO stuff it in
+***** TODO test it
+*** [/] week 3: implement a small subset of SCION forwarding      :dataplane:
+    so we have something to play with
+*** [0/4] week 4: implement SCION path verification ==> AES       :dataplane:
+***** TODO find 3rd party AES module                                    :aes:
+      make it easily replaceable with commercial solutions
+      ==> don't worry about side channels (not my problem) :D
+***** TODO add AES as an extern to P4
+***** TODO test that AES works                                          :aes:
+***** TODO wire it together: implement and test path verification :dataplane:
+*** [/] weeks 5-8: complete SCION forwarding                      :dataplane:
+    with proper testing
+***** TODO evaluate it: does it work?
+      how?
+*** [/] weeks 9-12: Performance                                   :dataplane:
+    How fast is it? Where are the bottlenecks? Can we make it faster?
+*** [/] week 13 (if feeling hyperactive): deploy in production
+* Questions about FPGAs
+*** TODO VHDL vs Verilog: what's the relationship?
+*** TODO How do you do modular design? Literally "LEGO submodules"?
+*** DONE What does IP stand for in FPGA context?
+    CLOSED: [2019-01-20 Sun 11:42]
+    "intelectual property core" ==> can be pronounced "module" or even "chip"
+*** TODO Gimme a nice paper about implementing something on an FPGA in a nice way.
+    So that I can do my learning by example thing.
+*** TODO What's this thing about 8 bytes? How general is it?
+*** TODO How do I find out if it's optimal? 
+    This P4 stuff will compile into something that will light up different parts
+    of the FPGA at different times. I want to:
+      - look at it
+      - figure out whether it could be parallelising some more
+      - tell it to do better (maybe :D)
+* HW documentation
+*** SDNet + P4-SDNet
+    downloaded from: https://www.xilinx.com/products/design-tools/software-zone/sdnet.html#documentation
+     1. Read this first: [[../hw-doc/ug1252-p4-sdnet.pdf][P4-SDNet]]
+     2. Read this when you want to make your own externs: [[../hw-doc/ug1012-sdnet-packet-processor.pdf][SDNet]]
+* Notes to self
+*** about NetFPGA
+     - apparently there is a pile of @Xilinx_whatever annotations which look
+       like they affect how the things are laid out on the FPGA
+     - the architecture is:
+       #+BEGIN_SRC p4_16
+       SimpleSumeSwitch(
+           TopParser(),
+           TopPipe(),
+           TopDeparser()
+       ) main;
+       #+END_SRC
+     - Accessing registers doesn't exist :D
+       They have an extern which is one function where an argument says whether
+       it's a read or a write, and there is just one register:
+       #+begin_src p4_16
+       const_reg_rw(
+           index,
+           value_to_be_written, // probably bit<
+           r_or_w,  // bit<8>
+           value_will_be_read_into_here
+       );
+       #+end_src
+       Actually this is a bit weird and confusing.
+     - Testing things: you generate pcap files with input packets and expected
+       output packets. (Not sure if the expected packets are an exact match or
+       what.)
+     - The ~p4c-sdnet~ simulator spits out a "module", I can pick the bus type
+       as a compiler flag (sample project makefile has Axi)
