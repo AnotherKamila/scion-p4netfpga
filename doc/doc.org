@@ -1,15 +1,20 @@
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
-*** [1/3] week 1: Getting started
+*** [2/4] week 1: Getting started
 ***** DONE read Seyedali's documentation
       CLOSED: [2019-01-20 Sun 12:07]
       ==> background brain
+***** DONE read NetFPGA documentation
+      CLOSED: [2019-01-22 Tue 11:32]
+      [[*SDNet + P4-SDNet]]
 ***** TODO complete & run & test one of the tutorial NetFPGA projects
       Doing =switch_calc=
 ******* 0. Artillery Preparation
          1. Edit ~~/projects/P4-NetFPGA-live/tools/settings.sh~
-         2. (in tmux) ~cd $P4_PROJECT_DIR~
-         3. (emacs) ~e /scion-netfpga:...~ (will be in recent files next time)
+         2. open tmux
+         3. ~. ~/envsetup.sh~
+         4. ~cd $P4_PROJECT_DIR~
+         5. (in my emacs) ~e /scion-netfpga:...~ (will be in recent files next time)
 
 ***** TODO set up repo skeleton
 *** [0/3] week 2: deploy (existing) P4 router                       :intraAS:
@@ -58,6 +63,7 @@
 *** about NetFPGA
      - apparently there is a pile of @Xilinx_whatever annotations which look
        like they affect how the things are laid out on the FPGA
+       ==> documented in P4-SDNet
      - the architecture is:
        #+BEGIN_SRC p4_16
        SimpleSumeSwitch(
