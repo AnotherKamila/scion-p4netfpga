@@ -17,10 +17,12 @@
          5. (in my emacs) ~e /scion-netfpga:...~ (will be in recent files next time)
 
 ***** TODO set up repo skeleton
-*** [0/3] week 2: deploy (existing) P4 router                       :intraAS:
+*** [1/4] week 2: deploy (existing) P4 router                       :intraAS:
     this is probably an over-estimate: it hopefully won't take a week
-***** TODO find it
-      the LB article has the reference probably
+***** DONE find it
+      CLOSED: [2019-01-22 Tue 11:46]
+      https://github.com/p4lang/switch
+***** TODO figure out which parts we want and split them out
 ***** TODO stuff it in
 ***** TODO test it
 *** [/] week 3: implement a small subset of SCION forwarding      :dataplane:
