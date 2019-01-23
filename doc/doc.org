@@ -42,25 +42,84 @@
     How fast is it? Where are the bottlenecks? Can we make it faster?
 *** [/] week 13 (if feeling hyperactive): deploy in production
 * Questions about FPGAs
-*** TODO VHDL vs Verilog: what's the relationship?
-*** TODO How do you do modular design? Literally "LEGO submodules"?
+*** DONE VHDL vs Verilog: what's the relationship?
+    CLOSED: [2019-01-23 Wed 11:05]
+    Both are hardware description languages. VHDL smells a little more like Ada
+    and Verilog smells a little more like C. As far as I can tell, Verilog is
+    slightly more popular in FPGA circles. Most Xilinx tooling will be using
+    Verilog.
+
+    You can combine modules written in either as long as you know what the
+    interfaces are. A bit like you can link things written in different
+    languages in software too.
+*** DONE How do you do modular design? Literally "LEGO submodules"?
+    CLOSED: [2019-01-23 Wed 11:05]
+    Generally, you will want a bus like AMBA or Axi and your modules will talk
+    to each other on the bus using well-defined protocols.
 *** DONE What does IP stand for in FPGA context?
     CLOSED: [2019-01-20 Sun 11:42]
-    "intelectual property core" ==> can be pronounced "module" or even "chip"
+    "intelectual property core" ==> something that you buy from someone else and
+    integrate in your design.
+
+    Can be pronounced "module" or even "chip".
+
+    Blocks may be more or less independent. You could add e.g. a microblaze cpu
+    to your design. It will have its own clock domains and talk to other modules
+    using memory. Or you might have something like AES which operates in your
+    data path.
 *** TODO Gimme a nice paper about implementing something on an FPGA in a nice way.
     So that I can do my learning by example thing.
 *** TODO What's this thing about 8 bytes? How general is it?
-*** TODO How do I find out if it's optimal? 
+*** DONE How do I find out if it's optimal?
+    CLOSED: [2019-01-23 Wed 11:08]
     This P4 stuff will compile into something that will light up different parts
     of the FPGA at different times. I want to:
       - look at it
       - figure out whether it could be parallelising some more
       - tell it to do better (maybe :D)
+
+    Supposedly the Vivado tools help with that. I should revisit this once I get
+    the license crap to work.
 * HW documentation
 *** SDNet + P4-SDNet
     downloaded from: https://www.xilinx.com/products/design-tools/software-zone/sdnet.html#documentation
      1. Read this first: [[../hw-doc/ug1252-p4-sdnet.pdf][P4-SDNet]]
      2. Read this when you want to make your own externs: [[../hw-doc/ug1012-sdnet-packet-processor.pdf][SDNet]]
+* Ideas to revisit when the time comes
+*** Custom architecture
+    Instead of sticking with the ~SimpleSUMESwitch(parser, pipeline, deparser)~
+    architecture, it might be useful to define a custom architecture designed
+    specifically for SCION. This might be for example something like:
+    #+begin_src p4_16
+    ScionSUMESwitch(
+        my_parser,
+        my_path_verification,
+        my_pipeline,
+        my_deparser
+    )
+    #+end_src
+
+    ...Or maybe (this might be a terrible idea): explicitly separate the
+    intra-AS and inter-AS thing:
+    #+begin_src p4_16
+    ScionSUMESwitch(
+        my_intraAS_parser,     // handles the intra-AS encapsulation: in our case, IP + UDP (but could be e.g. MPLS for other ASs)
+        my_scion_parser,       // parses the SCION header
+        my_path_verification,  // read-only; handles the path verification
+        my_pipeline,           // updates the "next segment" pointers and picks the output port
+        my_scion_deparser      // deparses the SCION header
+        my_intraAS_deparser    // adds the intra-AS encapsulation
+    )
+    #+end_src
+    (For this case we might want a hardcoded component that dispatches to the
+    intra-AS en/decapsulation only if needed ==> gets non-trivial. So that's why
+    it's maybe a terrible idea)
+
+    Before spending time on this, I should:
+
+***** TODO find out whether there actually are performance advantages to custom architectures
+***** TODO talk to people about whether this is a good idea and what is a good architecture
+
 * Notes to self
 *** about NetFPGA
      - apparently there is a pile of @Xilinx_whatever annotations which look
