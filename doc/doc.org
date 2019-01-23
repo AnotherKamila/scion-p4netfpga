@@ -1,14 +1,15 @@
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
 *** week 1
-***** [2/3] Getting started
+***** [3/3] Getting started
 ******* DONE read Seyedali's documentation
         CLOSED: [2019-01-20 Sun 12:07]
         ==> background brain
 ******* DONE read NetFPGA documentation
         CLOSED: [2019-01-22 Tue 11:32]
         [[*SDNet + P4-SDNet]]
-******* TODO set up repo skeleton
+******* DONE set up repo skeleton
+        CLOSED: [2019-01-23 Wed 16:39]
 ***** [0/3] write the SCION packet parser
 ******* TODO get some SCION packets: generate with the repo thing
 ******* TODO write the parser
@@ -46,6 +47,7 @@
       how?
 *** [/] weeks 9-12: Performance                                   :dataplane:
     How fast is it? Where are the bottlenecks? Can we make it faster?
+*** TODO see [[*Custom architecture]]
 *** [/] week 13 (if feeling hyperactive): deploy in production
 * Questions about FPGAs
 *** DONE VHDL vs Verilog: what's the relationship?
@@ -154,5 +156,9 @@
      - Testing things: you generate pcap files with input packets and expected
        output packets. (Not sure if the expected packets are an exact match or
        what.)
+
+       The neat thing about that: there's a pcap2axi thing, so the packets are
+       replayed from memory. Therefore...
+     - Performace testing: just make a big pcap file :D ^^
      - The ~p4c-sdnet~ simulator spits out a "module", I can pick the bus type
        as a compiler flag (sample project makefile has Axi)
