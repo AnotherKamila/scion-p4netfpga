@@ -172,3 +172,10 @@
      - Performace testing: just make a big pcap file :D ^^
      - The ~p4c-sdnet~ simulator spits out a "module", I can pick the bus type
        as a compiler flag (sample project makefile has Axi)
+*** why I am being awesome (TODO also make it true :D)
+***** modularity:
+******* easy to swap things in here with other stuff (e.g. replace IP with MPLS)
+******* easy to take things from here and put into your switch
+******* easy to change functionality without being very sad because things are well separated
+***** portability
+      runs on SDNet and v1model and the SCION code doesn't need to change to add a new arch

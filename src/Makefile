@@ -43,7 +43,7 @@ all: ## Compile for SDNet
 	p4c-sdnet -o $(SDNET_NAME).sdnet --sdnet_info .sdnet_switch_info.dat $(MAIN)
 	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
 
-v1model: ## Compile with the P4 reference model (outputs switch-emulating executable)
+v1model: ## Compile with the P4 reference model (outputs a switch-emulating executable)
 	p4c --target bmv2 --arch v1model --std p4-16 $(MAIN_V1MODEL)
 
 clean: ## Removes generated files
