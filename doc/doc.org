@@ -1,30 +1,36 @@
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
-*** [2/4] week 1: Getting started
-***** DONE read Seyedali's documentation
-      CLOSED: [2019-01-20 Sun 12:07]
-      ==> background brain
-***** DONE read NetFPGA documentation
-      CLOSED: [2019-01-22 Tue 11:32]
-      [[*SDNet + P4-SDNet]]
-***** TODO complete & run & test one of the tutorial NetFPGA projects
-      Doing =switch_calc=
-******* 0. Artillery Preparation
-         1. Edit ~~/projects/P4-NetFPGA-live/tools/settings.sh~
-         2. open tmux
-         3. ~. ~/envsetup.sh~
-         4. ~cd $P4_PROJECT_DIR~
-         5. (in my emacs) ~e /scion-netfpga:...~ (will be in recent files next time)
+*** week 1
+***** [2/3] Getting started
+******* DONE read Seyedali's documentation
+        CLOSED: [2019-01-20 Sun 12:07]
+        ==> background brain
+******* DONE read NetFPGA documentation
+        CLOSED: [2019-01-22 Tue 11:32]
+        [[*SDNet + P4-SDNet]]
+******* TODO set up repo skeleton
+***** [0/3] write the SCION packet parser
+******* TODO get some SCION packets: generate with the repo thing
+******* TODO write the parser
+******* TODO test it
+*** week 2
+***** [0/1] Getting started 2
+******* TODO complete & run & test one of the tutorial NetFPGA projects
+        Doing =switch_calc=
+********* 0. Artillery Preparation
+           1. Edit ~~/projects/P4-NetFPGA-live/tools/settings.sh~
+           2. open tmux
+           3. ~. ~/envsetup.sh~
+           4. ~cd $P4_PROJECT_DIR~
+           5. (in my emacs) ~e /scion-netfpga:...~ (will be in recent files next time)
 
-***** TODO set up repo skeleton
-*** [1/4] week 2: deploy (existing) P4 router                       :intraAS:
-    this is probably an over-estimate: it hopefully won't take a week
-***** DONE find it
-      CLOSED: [2019-01-22 Tue 11:46]
-      https://github.com/p4lang/switch
-***** TODO figure out which parts we want and split them out
-***** TODO stuff it in
-***** TODO test it
+***** [1/4] Deploy (existing) P4 router                             :intraAS:
+******* DONE find the router
+        CLOSED: [2019-01-22 Tue 11:46]
+        https://github.com/p4lang/switch
+******* TODO figure out which parts we want and split them out
+******* TODO stuff it in
+******* TODO test it
 *** [/] week 3: implement a small subset of SCION forwarding      :dataplane:
     so we have something to play with
 *** [0/4] week 4: implement SCION path verification ==> AES       :dataplane:
