@@ -1,3 +1,5 @@
+#+SEQ_TODO: TODO NEXT DONE
+
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
 *** week 1
@@ -10,9 +12,11 @@
         [[*SDNet + P4-SDNet]]
 ******* DONE set up repo skeleton
         CLOSED: [2019-01-23 Wed 16:39]
-***** [0/3] write the SCION packet parser
-******* TODO get some SCION packets: generate with the repo thing
-******* TODO write the parser
+***** [1/3] write the SCION packet parser
+******* DONE get some SCION packets
+        CLOSED: [2019-01-23 Wed 19:35]
+        captured stuff from my SCION VM, lives in testdata/*.pcap
+******* NEXT write the parser
 ******* TODO test it
 *** week 2
 ***** [0/1] Getting started 2
@@ -41,13 +45,19 @@
 ***** TODO add AES as an extern to P4
 ***** TODO test that AES works                                          :aes:
 ***** TODO wire it together: implement and test path verification :dataplane:
-*** [/] weeks 5-8: complete SCION forwarding                      :dataplane:
-    with proper testing
+*** [0/1] weeks 5-7: complete SCION forwarding                    :dataplane:
 ***** TODO evaluate it: does it work?
       how?
+*** week 8: re-structure the code properly [0/1]
+***** TODO put the parts that should be easy to switch into separate files:
+      Right now I separate by function (parsers, headers, etc). I should be
+      separating by concern (intra-AS, inter-AS, ...).
+       - SCION encapsulation
+       - IP stack
+       - SCION core
 *** [/] weeks 9-12: Performance                                   :dataplane:
     How fast is it? Where are the bottlenecks? Can we make it faster?
-*** TODO see [[*Custom architecture]]
+***** TODO see [[*Custom architecture]]
 *** [/] week 13 (if feeling hyperactive): deploy in production
 * Questions about FPGAs
 *** DONE VHDL vs Verilog: what's the relationship?

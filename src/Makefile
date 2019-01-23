@@ -30,10 +30,23 @@
 
 # Makefile to convert the P4 into PX and P4 commands into SDNet tables
 
-all:
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet --sdnet_info .sdnet_switch_info.dat ${P4_PROJECT_NAME}.p4
+MAIN=./main.p4
+MAIN_V1MODEL=./main-v1model.p4
+SDNET_NAME=scion
+
+.PHONY: help clean
+
+help:  # stolen from marmelab.com/blog/2016/02/29/auto-documented-makefile.html
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "%-10s %s\n", $$1, $$2}'
+
+all: ## Compile for SDNet
+	p4c-sdnet -o $(SDNET_NAME).sdnet --sdnet_info .sdnet_switch_info.dat $(MAIN)
 	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
 
-clean:
+v1model: ## Compile with the P4 reference model (outputs switch-emulating executable)
+	p4c --target bmv2 --arch v1model --std p4-16 $(MAIN_V1MODEL)
+
+clean: ## Removes generated files
 	rm -f *.sdnet *.tbl .sdnet_switch_info.dat
+	rm -f *.json *.p4i
 
