@@ -91,8 +91,8 @@
 * HW documentation
 *** SDNet + P4-SDNet
     downloaded from: https://www.xilinx.com/products/design-tools/software-zone/sdnet.html#documentation
-     1. Read this first: [[../hw-doc/ug1252-p4-sdnet.pdf][P4-SDNet]]
-     2. Read this when you want to make your own externs: [[../hw-doc/ug1012-sdnet-packet-processor.pdf][SDNet]]
+     1. Read this first: [[./hw-doc/ug1252-p4-sdnet.pdf][P4-SDNet]]
+     2. Read this when you want to make your own externs: [[./hw-doc/ug1012-sdnet-packet-processor.pdf][SDNet]]
 * Ideas to revisit when the time comes
 *** Custom architecture
     Instead of sticking with the ~SimpleSUMESwitch(parser, pipeline, deparser)~
