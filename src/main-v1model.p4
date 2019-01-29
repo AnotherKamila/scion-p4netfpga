@@ -4,17 +4,18 @@
 
 #include "settings.p4"   // table sizes, register widths, and such
 #include "headers.p4"    // packet headers, plus the metadata struct
-#include "parsers.p4"    // parser and deparser
+#include "parsers.p4"
+#include "deparsers.p4"
 
 
 parser TopParser(packet_in packet, 
                  out headers_t hdr, 
-                 inout user_metadata_t user_metadata,
-                 inout standard_metadata_t standard_metadata) {
+                 inout user_metadata_t meta,
+                 inout standard_metadata_t standard_meta) {
 
-    MaybeScionTopParser() scion_parser;
+    ScionParser() scion_parser;
     state start{
-        scion_parser.apply(packet, hdr);
+        scion_parser.apply(packet, hdr, meta.scion);
         transition accept;
     }
 }
@@ -32,7 +33,7 @@ control TopPipe(inout headers_t hdr,
 control TopDeparser(packet_out packet,
                     in headers_t hdr) {
 
-    ScionTopDeparser() scion_deparser;
+    ScionDeparser() scion_deparser;
     apply {
         scion_deparser.apply(packet, hdr);
     }

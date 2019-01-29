@@ -7,7 +7,8 @@
 
 #include "settings.p4"   // table sizes, register widths, and such
 #include "headers.p4"    // packet headers, plus the metadata struct
-#include "parsers.p4"    // parser and deparser
+#include "parsers.p4"
+#include "deparsers.p4"
 
 // TODO(optimisation): try removing unnecessary parameters everywhere
 
