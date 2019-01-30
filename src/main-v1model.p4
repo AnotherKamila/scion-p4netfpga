@@ -2,10 +2,12 @@
 #include <core.p4>
 #include <v1model.p4>
 
+#include <scion/headers.p4>
+#include <scion/parsers.p4>
+#include <scion/deparsers.p4>
+
+#include "headers.p4"    // header and metadata struct definitions
 #include "settings.p4"   // table sizes, register widths, and such
-#include "headers.p4"    // packet headers, plus the metadata struct
-#include "parsers.p4"
-#include "deparsers.p4"
 
 
 parser TopParser(packet_in packet, 

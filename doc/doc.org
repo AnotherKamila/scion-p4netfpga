@@ -67,6 +67,7 @@
 *** TODO Is Scion *always* encapsulated? And is it always in IP/UDP? (Probably not...)
 *** TODO => What is expected of me? What packets should I be able to process?
     this can also go into thesis/documentation
+*** TODO what to do about packets which aren't SCION?
 *** TODO LICENSE?
 * Questions about FPGAs
 *** DONE VHDL vs Verilog: what's the relationship?

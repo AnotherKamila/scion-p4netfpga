@@ -10,9 +10,9 @@ Currently supported platforms:
   Open-source and freely available. Useful to quickly test functionality without
   requiring vendor-specific toolchains.
 
-* `netfpga`: The NetFPGA board family. Multiple architectures can be supported
-  (currently we use the NetFPGA SUME with the default `SimpleSumeSwitch`
-  architecture).
+* `netfpga`: The NetFPGA board family. Multiple boards and architectures can be
+  supported. Currently we support the NetFPGA SUME with the default
+  `SimpleSumeSwitch` architecture.
 
   Other boards that use the Xilinx SDNet toolchain can also be supported by this
   target, as long as their architecture files are added.

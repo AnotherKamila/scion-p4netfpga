@@ -1,10 +1,10 @@
-// SCION deparsers.
-
+// SCION parsers.
+//
 // Use ScionTopParser to do everything, or the parsers for various
 // components to parse only some parts.
 
-#ifndef SCION__PARSERS_P4_
-#define SCION__PARSERS_P4_
+#ifndef SC__LIB__SCION__PARSERS_P4_
+#define SC__LIB__SCION__PARSERS_P4_
 
 
 // TODO figure out whether SCION is always encapsulated and re-structure
@@ -67,6 +67,7 @@ parser ScionCommonHeaderParser(packet_in packet,
                                out scion_metadata_t meta) {
 
     state start {
+        packet.extract(hdr.scion_common_h);
         transition accept;
     }
 }
