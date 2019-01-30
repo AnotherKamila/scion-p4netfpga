@@ -47,6 +47,8 @@ v1model: ## Compile with the P4 reference model (outputs a switch-emulating exec
 	p4c --target bmv2 --arch v1model --std p4-16 $(MAIN_V1MODEL)
 
 clean: ## Removes generated files
-	rm -f *.sdnet *.tbl .sdnet_switch_info.dat
+	# p4c
 	rm -f *.json *.p4i
+	# SDNet
+	rm -f *.sdnet *.tbl .sdnet_switch_info.dat
 
