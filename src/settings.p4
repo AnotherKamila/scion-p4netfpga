@@ -1,4 +1,4 @@
-/* table sizes, register widths, and such */
+// table sizes, register widths, and such
 #ifndef SETTINGS_P4
 #define SETTINGS_P4
 

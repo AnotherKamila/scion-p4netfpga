@@ -2,9 +2,9 @@
 #define SC_LIB_COMMON_HEADERS_P4_
 
 
-///// Ethernet ///////////////////////////////////////////////////////////////
+#include <common/datatypes.p4>
 
-typedef bit<48>  eth_addr_t;
+/// Ethernet
 
 header ethernet_h {
     eth_addr_t dst_addr;
@@ -12,30 +12,23 @@ header ethernet_h {
     bit<16>    ethertype;
 }
 
-const bit<16> ETHERTYPE_IPV4 = 0x0800;
-const bit<16> ETHERTYPE_IPV6 = 0x86DD;
 
-
-///// IP /////////////////////////////////////////////////////////////////////
-
-// TODO options
-
-typedef bit<32>  ipv4_addr_t;
-typedef bit<128> ipv6_addr_t;
+/// IP
 
 header ipv4_h {
-    bit<4>  version;
-    bit<4>  ihl;
-    bit<8>  tos;
-    bit<16> total_len;
-    bit<16> identification;
-    bit<3>  flags;
-    bit<13> frag_offset;
-    bit<8>  ttl;
-    bit<8>  protocol;
-    bit<16> hdr_checksum;
+    bit<4>      version;
+    bit<4>      ihl;
+    bit<8>      tos;
+    bit<16>     total_len;
+    bit<16>     identification;
+    bit<3>      flags;
+    bit<13>     frag_offset;
+    bit<8>      ttl;
+    protocol_t  protocol;
+    bit<16>     hdr_checksum;
     ipv4_addr_t src_addr;
     ipv4_addr_t dst_addr;
+    // TODO options
 }
 
 header ipv6_h {
@@ -43,18 +36,20 @@ header ipv6_h {
     bit<8>      traffic_class;
     bit<20>     flow_label;
     bit<16>     payload_length;
-    bit<8>      next_header;
+    protocol_t  next_hdr;
     bit<8>      hop_limit;
     ipv6_addr_t src_addr;
     ipv6_addr_t dst_addr;
+    // TODO extensions
 }
 
-const bit<8> PROTOCOL_UDP = 0x11;
+header_union ip_h {
+    ipv4_h v4;
+    ipv4_h v6;
+}
 
 
-///// UDP ////////////////////////////////////////////////////////////////////
-
-typedef bit<16>  udp_port_t;
+/// UDP
 
 header udp_h {
     udp_port_t src_port;

@@ -1,6 +1,6 @@
 // SCION deparsers.
 
-// Use ScionTopDeparser to do everything, or the deparsers for various
+// Use ScionDeparser to do everything, or the deparsers for various
 // components to deparse only some parts.
 
 
@@ -13,19 +13,17 @@
 //  - ScionCommonHeaderDeparser
 //  - ScionPathDeparser
 //  - ScionPathSegmentDeparser
-// Also: think about moving this into a different directory than main, let's say
-// lib/scion or something.
 
-#include "headers.p4"
-
+#include <scion/headers.p4>
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control ScionDeparser(packet_out packet,
-                      in headers_t hdr) {
+                      in scion_headers_t hdr) {
     apply {
         packet.emit(hdr.ethernet); 
-        packet.emit(hdr.ipv4);
-        packet.emit(hdr.ipv6);
+        packet.emit(hdr.encaps.ipv4);
+        packet.emit(hdr.encaps.ipv6);
+        packet.emit(hdr.encaps.udp);
     }
 }
 

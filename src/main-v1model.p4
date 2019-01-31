@@ -1,4 +1,5 @@
-// main for v1model emulator
+// main for v1model simple_switch emulator
+// TODO probably should be renamed to simple_switch? IDK
 #include <core.p4>
 #include <v1model.p4>
 
@@ -6,23 +7,23 @@
 #include <scion/parsers.p4>
 #include <scion/deparsers.p4>
 
-#include "headers.p4"    // header and metadata struct definitions
-#include "settings.p4"   // table sizes, register widths, and such
+#include "datatypes.p4"
+#include "settings.p4"
 
 
 parser TopParser(packet_in packet, 
-                 out headers_t hdr, 
+                 out   scion_headers_t hdr, 
                  inout user_metadata_t meta,
                  inout standard_metadata_t standard_meta) {
 
     ScionParser() scion_parser;
-    state start{
+    state start {
         scion_parser.apply(packet, hdr, meta.scion);
         transition accept;
     }
 }
 
-control TopPipe(inout headers_t hdr,
+control TopPipe(inout scion_headers_t hdr,
                 inout user_metadata_t user_metadata, 
                 inout standard_metadata_t standard_metadata) {
 
@@ -33,7 +34,7 @@ control TopPipe(inout headers_t hdr,
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control TopDeparser(packet_out packet,
-                    in headers_t hdr) {
+                    in scion_headers_t hdr) {
 
     ScionDeparser() scion_deparser;
     apply {
