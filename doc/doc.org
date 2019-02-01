@@ -1,8 +1,9 @@
-#+SEQ_TODO: TODO NEXT DONE
+#+SEQ_TODO: TODO INPR DONE
 
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
-*** week 1: Getting started [3/3]
+*** DONE [3/3] week 1: Getting started
+    CLOSED: [2019-01-30 Wed 17:52]
 ******* DONE read Seyedali's documentation
         CLOSED: [2019-01-20 Sun 12:07]
         ==> background brain
@@ -11,28 +12,18 @@
         [[*SDNet + P4-SDNet]]
 ******* DONE set up repo skeleton
         CLOSED: [2019-01-23 Wed 16:39]
-*** [1/4] week 2
+*** INPR [1/3] week 2
 ***** DONE Figure out the project structure
       CLOSED: [2019-01-29 Tue 18:43]
-***** NEXT Make things compile with the new repo structure
-***** NEXT [1/3] write the SCION packet parser
+***** INPR Make things compile with the new repo structure
+***** TODO [1/3] write the SCION packet parser
 ******* DONE get some SCION packets
         CLOSED: [2019-01-23 Wed 19:35]
         captured stuff from my SCION VM, lives in testdata/*.pcap
-******* NEXT write the parser
+******* INPR write the parser
 ******* TODO test it
-***** TODO MAYBE Getting started 2 [0/1]
-      Actually, maybe I've done enough getting started now and I can just build
-      the thing I have?
-******* TODO complete & run & test one of the tutorial NetFPGA projects
-        Doing =switch_calc=
-********* 0. Artillery Preparation
-           1. Edit ~~/projects/P4-NetFPGA-live/tools/settings.sh~
-           2. open tmux
-           3. ~. ~/envsetup.sh~
-           4. ~cd $P4_PROJECT_DIR~
-           5. (in my emacs) ~e /scion-netfpga:...~ (will be in recent files next time)
-
+        cccceijfcnvejudhbetrluhuifctnerelkivth
+r
 *** TODO week 3: implement a small subset of SCION forwarding     :dataplane:
     so we have something to play with
 *** [0/4] week 4: implement SCION path verification ==> AES       :dataplane:
@@ -62,13 +53,21 @@
 *** [/] weeks 9-12: Performance                                   :dataplane:
     How fast is it? Where are the bottlenecks? Can we make it faster?
 ***** TODO see [[*Custom architecture]]
-*** [/] week 13 (if feeling hyperactive): deploy in production
+*** [/] week 13: deploy in production
 * Questions for Benjamin
-*** TODO Is Scion *always* encapsulated? And is it always in IP/UDP? (Probably not...)
-*** TODO => What is expected of me? What packets should I be able to process?
+*** DONE Is Scion *always* encapsulated? And is it always in IP/UDP?
+    CLOSED: [2019-01-30 Wed 18:48]
+    for now yes; eventually no
+*** DONE => What is expected of me? What packets should I be able to process?
+    CLOSED: [2019-01-30 Wed 14:58]
     this can also go into thesis/documentation
-*** TODO what to do about packets which aren't SCION?
-*** TODO LICENSE?
+    SCION only
+*** DONE what to do about packets which aren't SCION?
+    CLOSED: [2019-01-30 Wed 14:59]
+    for now drop is good
+*** DONE LICENSE?
+    CLOSED: [2019-01-30 Wed 14:59]
+    check scion repo
 * Questions about FPGAs
 *** DONE VHDL vs Verilog: what's the relationship?
     CLOSED: [2019-01-23 Wed 11:05]
@@ -192,6 +191,9 @@
 ******* easy to change functionality without being very sad because things are well separated
 ***** portability
       runs on SDNet and v1model and the SCION code doesn't need to change to add a new arch
+***** attention to detail
+       - by only passing the parameters I really need instead of the whole metadata or headers struct, I both enforce modularity *and* give the compiler more information about the code so that it can optimise better. TODO would be neat to have an example.
 *** TODO README files everywhere
     every directory should have a README file
 *** TODO LICENSE files everywhere
+    check SCION repo for which
