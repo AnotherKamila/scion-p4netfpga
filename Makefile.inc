@@ -16,7 +16,7 @@ MAIN=main-$(ARCH).p4
 
 ### Environment -- shouldn't need to be changed ##############################
 
-ALL_MAKEFILES=$(.MAKE.MAKEFILES) $(MAKEFILE_LIST)  # GNU and BSD make compatibility
+ALL_MAKEFILES=$(MAKEFILE_LIST) $(.MAKE.MAKEFILES)  # GNU and BSD make compatibility
 
 ### Internal things -- things will break if you change this ##################
 
@@ -31,9 +31,13 @@ GNUMAKE=$(shell echo GNUMAKE)
 # but better! :D
 help:
 	@echo Targets:
-	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
-	@echo Settings:
-	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+=.*?## .*$$' | awk 'BEGIN {FS = "=.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
+	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
 	@echo
-	@echo 'To change the settings, run: make <target> <VARIABLE>=<value>'
+	@echo Settings:
+	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+=.*?## .*$$' | awk 'BEGIN {FS = " ?## "}; {printf "  %-16s %s\n", $$1, $$2}'
+	@echo
+	@echo 'To override the settings, run: make <target> <VARIABLE>=<value>'
+
+gmake:
 	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'GNU make required (run with gmake)'; exit 70; }
+

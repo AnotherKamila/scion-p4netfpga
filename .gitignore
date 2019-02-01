@@ -1,4 +1,10 @@
-src/*.json
-src/*.p4i
-
+# Things I can't redistribute
 doc/hw-doc/*.pdf
+
+# Generated files: common
+graphs/
+
+# Generated files: per-platform
+platforms/bmv2/*.json
+platforms/bmv2/*.p4i
+
