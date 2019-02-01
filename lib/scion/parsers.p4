@@ -9,11 +9,17 @@
 // If you want to process non-SCION packets as well, create your own equivalent
 // of ScionParser by replacing the ScionEncapsulationParser with what you need
 // and re-using ScionHeaderParser.
+//
+// TODO Actually, it is possible to parametrise the parsers with whether it
+// should accept or reject non-SCION: just replayce verify(false, ...) with
+// verify(parameter, ...) and put a transition: accept below
 
 #ifndef SC__LIB__SCION__PARSERS_P4_
 #define SC__LIB__SCION__PARSERS_P4_
 
 
+#include <common/constants.p4>
+#include <scion/constants.p4>
 #include <scion/datatypes.p4>
 #include <scion/errors.p4>
 #include <scion/headers.p4>
@@ -30,7 +36,7 @@ parser ScionEncapsulationParser(packet_in packet,
             ETHERTYPE_IPV6: parse_ipv6;
             // TODO non-encapsulated SCION, once we have an Ethertype:
             // ETHERTYPE_SCION: accept;
-            default: verify(false, error.notScion);
+            default:        not_scion;
         } 
     }
 
@@ -38,43 +44,50 @@ parser ScionEncapsulationParser(packet_in packet,
     // into <common/parsers.p4> instead
     state parse_ipv4 { 
         // TODO options
-        packet.extract(hdr.ipv4);
-        transition select(hdr.ipv4.protocol) {
+        packet.extract(encaps.ip.v4);
+        transition select(encaps.ip.v4.protocol) {
             PROTOCOL_UDP: parse_udp;
-            default: verify(false, error.notScion);
+            default:      not_scion;
         }
     }
 
     state parse_ipv6 { 
         // TODO extensions
-        packet.extract(hdr.ipv6);
-        transition select(hdr.ipv6.next_header) {
+        packet.extract(encaps.ip.v6);
+        transition select(encaps.ip.v6.next_hdr) {
             PROTOCOL_UDP: parse_udp;
-            default: verify(false, error.notScion);
+            default:      not_scion;
         }
     }
 
     state parse_udp {
-        packet.extract(hdr.udp);
+        packet.extract(encaps.udp);
         // TODO don't forget UDP checksum!
         //  1. find out if it's possible to put it into the parser
         //  2. find out what's faster
-        transition select(hdr.udp.dst_port) {
+        transition select(encaps.udp.dst_port) {
             SCION_PORT: accept;
-            default: verify(false, error.notScion);
+            default:    not_scion;
         }
+    }
+
+    state not_scion {
+        // verify(false, error.NotScion);
+        // TODO
+        verify(false, error.NoMatch);
+        // transition reject;
     }
 }
 
 // Parses the SCION Common Header
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser ScionCommonHeaderParser(packet_in packet, 
-                               out   scion_common_h   hdr,
-                               inout scion_metadata_t meta) {
+                               out scion_common_h   hdr,
+                               out scion_metadata_t meta) {
     state start {
-        packet.extract(hdr.common);
-        meta.dst_addr_type = hdr.common.dst_type;
-        meta.src_addr_type = hdr.common.src_type;
+        packet.extract(hdr);
+        meta.dst_addr_type = hdr.dst_type;
+        meta.src_addr_type = hdr.src_type;
         transition accept;
     }
 }
@@ -90,7 +103,7 @@ parser ScionHostAddressParser(packet_in packet,
             SCION_HOST_ADDR_IPV4: ipv4;
             SCION_HOST_ADDR_IPV6: ipv6;
             SCION_HOST_ADDR_SVC:  svc;
-            default: verify(false, error.unknownScionHostAddrType);
+            default:              error_unknown_host_addr_type;
         }
     }
 
@@ -108,6 +121,13 @@ parser ScionHostAddressParser(packet_in packet,
         packet.extract(hdr.service);
         transition accept;
     }
+
+    state error_unknown_host_addr_type {
+        // verify(false, error.UnknownScionHostAddrType);
+        // TODO
+        verify(false, error.NoMatch);
+        // transition reject;
+    }
 }
 
 // Parses the SCION Address Header
@@ -120,10 +140,10 @@ parser ScionAddressHeaderParser(packet_in packet,
     ScionHostAddressParser() src_host_parser;
 
     state start {
-        packet.extract(hdr.addr.dst_isdas);
-        packet.extract(hdr.addr.src_isdas);
-        dst_host_parser.apply(packet, hdr.dst_host, meta.dst_addr_t);
-        src_host_parser.apply(packet, hdr.src_host, meta.src_addr_t);
+        packet.extract(hdr.dst_isdas);
+        packet.extract(hdr.src_isdas);
+        dst_host_parser.apply(packet, meta.dst_addr_type, hdr.dst_host);
+        src_host_parser.apply(packet, meta.src_addr_type, hdr.src_host);
         transition accept;
     }
 
@@ -132,8 +152,7 @@ parser ScionAddressHeaderParser(packet_in packet,
 // TODO
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser ScionPathParser(packet_in packet, 
-                       out scion_headers_t hdr,
-                       out scion_metadata_t meta) {
+                       out scion_header_t hdr) {
     state start {
         transition accept;
     }
@@ -142,8 +161,7 @@ parser ScionPathParser(packet_in packet,
 // TODO
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser ScionExtensionsParser(packet_in packet, 
-                             out scion_headers_t hdr,
-                             out scion_metadata_t meta) {
+                             out scion_header_t hdr) {
 
     state start {
         transition accept;
@@ -153,13 +171,13 @@ parser ScionExtensionsParser(packet_in packet,
 // Parses the SCION header (NOT including encapsulation).
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser ScionHeaderParser(packet_in packet, 
-                         out scion_headers_t hdr,
+                         out scion_header_t hdr,
                          out scion_metadata_t meta) {
 
     ScionCommonHeaderParser()  common_header_parser;
     ScionAddressHeaderParser() address_header_parser;
-    ScionPathParser()          path_parser;
-    ScionExtensionsParser()    extensions_parser;
+    // ScionPathParser()          path_parser;
+    // ScionExtensionsParser()    extensions_parser;
 
     state start {
         common_header_parser.apply(packet, hdr.common, meta);
@@ -183,7 +201,7 @@ parser ScionParser(packet_in packet,
 
     state start {
         encapsulation_parser.apply(packet, hdr.ethernet, hdr.encaps);
-        scion_header_parser.apply(packet, hdr.scion)
+        scion_header_parser.apply(packet, hdr.scion, meta);
         transition accept;
     }
 }

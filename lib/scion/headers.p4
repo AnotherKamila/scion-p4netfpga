@@ -9,7 +9,7 @@
 
 /// Encapsulation
 
-struct scion_encaps_h {
+struct scion_encaps_t {
     ip_h       ip;
     udp_h      udp;
 }
@@ -18,20 +18,20 @@ struct scion_encaps_h {
 /// Common header
 
 header scion_common_h {
-    bit<4>             version;
-    scion_host_addr_t  dst_type;
-    scion_host_addr_t  src_type;
-    bit<16>            total_len;
-    bit<8>             hdr_len;
-    bit<8>             curr_INF;
-    bit<8>             curr_HF;
-    bit<8>             next_hdr;
+    bit<4>                 version;
+    scion_host_addr_type_t dst_type;
+    scion_host_addr_type_t src_type;
+    bit<16>                total_len;
+    bit<8>                 hdr_len;
+    bit<8>                 curr_INF;
+    bit<8>                 curr_HF;
+    protocol_t             next_hdr;
 }
 
 
 /// Address header
 
-header scion_isdas_h {
+header scion_isdas_addr_h {
     scion_isd   isd;
     scion_as    as;
 }
@@ -67,8 +67,8 @@ struct scion_header_t {
 }
 
 struct scion_all_headers_t {
-    ethernet_h ethernet; 
-    scion_encapsulation_t encaps;
+    ethernet_h     ethernet; 
+    scion_encaps_t encaps;
     scion_header_t scion;
 }
 

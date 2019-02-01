@@ -1,18 +1,18 @@
-// main for v1model simple_switch emulator
-// TODO probably should be renamed to simple_switch? IDK
+// main for the v1model simple_switch architecture of the P4 software switch emulator
 #include <core.p4>
 #include <v1model.p4>
+
+#include "settings.p4" // must be included *before* SCION
 
 #include <scion/headers.p4>
 #include <scion/parsers.p4>
 #include <scion/deparsers.p4>
 
 #include "datatypes.p4"
-#include "settings.p4"
 
 
 parser TopParser(packet_in packet, 
-                 out   scion_headers_t hdr, 
+                 out   scion_all_headers_t hdr, 
                  inout user_metadata_t meta,
                  inout standard_metadata_t standard_meta) {
 
@@ -23,7 +23,7 @@ parser TopParser(packet_in packet,
     }
 }
 
-control TopPipe(inout scion_headers_t hdr,
+control TopPipe(inout scion_all_headers_t hdr,
                 inout user_metadata_t user_metadata, 
                 inout standard_metadata_t standard_metadata) {
 
@@ -34,7 +34,7 @@ control TopPipe(inout scion_headers_t hdr,
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control TopDeparser(packet_out packet,
-                    in scion_headers_t hdr) {
+                    in scion_all_headers_t hdr) {
 
     ScionDeparser() scion_deparser;
     apply {
@@ -43,13 +43,13 @@ control TopDeparser(packet_out packet,
 }
 
 
-control EmptyVerifyChecksum(inout headers_t  hdr, inout user_metadata_t meta) {
+control EmptyVerifyChecksum(inout scion_all_headers_t  hdr, inout user_metadata_t meta) {
     apply {}
 }
-control EmptyComputeChecksum(inout headers_t  hdr, inout user_metadata_t meta) {
+control EmptyComputeChecksum(inout scion_all_headers_t  hdr, inout user_metadata_t meta) {
     apply {}
 }
-control EmptyEgress(inout headers_t hdr,
+control EmptyEgress(inout scion_all_headers_t hdr,
                  inout user_metadata_t meta,
                  inout standard_metadata_t standard_metadata) {
     apply {}

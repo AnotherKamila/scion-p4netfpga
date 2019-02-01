@@ -45,7 +45,7 @@ header ipv6_h {
 
 header_union ip_h {
     ipv4_h v4;
-    ipv4_h v6;
+    ipv6_h v6;
 }
 
 

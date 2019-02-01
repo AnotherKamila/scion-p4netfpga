@@ -18,11 +18,11 @@
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control ScionDeparser(packet_out packet,
-                      in scion_headers_t hdr) {
+                      in scion_all_headers_t hdr) {
     apply {
         packet.emit(hdr.ethernet); 
-        packet.emit(hdr.encaps.ipv4);
-        packet.emit(hdr.encaps.ipv6);
+        packet.emit(hdr.encaps.ip.v4); // - union => only one will be valid
+        packet.emit(hdr.encaps.ip.v6); // /
         packet.emit(hdr.encaps.udp);
     }
 }

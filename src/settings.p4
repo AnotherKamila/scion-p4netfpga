@@ -1,6 +1,6 @@
 // table sizes, register widths, and such
-#ifndef SETTINGS_P4
-#define SETTINGS_P4
+#ifndef SC__SRC__SETTINGS_P4
+#define SC__SRC__SETTINGS_P4
 
 
 // TODO is this just the headers we work with or the whole packet?

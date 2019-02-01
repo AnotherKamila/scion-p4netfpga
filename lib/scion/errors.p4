@@ -5,8 +5,8 @@
 
 
 error {
-    notScion,                 // This is not a SCION packet
-    unknownScionHostAddrType, // The address type in the SCION common header is unknown
+    NotScion,                 // This is not a SCION packet
+    UnknownScionHostAddrType, // The address type in the SCION common header is unknown
 };
 
 

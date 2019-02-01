@@ -1,6 +1,6 @@
 // types and metadata definitions
-#ifdef SC_SRC_DATATYPES_P4_
-#define SC_SRC_DATATYPES_P4_
+#ifndef SC__SRC__DATATYPES_P4_
+#define SC__SRC__DATATYPES_P4_
 
 
 struct user_metadata_t {
