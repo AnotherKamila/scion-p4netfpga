@@ -29,12 +29,12 @@ GNUMAKE=$(shell echo GNUMAKE)
 # the auto-documenting target: should be the default
 # based on marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 # but better! :D
-help:
+help:  ## Show this help
 	@echo Targets:
-	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
+	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 	@echo
 	@echo Settings:
-	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+=.*?## .*$$' | awk 'BEGIN {FS = " ?## "}; {printf "  %-16s %s\n", $$1, $$2}'
+	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+=.*?## .*$$' | awk 'BEGIN {FS = " ?## "}; {printf "  %-20s %s\n", $$1, $$2}' | sort -u -t= -k1,1
 	@echo
 	@echo 'To override the settings, run: make <target> <VARIABLE>=<value>'
 

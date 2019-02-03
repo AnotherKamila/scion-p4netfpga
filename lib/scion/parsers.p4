@@ -18,6 +18,7 @@
 #define SC__LIB__SCION__PARSERS_P4_
 
 
+#include <compat/macros.p4>
 #include <common/constants.p4>
 #include <scion/constants.p4>
 #include <scion/datatypes.p4>
@@ -72,9 +73,9 @@ parser ScionEncapsulationParser(packet_in packet,
     }
 
     state not_scion {
-        // verify(false, error.NotScion);
         // TODO
-        verify(false, error.NoMatch);
+        // verify(false, error.NotScion);
+        ERROR(error.NoMatch);
         // transition reject;
     }
 }
@@ -125,7 +126,7 @@ parser ScionHostAddressParser(packet_in packet,
     state error_unknown_host_addr_type {
         // verify(false, error.UnknownScionHostAddrType);
         // TODO
-        verify(false, error.NoMatch);
+        ERROR(error.NoMatch);
         // transition reject;
     }
 }

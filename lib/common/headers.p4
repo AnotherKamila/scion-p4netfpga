@@ -2,6 +2,7 @@
 #define SC_LIB_COMMON_HEADERS_P4_
 
 
+#include <compat/macros.p4>
 #include <common/datatypes.p4>
 
 /// Ethernet
@@ -43,7 +44,7 @@ header ipv6_h {
     // TODO extensions
 }
 
-header_union ip_h {
+HEADER_UNION ip_h {
     ipv4_h v4;
     ipv6_h v6;
 }

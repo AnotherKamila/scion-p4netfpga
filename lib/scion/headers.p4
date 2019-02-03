@@ -43,7 +43,7 @@ header scion_host_addr_ipv4_h { ipv4_addr_t      a; }
 header scion_host_addr_ipv6_h { ipv6_addr_t      a; }
 header scion_host_addr_svc_h  { scion_svc_addr_t a; }
 
-header_union scion_host_addr_h {
+HEADER_UNION scion_host_addr_h {
     scion_host_addr_ipv4_h ipv4;
     scion_host_addr_ipv6_h ipv6;
     scion_host_addr_svc_h  service;

@@ -2,28 +2,30 @@
 #include <core.p4>
 #include <sume_switch.p4>
 
-#define PARSER_HAS_REJECT 1
+#include "settings.p4" // must be included *before* SCION
 
+#include <scion/headers.p4>
+#include <scion/parsers.p4>
+#include <scion/deparsers.p4>
 
-#include "settings.p4"   // table sizes, register widths, and such
-#include "headers.p4"    // packet headers, plus the metadata struct
-#include "parsers.p4"
-#include "deparsers.p4"
-
-// TODO(optimisation): try removing unnecessary parameters everywhere
+#include "datatypes.p4"
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser TopParser(packet_in packet, 
-                 out headers_t hdr, 
-                 out user_metadata_t user_metadata,
+                 out   scion_all_headers_t hdr, 
+                 out user_metadata_t meta,
                  out digest_data_t digest_data,
                  inout sume_metadata_t sume_metadata) {
+
+    ScionParser() scion_parser;
     state start {
-        MaybeScionTopParser.apply(packet, hdr);
+        scion_parser.apply(packet, hdr, meta.scion);
+        transition accept;
     }
 }
 
-control TopPipe(inout headers_t hdr,
+@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+control TopPipe(inout scion_all_headers_t hdr,
                 inout user_metadata_t user_metadata, 
                 inout digest_data_t digest_data, 
                 inout sume_metadata_t sume_metadata) {
@@ -35,12 +37,14 @@ control TopPipe(inout headers_t hdr,
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control TopDeparser(packet_out packet,
-                    in headers_t hdr,
+                    in scion_all_headers_t hdr,
                     in user_metadata_t user_metadata,
                     inout digest_data_t digest_data, 
                     inout sume_metadata_t sume_metadata) { 
+
+    ScionDeparser() scion_deparser;
     apply {
-        ScionTopDeparser.apply(packet, hdr);
+        scion_deparser.apply(packet, hdr);
     }
 }
 

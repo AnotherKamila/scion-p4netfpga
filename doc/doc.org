@@ -146,7 +146,10 @@ r
 
 ***** TODO find out whether there actually are performance advantages to custom architectures
 ***** TODO talk to people about whether this is a good idea and what is a good architecture
-
+*** Optimisation
+***** TODO check all parameters: in/out/inout
+***** TODO check all parameters: are they actually used?
+      actually, first check whether the compiler warns for unused
 * Notes to self
 *** about NetFPGA
      - apparently there is a pile of @Xilinx_whatever annotations which look
