@@ -5,6 +5,7 @@ include $(TOP)/Makefile.inc
 PLATFORM=netfpga ## Select the platform. Try make -C platforms ls
 ARCH=simple_sume_switch ## Select the architecture
 SDNET_NAME=scion ## Name of the TODO what exactly is it?
+# TODO There is a --toplevel_name thing for SDNet which might or might not be useful.
 
 # Clean up whitespace (grr)
 PLATFORM := $(strip $(PLATFORM))
@@ -34,10 +35,10 @@ clean: ## Remove generated files
 ### Targets that actually do stuff ###########################################
 
 $(SDNET_NAME).sdnet: $(TOP)/$(SRCDIR)/$(MAIN) $(shell find $(TOP)/$(INCDIR) -name '*.p4')
-	p4c-sdnet -o $(SDNET_NAME).sdnet --sdnet_info .sdnet_switch_info.dat -I$(TOP)/$(INCDIR) $<
+	p4c-sdnet -o $@ --sdnet_info .sdnet_switch_info.dat -I$(TOP)/$(INCDIR) $<
 	# TODO think about and enable when commands become useful
 	# ${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
 
 # TODO merge with previous rule
-compilertest.sdnet: $(TOP)/$(INCDIR)/compat/sdnet-compiler-test.p4
-	p4c-sdnet -o $@ --sdnet_info .sdnet_switch_info.dat -I$(TOP)/$(INCDIR) $<
+compilertest.sdnet: $(TOP)/$(INCDIR)/compat/sdnet-compiler-test.p4 $(shell find $(TOP)/$(INCDIR) -name '*.p4')
+	p4c-sdnet -o $@ -I$(TOP)/$(INCDIR) $<

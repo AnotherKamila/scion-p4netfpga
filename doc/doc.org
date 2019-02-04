@@ -23,8 +23,8 @@
 ***** Made significant progress on [[*Write the parser][Write the parser]], but...
 ***** TODO NEW! Terrible terrible things: see [[*P4 spec compatibility (or lack thereof)][P4 spec compatibility (or lack thereof)]]
       Will talk to Benjamin on <2019-02-05 Tue>. Tentative plan for next weeks follows.
-*** NEXT [0/4] week 3: Custom architecture
-***** NEXT Figure out how to create custom architectures
+*** NEXT [0/3] week 3: Custom architecture
+***** INPR Figure out how to create custom architectures
       Find out how it works and how difficult it is.
 ***** TODO Create a ~packet_mod~-enabled architecture
       Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.

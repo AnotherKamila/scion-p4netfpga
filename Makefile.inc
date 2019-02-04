@@ -29,7 +29,7 @@ GNUMAKE=$(shell echo GNUMAKE)
 # the auto-documenting target: should be the default
 # based on marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 # but better! :D
-help:  ## Show this help
+help: gmake  ## Show this help
 	@echo Targets:
 	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 	@echo
