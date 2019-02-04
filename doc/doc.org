@@ -193,16 +193,24 @@ r
 *** documentation
 ***** SCION Parser
 ******* TODO if it doesn't match:
+* Things to write about
+*** A SWE-friendly intro to FPGAs
+***** TODO think in space, not time
+       - everything happens at the same time
+       - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
+***** TODO resources / limiting factors
+       - Area instead of # of instructions
 *** why I am being awesome (TODO also make it true :D)
 ***** modularity:
 ******* easy to swap things in here with other stuff (e.g. replace IP with MPLS)
 ******* easy to take things from here and put into your switch
 ******* easy to change functionality without being very sad because things are well separated
 ***** portability
-      runs on SDNet and v1model and the SCION code doesn't need to change to add a new arch
+       - runs on SDNet and v1model and the SCION code doesn't need to change to add a new arch
+       - can benefit from features present only on some archs, but doesn't need much rewriting because of ~lib/compat~ and because modularity
 ***** attention to detail
        - by only passing the parameters I really need instead of the whole metadata or headers struct, I both enforce modularity *and* give the compiler more information about the code so that it can optimise better. TODO would be neat to have an example.
-*** Challenges:
+*** Challenges
 ***** Parsing the SCION packet
 Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
 created unexpected challenges when implementing SCION.
