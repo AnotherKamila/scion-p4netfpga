@@ -14,6 +14,9 @@ INCDIR=lib/
 
 MAIN=main-$(ARCH).p4
 
+MARK='\033[1m-----'
+ENDMARK='-----\033[0m'
+
 ### Environment -- shouldn't need to be changed ##############################
 
 ALL_MAKEFILES=$(MAKEFILE_LIST) $(.MAKE.MAKEFILES)  # GNU and BSD make compatibility
@@ -29,7 +32,7 @@ GNUMAKE=$(shell echo GNUMAKE)
 # the auto-documenting target: should be the default
 # based on marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 # but better! :D
-help: gmake  ## Show this help
+help: ## Show this help
 	@echo Targets:
 	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 	@echo
@@ -37,7 +40,7 @@ help: gmake  ## Show this help
 	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+=.*?## .*$$' | awk 'BEGIN {FS = " ?## "}; {printf "  %-20s %s\n", $$1, $$2}' | sort -u -t= -k1,1
 	@echo
 	@echo 'To override the settings, run: make <target> <VARIABLE>=<value>'
+	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'GNU make required (run with gmake)'; exit 70; }  # inline to have help first
 
 gmake:
 	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'GNU make required (run with gmake)'; exit 70; }
-

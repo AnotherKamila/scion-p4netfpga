@@ -8,8 +8,16 @@ include Makefile.inc
 
 all: build graph ## TODO
 
+compiler-test: ## Compile a simple test program to check whether important features work
+	@echo $(MARK) "Compiling for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
+	$(MAKE) -C platforms/$(PLATFORM) compiler-test ARCH=$(ARCH) || $(MAKE) compiler-test-failed
+
+compiler-test-failed: # TODO
+	@echo $(MARK) "Compiler test FAILED!" $(ENDMARK)
+	@echo point to documentation about -DTARGET_SUPPORTS_* and stuff
+
 build: ## Compile the P4 code
-	@echo " +++++++ Building for PLATFORM=$(PLATFORM), ARCH=$(ARCH) +++++++ "
+	@echo $(MARK) "Building for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
 	$(MAKE) -C platforms/$(PLATFORM) build ARCH=$(ARCH)
 
 sim: ## TODO
@@ -44,4 +52,4 @@ graphs: $(SRCDIR)/$(MAIN) $(shell find $(INCDIR) -name '*.p4')
 	cd graphs; for f in *.dot; do dot $$f -T png -x -o $$f.png; done
 	cd graphs; for f in *.dot; do dot $$f -T svg -x -o $$f.svg; done
 	touch graphs
-	@echo " ++++++ Graphs saved in the graphs/ directory. ++++++ "
+	@echo $(MARK) "Graphs saved in the graphs/ directory." $(ENDMARK)

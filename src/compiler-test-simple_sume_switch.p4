@@ -20,7 +20,7 @@ v2018.2:
 #define MAX_PACKET_REGION  16384
 
 header x_h {
-    varbit<16> val;
+    bit<16> val;
 }
 header y_h {
     bit<8> val;
@@ -28,10 +28,6 @@ header y_h {
 HEADER_UNION xy_h {
     x_h x;
     y_h y;
-}
-
-header t_h {
-    bit<8> val;
 }
 
 struct headers_t {
