@@ -4,12 +4,12 @@ include $(TOP)/Makefile.inc
 ### Settings #################################################################
 PLATFORM=netfpga ## Select the platform. Try make -C platforms ls
 ARCH=simple_sume_switch ## Select the architecture
-TOPLEVEL_NAME=scion ## Name of the TODO what exactly is it?
+# TOPLEVEL_NAME=scion ## Name of the TODO what exactly is it?
 
 # Clean up whitespace (grr)
 PLATFORM := $(strip $(PLATFORM))
 ARCH     := $(strip $(ARCH))
-TOPLEVEL_NAME := $(strip $(TOPLEVEL_NAME))
+# TOPLEVEL_NAME := $(strip $(TOPLEVEL_NAME))
 
 ### User-facing targets ######################################################
 
@@ -35,6 +35,6 @@ clean: ## Remove generated files
 ### Targets that actually do stuff ###########################################
 
 %.sdnet: $(TOP)/$(SRCDIR)/%.p4 $(shell find $(TOP)/$(INCDIR) -name '*.p4')
-	p4c-sdnet -o $@ --toplevel_name $(TOPLEVEL_NAME) --sdnet_info .sdnet_switch_info-%.dat -I$(TOP)/$(INCDIR) $<
+	p4c-sdnet -o $@ --sdnet_info .sdnet_switch_info-%.dat -I$(TOP)/$(INCDIR) $<
 	# TODO think about and enable when commands become useful
 	# ${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
