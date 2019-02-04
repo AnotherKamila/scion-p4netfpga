@@ -146,10 +146,16 @@ r
 
 ***** TODO find out whether there actually are performance advantages to custom architectures
 ***** TODO talk to people about whether this is a good idea and what is a good architecture
-*** Optimisation
-***** TODO check all parameters: in/out/inout
-***** TODO check all parameters: are they actually used?
-      actually, first check whether the compiler warns for unused
+*** Eventual code-related TODOs:
+***** TODO README files everywhere
+      every directory should have a README file
+      (maybe generated? :-o)
+***** TODO LICENSE files everywhere
+      check SCION repo for which
+***** TODO [0/2] Optimisation
+******* TODO check all parameters: in/out/inout
+******* TODO check all parameters: are they actually used?
+        actually, first check whether the compiler warns for unused
 * Notes to self
 *** about NetFPGA
      - apparently there is a pile of @Xilinx_whatever annotations which look
@@ -196,7 +202,67 @@ r
       runs on SDNet and v1model and the SCION code doesn't need to change to add a new arch
 ***** attention to detail
        - by only passing the parameters I really need instead of the whole metadata or headers struct, I both enforce modularity *and* give the compiler more information about the code so that it can optimise better. TODO would be neat to have an example.
-*** TODO README files everywhere
-    every directory should have a README file
-*** TODO LICENSE files everywhere
-    check SCION repo for which
+*** Challenges:
+***** Parsing the SCION packet
+Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
+created unexpected challenges when implementing SCION.
+The biggest issue [HOPEFULLY :D] was that at the time of writing, with P4-SDNet
+the parser cannot parse any variable-length data: this includes not only
+~varbit<n>~ types, but also header unions, and -- most importantly -- header
+stacks.
+This poses a problem for SCION: the path in the packet is variable length (it
+can contain any number of hops).[fn:varlen]
+Therefore, the parser cannot parse the path in the SCION packet.[fn:cantparse]
+
+A workaround (and additionally a performance improvement) is to parse only the
+actually needed data: while the path can be arbitrarily long, any single BR only
+needs to process $O(1)$ hop fields (usually one, or two in case of a shortcut
+path). [TODO is that always true?]
+This workaround cannot, however, be used as is: using only the standard features
+of P4, it is impossible to deparse parts of the header which have not been
+parsed. (The payload is copied without being parsed, but the payload is defined
+as anything *after* the last thing we parsed -- so if we skip parsing something
+in the header, it is lost and we are unable to emit it on the output interface.)
+
+The solution is to use the non-standard ~packet_mod~ feature of P4-SDNet, as
+this (unlike the standard deparsers) allows to modify the existing header
+instead of creating it anew, thereby allowing me to not lose the skipped parts
+of the header.
+
+Using this feature was not straightforward, either: we needed to create a custom
+architecture, as this feature is not available in the ~SimpleSumeSwitch~
+architecture that is the default on the NetFPGA.
+The custom architecture we created is described [SOMEWHERE ELSE].
+
+Obviously, using a non-standard SDNet-only feature means that with this
+approach, the program would not compile on a standard P4 compiler.
+However, standard P4 compilers (unlike the P4-SDNet compiler) tend to implement
+parsing variable-length headers.
+Therefore, we are able to emulate ~packet_mod~ for standard compilers by adding
+an extra struct to keep track of the "skipped" parts of the headers, and instead
+of skipping them, we parse them into the (variable-length) fields of this extra
+struct.
+
+We can use preprocessor macros to hide this difference, thereby keeping our
+code portable while being able to use ~packet_mod~ where available.
+This not only allows us to parse the variable-length SCION packet on the
+currently incomplete P4-SDNet compiler, but also allows us to harness the
+performance benefits of the ~packet_mod~ feature on any target where it is
+available.
+
+
+[fn:varlen] The SCION host addresses are also variable-length, as the address
+type tag in the common header defines what kind of address it is.
+For this case, we opted to use the C preprocessor to replace the union with a
+struct with three fixed-length fields (one for each possible type of address),
+only one of which is parsed and made valid for a given packet.
+(This causes a small increase in FPGA area usage, but any other solution would
+be significantly more complex, so this is a good tradeoff.)
+
+[fn:cantparse] In fact, it would be possible to parse the whole SCION packet by
+using the C preprocessor to "unroll" the parser at compile time, and parse the
+path segments into ~struct~'s with fields such as ~hop1~, ~hop2~, ... (size
+fixed at compile time).
+However, this would make actually using the fields very difficult, as I would
+need more preprocessor magic to index into such a struct; and additionally it
+would drastically increase my FPGA area usage.
