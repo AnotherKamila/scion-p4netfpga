@@ -1,4 +1,4 @@
-#+SEQ_TODO: TODO INPR DONE
+#+SEQ_TODO: TODO NEXT INPR DONE
 
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
@@ -12,28 +12,45 @@
         [[*SDNet + P4-SDNet]]
 ******* DONE set up repo skeleton
         CLOSED: [2019-01-23 Wed 16:39]
-*** INPR [1/3] week 2
+*** INPR [3/4] week 2
 ***** DONE Figure out the project structure
       CLOSED: [2019-01-29 Tue 18:43]
-***** INPR Make things compile with the new repo structure
-***** TODO [1/3] write the SCION packet parser
-******* DONE get some SCION packets
-        CLOSED: [2019-01-23 Wed 19:35]
-        captured stuff from my SCION VM, lives in testdata/*.pcap
-******* INPR write the parser
-******* TODO test it
-        cccceijfcnvejudhbetrluhuifctnerelkivth
-r
-*** TODO week 3: implement a small subset of SCION forwarding     :dataplane:
+***** DONE Make things compile with the new repo structure
+      CLOSED: [2019-02-04 Mon 15:28]
+***** DONE get some SCION packets
+      CLOSED: [2019-01-23 Wed 19:35]
+      captured stuff from my SCION VM, lives in testdata/*.pcap
+***** Made significant progress on [[*Write the parser][Write the parser]], but...
+***** TODO NEW! Terrible terrible things: see [[*P4 spec compatibility (or lack thereof)][P4 spec compatibility (or lack thereof)]]
+      Will talk to Benjamin on <2019-02-05 Tue>. Tentative plan for next weeks follows.
+*** NEXT [0/4] week 3: Custom architecture
+***** NEXT Figure out how to create custom architectures
+      Find out how it works and how difficult it is.
+***** TODO Create a ~packet_mod~-enabled architecture
+      Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.
+***** INPR [1/7] Write the parser
+      With the fancy idea for using ~packet_mod~ if possible and variable-length
+      fields in a "skip" struct otherwise.
+******* DONE Parse SCION Common Header
+        CLOSED: [2019-02-02 Sat]
+******* INPR Parse SCION Address Header
+        Nearly done, but need to skip to 8-byte alignment.
+******* TODO Parse current SCION Info Field
+******* TODO Parse current SCION Hop Field + next HF if VRFY_ONLY
+******* TODO [0/2] Write the deparsers
+********* TODO "normal" deparser
+********* TODO ~packet_mod~ deparser
+******* TODO Test it
+*** week 4: implement a small subset of SCION forwarding          :dataplane:
     so we have something to play with
-*** [0/4] week 4: implement SCION path verification ==> AES       :dataplane:
+*** [0/4] week 5: implement SCION path verification ==> AES       :dataplane:
 ***** TODO find 3rd party AES module                                    :aes:
       make it easily replaceable with commercial solutions
       ==> don't worry about side channels (not my problem) :D
 ***** TODO add AES as an extern to P4
 ***** TODO test that AES works                                          :aes:
 ***** TODO wire it together: implement and test path verification :dataplane:
-*** [0/1] weeks 5-7: complete SCION forwarding                    :dataplane:
+*** [0/1] weeks 6-7: complete SCION forwarding                    :dataplane:
 ***** [1/4] Deploy (existing) P4 router                             :intraAS:
 ******* DONE find the router
         CLOSED: [2019-01-22 Tue 11:46]
@@ -55,19 +72,24 @@ r
 ***** TODO see [[*Custom architecture]]
 *** [/] week 13: deploy in production
 * Questions for Benjamin
-*** DONE Is Scion *always* encapsulated? And is it always in IP/UDP?
-    CLOSED: [2019-01-30 Wed 18:48]
-    for now yes; eventually no
-*** DONE => What is expected of me? What packets should I be able to process?
-    CLOSED: [2019-01-30 Wed 14:58]
-    this can also go into thesis/documentation
-    SCION only
-*** DONE what to do about packets which aren't SCION?
-    CLOSED: [2019-01-30 Wed 14:59]
-    for now drop is good
-*** DONE LICENSE?
-    CLOSED: [2019-01-30 Wed 14:59]
-    check scion repo
+*** TODO [[P4 spec compatibility (or lack thereof)]]
+*** TODO Should we also add an "L2 learning switch"?
+    ARP + remembering MAC addresses
+
+*** Archive:
+***** DONE Is Scion *always* encapsulated? And is it always in IP/UDP?
+      CLOSED: [2019-01-30 Wed 18:48]
+      for now yes; eventually no
+***** DONE => What is expected of me? What packets should I be able to process?
+      CLOSED: [2019-01-30 Wed 14:58]
+      this can also go into thesis/documentation
+      SCION only
+***** DONE what to do about packets which aren't SCION?
+      CLOSED: [2019-01-30 Wed 14:59]
+      for now drop is good
+***** DONE LICENSE?
+      CLOSED: [2019-01-30 Wed 14:59]
+      check scion repo
 * Questions about FPGAs
 *** DONE VHDL vs Verilog: what's the relationship?
     CLOSED: [2019-01-23 Wed 11:05]
@@ -114,7 +136,7 @@ r
      2. Read this when you want to make your own externs: [[./hw-doc/ug1012-sdnet-packet-processor.pdf][SDNet]]
 * Ideas to revisit when the time comes
 *** Custom architecture
-    Instead of sticking with the ~SimpleSUMESwitch(parser, pipeline, deparser)~
+    Instead of sticking with the =SimpleSUMESwitch(parser, pipeline, deparser)=
     architecture, it might be useful to define a custom architecture designed
     specifically for SCION. This might be for example something like:
     #+begin_src p4_16
@@ -158,43 +180,59 @@ r
         actually, first check whether the compiler warns for unused
 * Notes to self
 *** about NetFPGA
-     - apparently there is a pile of @Xilinx_whatever annotations which look
+***** Annotations:
+       apparently there is a pile of @Xilinx_whatever annotations which look
        like they affect how the things are laid out on the FPGA
        ==> documented in P4-SDNet
-     - the architecture is:
-       #+BEGIN_SRC p4_16
-       SimpleSumeSwitch(
-           TopParser(),
-           TopPipe(),
-           TopDeparser()
-       ) main;
-       #+END_SRC
-     - Accessing registers doesn't exist :D
-       They have an extern which is one function where an argument says whether
-       it's a read or a write, and there is just one register:
-       #+begin_src p4_16
-       const_reg_rw(
-           index,
-           value_to_be_written, // probably bit<
-           r_or_w,  // bit<8>
-           value_will_be_read_into_here
-       );
-       #+end_src
-       Actually this is a bit weird and confusing.
-     - Testing things: you generate pcap files with input packets and expected
-       output packets. (Not sure if the expected packets are an exact match or
-       what.)
+***** Architecture:
+      #+BEGIN_SRC p4_16
+      SimpleSumeSwitch(
+          TopParser(),
+          TopPipe(),
+          TopDeparser()
+      ) main;
+      #+END_SRC
+***** Registers:
+      Accessing registers doesn't exist :D
+      They have an extern which is one function where an argument says whether
+      it's a read or a write, and there is just one register:
+      #+begin_src p4_16
+      const_reg_rw(
+          index,
+          value_to_be_written, // probably bit<
+          r_or_w,  // bit<8>
+          value_will_be_read_into_here
+      );
+      #+end_src
+      Actually this is a bit weird and confusing.
+***** Testing things
+      You generate pcap files with input packets and expected
+      output packets. (Not sure if the expected packets are an exact match or
+      what.)
 
-       The neat thing about that: there's a pcap2axi thing, so the packets are
-       replayed from memory. Therefore...
-     - Performace testing: just make a big pcap file :D ^^
-     - The ~p4c-sdnet~ simulator spits out a "module", I can pick the bus type
-       as a compiler flag (sample project makefile has Axi)
+      The neat thing about that: there's a pcap2axi thing, so the packets are
+      replayed from memory. Therefore...
+***** Performace testing
+      Just make a big pcap file :D ^^
+***** Turning source code into bits in the FPGA
+       1. ~p4c-sdnet~ converts P4 into the SDNet language, which is a Xilinx
+          thing that looks a little like C++. Check out .sdnet files.
+          Makefile target: ~sdnet~
+       2. ~sdnet~ compiles the .sdnet file into a module/IP core that then
+          goes into Vivado. I can pick the bus type as a compiler flag (sample
+          project makefile has Axi).
+          Makefile target: ~module~ (doesn't exist yet, TODO)
+          From now on it's the usual FPGA workflow.
+       3. TODO Figure out what to do with it once it's in Vivado.
+          Probably something like ~synth~, route & place, ~bitfile~...
+***** TODO How do custom architectures work?
 *** documentation
-***** SCION Parser
-******* TODO if it doesn't match:
+***** TODO SCION Parser
+***** TODO portability
 * Things to write about
-*** A SWE-friendly intro to FPGAs
+*** Aim: SCION BR
+    => only SCION
+*** Intro to FPGAs for software people
 ***** TODO think in space, not time
        - everything happens at the same time
        - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
@@ -211,12 +249,12 @@ r
 ***** attention to detail
        - by only passing the parameters I really need instead of the whole metadata or headers struct, I both enforce modularity *and* give the compiler more information about the code so that it can optimise better. TODO would be neat to have an example.
 *** Challenges
-***** Parsing the SCION packet
+***** P4 spec compatibility (or lack thereof)
 Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
 created unexpected challenges when implementing SCION.
 The biggest issue [HOPEFULLY :D] was that at the time of writing, with P4-SDNet
 the parser cannot parse any variable-length data: this includes not only
-~varbit<n>~ types, but also header unions, and -- most importantly -- header
+=varbit<n>= types, but also header unions, and -- most importantly -- header
 stacks.
 This poses a problem for SCION: the path in the packet is variable length (it
 can contain any number of hops).[fn:varlen]
@@ -269,7 +307,7 @@ be significantly more complex, so this is a good tradeoff.)
 
 [fn:cantparse] In fact, it would be possible to parse the whole SCION packet by
 using the C preprocessor to "unroll" the parser at compile time, and parse the
-path segments into ~struct~'s with fields such as ~hop1~, ~hop2~, ... (size
+path segments into ~struct~'s with fields such as =hop1=, =hop2=, ... (size
 fixed at compile time).
 However, this would make actually using the fields very difficult, as I would
 need more preprocessor magic to index into such a struct; and additionally it
