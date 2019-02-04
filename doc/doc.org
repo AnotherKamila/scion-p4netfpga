@@ -253,9 +253,9 @@ available.
 
 [fn:varlen] The SCION host addresses are also variable-length, as the address
 type tag in the common header defines what kind of address it is.
-For this case, we opted to use the C preprocessor to replace the union with a
-struct with three fixed-length fields (one for each possible type of address),
-only one of which is parsed and made valid for a given packet.
+For this case, we opted to use the C preprocessor to conditionally replace the
+union with a struct with three fixed-length fields (one for each possible type
+of address), only one of which is parsed and made valid for a given packet.
 (This causes a small increase in FPGA area usage, but any other solution would
 be significantly more complex, so this is a good tradeoff.)
 
