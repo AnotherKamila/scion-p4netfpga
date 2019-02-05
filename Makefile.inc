@@ -14,8 +14,7 @@ INCDIR=lib/
 
 MAIN=main-$(ARCH).p4
 
-MARK='\n\033[1m-----'
-ENDMARK='-----\033[0m\n'
+TARGET_DEFINES=$(foreach F,$(TARGET_SUPPORTS),-DTARGET_SUPPORTS_$(F))
 
 ### Environment -- shouldn't need to be changed ##############################
 
@@ -25,6 +24,11 @@ ALL_MAKEFILES=$(MAKEFILE_LIST) $(.MAKE.MAKEFILES)  # GNU and BSD make compatibil
 
 # Detect whether we're running with GNU or BSD make
 GNUMAKE=$(shell echo GNUMAKE)
+
+### Silly things that only exist because I like poking Makefiles #############
+
+MARK='\n\033[1m-----'
+ENDMARK='-----\033[0m\n'
 
 ### Common targets ###########################################################
 
@@ -62,10 +66,7 @@ gmake:
 find-all-target-supports:
 	@find $(TOP) -name '*.p4' | xargs cat | grep -o -E 'TARGET_SUPPORTS_\w+' | sort -u | sed s/TARGET_SUPPORTS_//
 
-###### Common targets needed for actually doing stuff ########################
-
 target-supports: # Does NOT work in the toplevel directory!
 	@echo $(TARGET_SUPPORTS)
 
-target-supports-define-flags: # Does NOT work in the toplevel directory!
-	@for d in $(TARGET_SUPPORTS); do echo -DTARGET_SUPPORTS_$$d ; done
+###### Common targets needed for actually doing stuff ########################

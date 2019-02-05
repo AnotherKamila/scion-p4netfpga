@@ -5,6 +5,7 @@ include $(TOP)/Makefile.inc
 PLATFORM=netfpga ## Select the platform. Try make -C platforms ls
 ARCH=simple_sume_switch ## Select the architecture
 # TOPLEVEL_NAME=scion ## Name of the TODO what exactly is it?
+include $(ARCH)/Makefile.inc
 
 # Clean up whitespace (grr)
 PLATFORM := $(strip $(PLATFORM))
@@ -32,10 +33,8 @@ clean: ## Remove generated files
 compiler-test: compiler-test-$(ARCH).sdnet ## Compile a test program to check support for P4 features
 	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
-### Targets that actually do stuff ###########################################
-
 %.sdnet: $(TOP)/$(SRCDIR)/%.p4 $(shell find $(TOP)/$(INCDIR) -name '*.p4')
-	p4c-sdnet -o $@ --sdnet_info .sdnet_switch_info-%.dat -I$(TOP)/$(INCDIR) $<
+	p4c-sdnet -o $@ --sdnet_info .sdnet_switch_info-%.dat $(TARGET_DEFINES) -I$(TOP)/$(INCDIR) $<
 
 # TODO think about and enable when commands become useful
 # commands:
