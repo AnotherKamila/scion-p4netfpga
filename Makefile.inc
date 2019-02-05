@@ -28,42 +28,41 @@ GNUMAKE=$(shell echo GNUMAKE)
 
 ### Common targets ###########################################################
 
+###### The auto-documenting target (here be dragons) #########################
 
-# the auto-documenting target: should be the default
-# based on marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-# but better! :D
-help: ## Show this help
+help: gmake ## Show this help
+	@$(MAKE) -s _help | column -t -s'|'
+	@echo
+	@echo 'To override the settings, run: make <VARIABLE>=<value> <target>'
+
+_help: gmake
 	@echo Targets:
-	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "  %s: %s\n", $$1, $$2}' | column -t -s:
 	@echo
+	@$(MAKE) -s _show-targets | sed 's/^/  /'
 	@echo Settings:
-	@$(MAKE) -s show-settings | sed 's/^/  /' | column -t -s:
-	@echo
-	@echo 'To override the settings, run: make <target> <VARIABLE>=<value>'
-	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'GNU make required (run with gmake)'; exit 70; }  # inline to have help first
+	@$(MAKE) -s _show-settings | sed 's/^/  /'
+
+_show-targets:
+	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "%s|%s\n", $$1, $$2}'
+
+_show-setting: gmake
+	@echo "$(SHOW_SETTING)=$($(SHOW_SETTING))|`cat $(ALL_MAKEFILES) | sed -n '/^$(SHOW_SETTING)=/s/[^#]*## *//p' | tail -n1`"
+
+list-settings-vars: gmake
+	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+=.*?## .*$$' | cut -d= -f1 | awk '!x[$$0]++'
+
+_show-settings:
+	@$(foreach var,$(shell $(MAKE) -s list-settings-vars),$(MAKE) -s _show-setting SHOW_SETTING=$(var);)
 
 gmake:
 	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'GNU make required (run with gmake)'; exit 70; }
 
-### Helper targets ###########################################################
-
-show-targets:
-
-
-show-setting:
-	@cat $(ALL_MAKEFILES) | echo $(SHOW_SETTING)=$($(SHOW_SETTING)): `sed -n '/^$(SHOW_SETTING)=/s/[^#]*## *//p' | tail -n1`
-
-list-settings-vars:
-	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+=.*?## .*$$' | cut -d= -f1 | awk '!x[$$0]++'
-
-show-settings:
-	@$(foreach var,$(shell $(MAKE) -s list-settings-vars),$(MAKE) -s show-setting SHOW_SETTING=$(var);)
-
+###### Helper targets for humans #############################################
 
 find-all-target-supports:
 	@find $(TOP) -name '*.p4' | xargs cat | grep -o -E 'TARGET_SUPPORTS_\w+' | sort -u | sed s/TARGET_SUPPORTS_//
 
-### Common targets needed for actually doing stuff ###########################
+###### Common targets needed for actually doing stuff ########################
 
 target-supports: # Does NOT work in the toplevel directory!
 	@echo $(TARGET_SUPPORTS)

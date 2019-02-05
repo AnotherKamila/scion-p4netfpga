@@ -29,7 +29,7 @@ sdnet: (basename $(MAIN)).sdnet ## Compile for SDNet
 clean: ## Remove generated files
 	rm -f *.sdnet *.tbl .sdnet_switch_info.dat
 
-compiler-test: compiler-test-$(ARCH).sdnet ## Compile a simple test program to check whether important features work
+compiler-test: compiler-test-$(ARCH).sdnet ## Compile a test program to check support for P4 features
 	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
 ### Targets that actually do stuff ###########################################

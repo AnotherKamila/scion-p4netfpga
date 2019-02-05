@@ -9,7 +9,7 @@ include $(TOP)/Makefile.inc
 
 all: build graph ## TODO
 
-compiler-test: ## Compile a simple test program to check whether important features work
+compiler-test: ## Compile a test program to check support for P4 features
 	@echo $(MARK) "Compiling for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
 	$(MAKE) -C platforms/$(PLATFORM) compiler-test ARCH=$(ARCH) || $(MAKE) compiler-test-failed
 
