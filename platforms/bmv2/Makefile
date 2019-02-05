@@ -6,7 +6,7 @@ include $(TOP)/Makefile.inc
 ### Settings #################################################################
 PLATFORM=bmv2 ## Select the platform. Try make -C platforms ls
 ARCH=v1model  ## Select the architecture
-TARGET_SUPPORTS=HEADER_UNIONS VERIFY
+TARGET_SUPPORTS=HEADER_UNIONS VERIFY VAR_LEN_PARSING
 
 ### User-facing targets ######################################################
 

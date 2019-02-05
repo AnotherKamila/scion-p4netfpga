@@ -17,6 +17,8 @@ compiler-test-failed: # TODO
 	@echo $(MARK) "Compiler test FAILED!" $(ENDMARK)
 	@echo TODO point to documentation about -DTARGET_SUPPORTS_* and stuff
 
+# TODO build and SW test for all architectures
+
 build: ## Compile the P4 code
 	@echo $(MARK) "Building for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
 	$(MAKE) -C platforms/$(PLATFORM) build ARCH=$(ARCH)

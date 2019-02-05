@@ -23,10 +23,11 @@ header scion_common_h {
     scion_host_addr_type_t src_type;
     bit<16>                total_len;
     bit<8>                 hdr_len;
-    bit<8>                 curr_INF;
+    bit<8>                 curr_INF; // absolute offset to the info field (from beginning of SCION common header), in units of 8B
     bit<8>                 curr_HF;
     protocol_t             next_hdr;
 }
+const packet_size_t SCION_COMMON_H_SIZE = 8; // I want sizeof :'(
 
 
 /// Address header
@@ -35,6 +36,7 @@ header scion_isdas_addr_h {
     scion_isd   isd;
     scion_as    as;
 }
+const packet_size_t SCION_ISDAS_ADDR_H_SIZE = 8; // here I *really* want sizeof :D
 
 // Wrappers for host address data types.
 // These must be headers because a header union may only contain headers, not
@@ -46,7 +48,7 @@ header scion_host_addr_svc_h  { scion_svc_addr_t a; }
 // This has to be wrapped because packet.extract() only accepts headers.
 #ifndef TARGET_SUPPORTS_PACKET_MOD
 // SDNet refuses to compile anything with the slightest mention of varbit, so I have to hide it behind this guard.
-header scion_addr_align_bits_h { varbit<8*6> a; }
+header scion_addr_align_bits_h { varbit<(8*6)> a; }
 #endif
 
 HEADER_UNION scion_host_addr_h {
@@ -89,6 +91,7 @@ struct scion_all_headers_t {
 struct scion_metadata_t {
     scion_host_addr_type_t dst_addr_type;
     scion_host_addr_type_t src_addr_type;
+    packet_size_t          pos_in_hdr; // absolute position in the SCION header, in bytes
 }
 
 

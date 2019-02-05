@@ -25,6 +25,8 @@
 #include <scion/errors.p4>
 #include <scion/headers.p4>
 
+// TODO clean up param ordering: in first, inout middle, out last
+
 // Parses Ethernet and IP/UDP encapsulation (if present).
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser ScionEncapsulationParser(packet_in packet,
@@ -86,7 +88,10 @@ parser ScionCommonHeaderParser(packet_in packet,
                                out scion_common_h   hdr,
                                out scion_metadata_t meta) {
     state start {
+        meta.pos_in_hdr = 0;
+
         packet.extract(hdr);
+        meta.pos_in_hdr = meta.pos_in_hdr + SCION_COMMON_H_SIZE;
         meta.dst_addr_type = hdr.dst_type;
         meta.src_addr_type = hdr.src_type;
         transition accept;
@@ -98,7 +103,8 @@ parser ScionCommonHeaderParser(packet_in packet,
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser ScionHostAddressParser(packet_in packet,
                               in  scion_host_addr_type_t type,
-                              out scion_host_addr_h      hdr) {
+                              out scion_host_addr_h      hdr,
+                              out packet_size_t          addr_len) {
     state start {
         transition select(type) {
             SCION_HOST_ADDR_IPV4: ipv4;
@@ -110,16 +116,19 @@ parser ScionHostAddressParser(packet_in packet,
 
     state ipv4 {
         packet.extract(hdr.ipv4);
+        addr_len = 4;
         transition accept;
     }
 
     state ipv6 {
         packet.extract(hdr.ipv6);
+        addr_len = 16;
         transition accept;
     }
 
     state svc {
         packet.extract(hdr.service);
+        addr_len = 2;
         transition accept;
     }
 
@@ -134,65 +143,63 @@ parser ScionHostAddressParser(packet_in packet,
 // Parses the SCION Address Header
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser ScionAddressHeaderParser(packet_in packet, 
-                                out scion_addr_header_t hdr,
-                                in scion_metadata_t     meta) {
+                                out   scion_addr_header_t hdr,
+                                inout scion_metadata_t    meta) {
 
     ScionHostAddressParser() dst_host_parser;
     ScionHostAddressParser() src_host_parser;
+    packet_size_t host_addr_len;
 
     state start {
         packet.extract(hdr.dst_isdas);
         packet.extract(hdr.src_isdas);
-        dst_host_parser.apply(packet, meta.dst_addr_type, hdr.dst_host);
-        src_host_parser.apply(packet, meta.src_addr_type, hdr.src_host);
+        meta.pos_in_hdr = meta.pos_in_hdr + 2*SCION_ISDAS_ADDR_H_SIZE;
+
+        dst_host_parser.apply(packet, meta.dst_addr_type, hdr.dst_host, host_addr_len);
+        meta.pos_in_hdr = meta.pos_in_hdr + host_addr_len;
+
+        src_host_parser.apply(packet, meta.src_addr_type, hdr.src_host, host_addr_len);
+        meta.pos_in_hdr = meta.pos_in_hdr + host_addr_len;
 
         // align to 8 bytes
-        // SDNet doesn't support select with tuples :-/
-        transition select(meta.dst_addr_type) {
-            SCION_HOST_ADDR_IPV4: align_lookup_at_4; //  4B
-            SCION_HOST_ADDR_IPV6: align_lookup_at_0; // 16B
-            SCION_HOST_ADDR_SVC:  align_lookup_at_2; //  2B
+        bit<4> skip = 8 - (bit<4>)meta.pos_in_hdr[2:0]; // last 3 bits => mod 8
+        meta.pos_in_hdr = meta.pos_in_hdr + (packet_size_t)skip;
+
+#ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
+
+        PACKET_SKIP(packet, 8*(bit<32>)skip, hdr.align_bits);
+        transition accept;
+
+#else
+        // buaaaaaaaaaaaaaaah T-T
+        // have to make separate states for this because SDNet is horrible
+        // TODO this should be a macro because I'll need it in path parsing too
+        transition select(skip) {
+            0: accept;
+            2: skip_2;
+            4: skip_4;
+            6: skip_6;
+            // odd values are currently impossible
         }
+#endif
+
     }
 
-    state align_lookup_at_0 {
-        transition select(meta.src_addr_type) {
-            SCION_HOST_ADDR_IPV4: align_munch_at_4; // 0 +  4B
-            SCION_HOST_ADDR_IPV6: accept;           // 0 + 16B => aligned
-            SCION_HOST_ADDR_SVC:  align_munch_at_2; // 0 +  2B
-        }
-    }
-
-    state align_lookup_at_2 {
-        transition select(meta.src_addr_type) {
-            SCION_HOST_ADDR_IPV4: align_munch_at_6; // 2B +  4B
-            SCION_HOST_ADDR_IPV6: align_munch_at_2; // 2B + 16B
-            SCION_HOST_ADDR_SVC:  align_munch_at_4; // 2B +  2B
-        }
-    }
-
-    state align_lookup_at_4 {
-        transition select(meta.src_addr_type) {
-            SCION_HOST_ADDR_IPV4: accept;           // 4B +  4B => aligned
-            SCION_HOST_ADDR_IPV6: align_munch_at_4; // 4B + 16B
-            SCION_HOST_ADDR_SVC:  align_munch_at_6; // 4B +  2B
-        }
-    }
-
-    state align_munch_at_2 {
-        PACKET_SKIP(packet, 8*6, hdr.align_bits);
+#ifndef TARGET_SUPPORTS_VAR_LEN_PARSING
+    // TODO kill it!!!! (with a macro)
+    state skip_2 {
+        packet.advance(8*2);
         transition accept;
     }
-
-    state align_munch_at_4 {
-        PACKET_SKIP(packet, 8*4, hdr.align_bits);
+    state skip_4 {
+        packet.advance(8*4);
         transition accept;
     }
-
-    state align_munch_at_6 {
-        PACKET_SKIP(packet, 8*2, hdr.align_bits);
+    state skip_6 {
+        packet.advance(8*6);
         transition accept;
     }
+#endif
 
 }
 
