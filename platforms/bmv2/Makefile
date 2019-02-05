@@ -1,7 +1,12 @@
+# TODO it might be worth it to just always have a 2-level hierarchy platforms/$(PLATFORM)/$(ARCH), this is annoying
+
 TOP=../..
 include $(TOP)/Makefile.inc
 
-TARGET_DEFINES=-DTARGET_SUPPORTS_HEADER_UNIONS -DTARGET_SUPPORTS_VERIFY
+### Settings #################################################################
+PLATFORM=bmv2 ## Select the platform. Try make -C platforms ls
+ARCH=v1model  ## Select the architecture
+TARGET_SUPPORTS=HEADER_UNIONS VERIFY
 
 ### User-facing targets ######################################################
 

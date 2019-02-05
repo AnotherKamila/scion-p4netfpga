@@ -1,6 +1,7 @@
 # Top-level Makefile for the SCION-p4netfpga project.
 
-include Makefile.inc
+TOP=.
+include $(TOP)/Makefile.inc
 
 .PHONY: help all build sim synth test flash graph clean
 

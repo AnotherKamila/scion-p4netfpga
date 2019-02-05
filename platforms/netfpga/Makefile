@@ -13,7 +13,7 @@ ARCH     := $(strip $(ARCH))
 
 ### User-facing targets ######################################################
 
-.PHONY: help all listarchs ls build sdnet clean
+.PHONY: help all listarchs ls build sdnet clean find-all-target-supports
 
 all: ## TODO
 
@@ -26,15 +26,17 @@ build: sdnet ## TODO
 
 sdnet: (basename $(MAIN)).sdnet ## Compile for SDNet
 
-compiler-test: compiler-test-$(ARCH).sdnet ## Compile a simple test program to check whether important features work
-	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
-
 clean: ## Remove generated files
 	rm -f *.sdnet *.tbl .sdnet_switch_info.dat
+
+compiler-test: compiler-test-$(ARCH).sdnet ## Compile a simple test program to check whether important features work
+	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
 ### Targets that actually do stuff ###########################################
 
 %.sdnet: $(TOP)/$(SRCDIR)/%.p4 $(shell find $(TOP)/$(INCDIR) -name '*.p4')
 	p4c-sdnet -o $@ --sdnet_info .sdnet_switch_info-%.dat -I$(TOP)/$(INCDIR) $<
-	# TODO think about and enable when commands become useful
-	# ${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
+
+# TODO think about and enable when commands become useful
+# commands:
+# ${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
