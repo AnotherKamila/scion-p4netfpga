@@ -1,4 +1,4 @@
-#+SEQ_TODO: TODO NEXT INPR DONE
+#+SEQ_TODO: TODO NEXT INPR WAIT NOPE DONE
 
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
@@ -12,7 +12,8 @@
         [[*SDNet + P4-SDNet]]
 ******* DONE set up repo skeleton
         CLOSED: [2019-01-23 Wed 16:39]
-*** INPR [3/4] week 2
+*** DONE [4/4] week 2
+    CLOSED: [2019-02-05 Tue 18:49]
 ***** DONE Figure out the project structure
       CLOSED: [2019-01-29 Tue 18:43]
 ***** DONE Make things compile with the new repo structure
@@ -21,26 +22,36 @@
       CLOSED: [2019-01-23 Wed 19:35]
       captured stuff from my SCION VM, lives in testdata/*.pcap
 ***** Made significant progress on [[*Write the parser][Write the parser]], but...
-***** TODO NEW! Terrible terrible things: see [[*P4 spec compatibility (or lack thereof)][P4 spec compatibility (or lack thereof)]]
+***** DONE NEW! Terrible terrible things: see [[*P4 spec compatibility (or lack thereof)][P4 spec compatibility (or lack thereof)]]
       Will talk to Benjamin on <2019-02-05 Tue>. Tentative plan for next weeks follows.
-*** NEXT [0/3] week 3: Custom architecture
-***** INPR Figure out how to create custom architectures
-      Find out how it works and how difficult it is.
-***** TODO Create a ~packet_mod~-enabled architecture
+*** NEXT [1/4] week 3: Figure out the parser despite setbacks
+***** DONE Figure out how to create custom architectures
+      CLOSED: [2019-02-05 Tue 18:43]
+      Currently there's no way to do that: the architectures are built into the
+      compiler, and I don't have the Xilinx compiler's source code.
+
+      I can hopefully use XilinxStreamSwitch with a bit of poking at the Verilog
+      wrapper module.
+***** NOPE Create a ~packet_mod~-enabled architecture
       Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.
-***** INPR [1/7] Write the parser
+      Rejected because not possible; will use ~XilinxStreamSwitch~.
+***** INPR [2/6] Write the parser
       With the fancy idea for using ~packet_mod~ if possible and variable-length
       fields in a "skip" struct otherwise.
 ******* DONE Parse SCION Common Header
         CLOSED: [2019-02-02 Sat]
-******* INPR Parse SCION Address Header
-        Nearly done, but need to skip to 8-byte alignment.
-******* TODO Parse current SCION Info Field
+******* DONE Parse SCION Address Header
+        CLOSED: [2019-02-05 Tue 18:44]
+        The 8-byte alignment was super annoying because SDNet.
+******* NEXT Parse current SCION Info Field
 ******* TODO Parse current SCION Hop Field + next HF if VRFY_ONLY
 ******* TODO [0/2] Write the deparsers
 ********* TODO "normal" deparser
 ********* TODO ~packet_mod~ deparser
-******* TODO Test it
+******* NEXT Test it
+***** WAIT Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
+      Stuck on not having the SDNet license. Sniff sniff.
+      I really hope this will work.
 *** week 4: implement a small subset of SCION forwarding          :dataplane:
     so we have something to play with
 *** [0/4] week 5: implement SCION path verification ==> AES       :dataplane:
