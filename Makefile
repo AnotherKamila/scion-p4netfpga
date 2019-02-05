@@ -15,7 +15,7 @@ compiler-test: ## Compile a test program to check support for P4 features
 
 compiler-test-failed: # TODO
 	@echo $(MARK) "Compiler test FAILED!" $(ENDMARK)
-	@echo point to documentation about -DTARGET_SUPPORTS_* and stuff
+	@echo TODO point to documentation about -DTARGET_SUPPORTS_* and stuff
 
 build: ## Compile the P4 code
 	@echo $(MARK) "Building for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)

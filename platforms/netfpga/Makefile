@@ -5,7 +5,7 @@ include $(TOP)/Makefile.inc
 PLATFORM=netfpga ## Select the platform. Try make -C platforms ls
 ARCH=simple_sume_switch ## Select the architecture
 # TOPLEVEL_NAME=scion ## Name of the TODO what exactly is it?
-include $(ARCH)/Makefile.inc
+include $(strip $(ARCH))/Makefile.inc
 
 # Clean up whitespace (grr)
 PLATFORM := $(strip $(PLATFORM))
