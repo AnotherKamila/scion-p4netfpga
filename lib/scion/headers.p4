@@ -43,6 +43,12 @@ header scion_host_addr_ipv4_h { ipv4_addr_t      a; }
 header scion_host_addr_ipv6_h { ipv6_addr_t      a; }
 header scion_host_addr_svc_h  { scion_svc_addr_t a; }
 
+// This has to be wrapped because packet.extract() only accepts headers.
+#ifndef TARGET_SUPPORTS_PACKET_MOD
+// SDNet refuses to compile anything with the slightest mention of varbit, so I have to hide it behind this guard.
+header scion_addr_align_bits_h { varbit<8*6> a; }
+#endif
+
 HEADER_UNION scion_host_addr_h {
     scion_host_addr_ipv4_h ipv4;
     scion_host_addr_ipv6_h ipv6;
@@ -55,6 +61,12 @@ struct scion_addr_header_t {
     scion_isdas_addr_h src_isdas;
     scion_host_addr_h  dst_host;
     scion_host_addr_h  src_host;
+
+// addr_header must always be a multiple of 8 bytes, so if we don't have
+// packet_mod, we need to put the right number of bytes somewhere
+#ifndef TARGET_SUPPORTS_PACKET_MOD
+    scion_addr_align_bits_h align_bits;
+#endif
 }
 
 

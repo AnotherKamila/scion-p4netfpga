@@ -145,6 +145,52 @@ parser ScionAddressHeaderParser(packet_in packet,
         packet.extract(hdr.src_isdas);
         dst_host_parser.apply(packet, meta.dst_addr_type, hdr.dst_host);
         src_host_parser.apply(packet, meta.src_addr_type, hdr.src_host);
+
+        // align to 8 bytes
+        // SDNet doesn't support select with tuples :-/
+        transition select(meta.dst_addr_type) {
+            SCION_HOST_ADDR_IPV4: align_lookup_at_4; //  4B
+            SCION_HOST_ADDR_IPV6: align_lookup_at_0; // 16B
+            SCION_HOST_ADDR_SVC:  align_lookup_at_2; //  2B
+        }
+    }
+
+    state align_lookup_at_0 {
+        transition select(meta.src_addr_type) {
+            SCION_HOST_ADDR_IPV4: align_munch_at_4; // 0 +  4B
+            SCION_HOST_ADDR_IPV6: accept;           // 0 + 16B => aligned
+            SCION_HOST_ADDR_SVC:  align_munch_at_2; // 0 +  2B
+        }
+    }
+
+    state align_lookup_at_2 {
+        transition select(meta.src_addr_type) {
+            SCION_HOST_ADDR_IPV4: align_munch_at_6; // 2B +  4B
+            SCION_HOST_ADDR_IPV6: align_munch_at_2; // 2B + 16B
+            SCION_HOST_ADDR_SVC:  align_munch_at_4; // 2B +  2B
+        }
+    }
+
+    state align_lookup_at_4 {
+        transition select(meta.src_addr_type) {
+            SCION_HOST_ADDR_IPV4: accept;           // 4B +  4B => aligned
+            SCION_HOST_ADDR_IPV6: align_munch_at_4; // 4B + 16B
+            SCION_HOST_ADDR_SVC:  align_munch_at_6; // 4B +  2B
+        }
+    }
+
+    state align_munch_at_2 {
+        PACKET_SKIP(packet, 8*6, hdr.align_bits);
+        transition accept;
+    }
+
+    state align_munch_at_4 {
+        PACKET_SKIP(packet, 8*4, hdr.align_bits);
+        transition accept;
+    }
+
+    state align_munch_at_6 {
+        PACKET_SKIP(packet, 8*2, hdr.align_bits);
         transition accept;
     }
 

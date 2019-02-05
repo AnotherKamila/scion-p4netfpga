@@ -25,16 +25,16 @@ ls: listarchs ## Shorthand for listarchs
 
 build: sdnet ## TODO
 
-sdnet: (basename $(MAIN)).sdnet ## Compile for SDNet
+sdnet: $(basename $(MAIN)).sdnet ## Compile for SDNet
 
 clean: ## Remove generated files
 	rm -f *.sdnet *.tbl .sdnet_switch_info.dat
 
 compiler-test: compiler-test-$(ARCH).sdnet ## Compile a test program to check support for P4 features
-	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
 %.sdnet: $(TOP)/$(SRCDIR)/%.p4 $(shell find $(TOP)/$(INCDIR) -name '*.p4')
 	p4c-sdnet -o $@ --sdnet_info .sdnet_switch_info-%.dat $(TARGET_DEFINES) -I$(TOP)/$(INCDIR) $<
+	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
 # TODO think about and enable when commands become useful
 # commands:

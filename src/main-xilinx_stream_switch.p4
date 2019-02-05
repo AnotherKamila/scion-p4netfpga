@@ -1,4 +1,4 @@
-// main for NetFPGA SUME switch
+// main for NetFPGA SUME switch with the XilinxStreamSwitch arch9tecture
 #include <core.p4>
 #include <sume_switch.p4>
 
