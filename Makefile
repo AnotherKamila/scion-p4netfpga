@@ -23,6 +23,18 @@ build: ## Compile the P4 code
 	@echo $(MARK) "Building for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
 	$(MAKE) -C platforms/$(PLATFORM) build ARCH=$(ARCH)
 
+for-all-archs: # Hello, I am a hack!
+	@set -e;                                                    \
+	for p in `$(MAKE) -s -C platforms list-platforms-only`; do  \
+		for a in `$(MAKE) -s -C platforms/$$p listarchs` ; do     \
+			$(MAKE) $(WHAT) PLATFORM=$$p ARCH=$$a ;                 \
+		done ;                                                    \
+	done
+
+test-all: ## Build and test for all platforms and architectures.
+	@$(MAKE) -s for-all-archs WHAT=test
+	@echo $(MARK) "Nothing broke! Yay!" $(ENDMARK)
+
 sim: ## TODO
 	@echo 'Not implemented yet'
 	@/bin/false
@@ -32,8 +44,8 @@ synth: ## Synthesise the something something TODO terminology
 	@/bin/false
 
 test: ## TODO
-	@echo 'Not implemented yet'
-	@/bin/false
+	@echo $(MARK) "Testing for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
+	$(MAKE) -C platforms/$(PLATFORM) build ARCH=$(ARCH)
 
 flash: ## TODO
 	@echo 'Not implemented yet'
@@ -44,6 +56,9 @@ graph: graphs ## Visualise the control flow of the P4 program
 clean: ## Remove generated files
 	$(MAKE) -C platforms/$(PLATFORM) clean
 	rm -rf graphs/
+
+clean-all: ## Remove generated files for all platforms and architectures
+	@$(MAKE) -s for-all-archs WHAT=clean
 
 ##### Targets that actually do things
 

@@ -9,10 +9,6 @@ PLATFORM := $(strip $(PLATFORM))
 ARCH     := $(strip $(ARCH))
 # TOPLEVEL_NAME := $(strip $(TOPLEVEL_NAME))
 
-HW = hw
-SW = sw/embedded/
-TEST = test
-
 ### User-facing targets ######################################################
 
 all: ## TODO

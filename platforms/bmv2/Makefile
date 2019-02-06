@@ -19,6 +19,8 @@ ls: listarchs ## Shorthand for listarchs
 
 build: $(basename $(MAIN)).json ## Compile the P4 code
 
+test: build ## TODO
+
 # compiler-test: compiler-test-$(ARCH).json ## Compile a simple test program to check whether important features work
 
 clean: ## Removes generated files

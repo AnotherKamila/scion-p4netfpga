@@ -14,16 +14,20 @@ ARCH     := $(strip $(ARCH))
 
 ### User-facing targets ######################################################
 
+ARCHS=$(shell find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+
 .PHONY: help all listarchs ls build sdnet clean find-all-target-supports
 
 all: ## TODO
 
 listarchs: ## List supported architectures
-	@for p in `find . -mindepth 1 -maxdepth 1 -type d`; do basename $$p; done
+	@echo $(ARCHS)
 
 ls: listarchs ## Shorthand for listarchs
 
 build: sdnet ## TODO
+
+test: build ## TODO
 
 sdnet: $(basename $(MAIN)).sdnet ## Compile for SDNet
 
