@@ -14,7 +14,10 @@ ARCH     := $(strip $(ARCH))
 
 ### User-facing targets ######################################################
 
-ARCHS=$(shell find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+# TEMPORARY, TODO put me back
+#ARCHS=$(shell find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+ARCHS=xilinx_stream_switch
+# TODO if I make it a habit do define ARCHS, I can move the listarchs target into $(TOP)/Makefile.inc
 
 .PHONY: help all listarchs ls build sdnet clean find-all-target-supports
 

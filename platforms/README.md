@@ -32,8 +32,9 @@ target, as long as their architecture files are added.
 
 * `SimpleSumeSwitch`: the default architecture provided by the NetFPGA SUME P4 toolkit
   Note that due to the limitations of the current version of P4-SDNet compiler, this architecture cannot handle long SCION paths.
+  **To speed up development, this platform is temporarily abandoned and doesn't compile. Later in the project it will either be made to work or removed.**
 * `XilinxStreamSwitch`: the experimental architecture providing access to the experimental `packet_mod` feature. Experimental.
-  This architecture improves performance and reduces FPGA area usage by not parsing the parts of the header which aren't needed. Thanks to that, it can handle slightly longer paths compared to the `SimpleSumeSwitch`.
+  This architecture improves performance and reduces FPGA area usage by not parsing the parts of the header which aren't needed. Thanks to that, it can handle longer paths compared to the `SimpleSumeSwitch` despite the limitations of the P4-SDNet compiler.
   
 
 # Adding a new architecture
