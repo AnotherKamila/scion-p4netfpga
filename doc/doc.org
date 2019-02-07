@@ -91,6 +91,67 @@
     How fast is it? Where are the bottlenecks? Can we make it faster?
 ***** TODO see [[*Custom architecture]]
 *** [/] week 13: deploy in production
+* Timeline summaries
+*** DONE beginning - <2019-02-06 Wed>
+    CLOSED: [2019-02-07 Thu 10:18]
+Progress report until now:
+
+ - Background research:
+   - read NetFPGA and Xilinx compiler docs, got familiar with the workflow
+   - got more familiar with the details of SCION: got a VM from SCIONLab, sniffed
+     packets, re-read parts of the SCION book with P4 and NetFPGA in mind
+   - Read Seyedali's documentation (scion-netfpga project)
+   - background reading on FPGAs: building intuition; workflow; timing issues; etc.
+     (Needed because while P4 abstracts away the logic, it does not automate all
+     FPGA design tasks.)
+ - Planning ahead: thought about project structure, modularity, portability.
+   (I will support both the P4 software switch and NetFPGA, to ease testing and
+   to force this project to be easily portable to other HW platforms.)
+ - Made progress on writing the SCION packet parser.
+ - Discovered a major problem and after many attempts found a workaround that might
+   actually work:
+
+   TL;DR: The NetFPGA can't deal with variable length headers, such as the SCION
+   path. Get around it by sacrificing FPGA area (we have plenty) and using a
+   non-standard P4 extension.
+
+   Longer version:
+
+   The NetFPGA's P4 compiler does not support doing anything with
+   variable-length headers (not even skipping them).
+   (The background info gained by talking to NetFPGA people is that Xilinx is
+   not fixing the old compiler, but writing a new one. I cannot rely on the new
+   compiler being released in time, hence the workaround.)
+
+   How I am planning to solve this:
+
+   1. Assume a max path length K, let's say K = 30. Use the C preprocessor to
+      "unroll" the parsing: create K separate parser states that parse a 1-hop
+      segment, a 2-hop segment, etc (compile-time known value, so that works).
+      The NetFPGA has plenty of space.
+   2. While the SCION path can be arbitrarily long, my BR only needs to look at
+      either 1 or 2 hops. Therefore I can skip the rest and only use O(1) buffer
+      space per state, not O(K). Thereby I can avoid an O(K^2) blowup and fit a
+      bigger K. (The NetFPGA is big, but not infinite).
+   3. Standard P4 does not allow me to emit headers I haven't parsed. Therefore
+      I will use the experimental `packet_mod` feature to avoid losing the
+      skipped parts.
+   4. Using `packet_mod` requires deviating from the "usual" NetFPGA Verilog
+      wrappers, but my initial research suggests that this should be doable in
+      less than 1 day of work. Therefore, worth trying.
+   5. Bonus: `packet_mod` should help with parser and deparser performance.
+   6. Backup plan if `packet_mod` turns out to be too experimental to work: Live
+      with the O(K^2) blowup until the new compiler comes out. Make it easy to
+      switch to it (yay portability).
+
+Next steps:
+
+Still waiting for the license. Can't confirm that `packet_mod` works as expected
+until then.
+Meanwhile, writing the parser assuming one of {fully compliant P4 compiler, the
+`packet_mod` feature}. If it turns out I have neither of those, it will be <2
+extra days of work to make it work without them with the O(K^2) blowup.
+
 * Questions for Benjamin
 *** TODO [[P4 spec compatibility (or lack thereof)]]
 *** TODO Should we also add an "L2 learning switch"?
