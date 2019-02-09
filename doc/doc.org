@@ -1,4 +1,4 @@
-#+SEQ_TODO: TODO NEXT INPR WAIT NOPE DONE
+#+SEQ_TODO: TODO NEXT INPR WAIT DONE
 
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
@@ -24,7 +24,7 @@
 ***** Made significant progress on [[*Write the parser][Write the parser]], but...
 ***** DONE NEW! Terrible terrible things: see [[*P4 spec compatibility (or lack thereof)][P4 spec compatibility (or lack thereof)]]
       Will talk to Benjamin on <2019-02-05 Tue>. Tentative plan for next weeks follows.
-*** INPR [1/5] week 3: Figure out the parser despite setbacks
+*** TODO [2/3] week 3 first half: Figure out the parser despite setbacks
 ***** DONE Figure out how to create custom architectures
       CLOSED: [2019-02-05 Tue 18:43]
       Currently there's no way to do that: the architectures are built into the
@@ -44,7 +44,8 @@
          => nope
        - can use ~XilinxStreamSwitch~, will need to modify wrapper thingy in some
          unknown way (no docs)
-***** INPR [2/6] Write the parser
+***** DONE [2/4] Write the parser: 1/2
+      CLOSED: [2019-02-09 Sat 16:23]
       With the fancy idea for using ~packet_mod~ if possible and variable-length
       fields in a "skip" struct otherwise.
 ******* DONE Parse SCION Common Header
@@ -52,17 +53,29 @@
 ******* DONE Parse SCION Address Header
         CLOSED: [2019-02-05 Tue 18:44]
         The 8-byte alignment was super annoying because SDNet.
-******* NEXT Parse current SCION Info Field
+*** TODO [0/3] Week 3 second half: Make it run
+***** WAIT Test the toolchain: Complete the =switch_calc= exercise
+      The `master` branch of the NetFPGA repo is broken, but `vivado-2018.2`
+      works. Synthesis finished, just waiting for physical access so I can
+      reboot the host.
+***** TODO Add an encaps deparser
+***** TODO [0/4] Create the project structure needed for testing it
+******* TODO make it sim and synth
+******* TODO add testdata
+******* TODO make it pass the simulation
+******* TODO synth and test IRL
+*** [0/4] Week 4: Make it forward!
+***** TODO [0/2] Write the parser: 2/2
+      With the fancy idea for using ~packet_mod~ if possible and variable-length
+      fields in a "skip" struct otherwise.
+******* TODO Parse current SCION Info Field
 ******* TODO Parse current SCION Hop Field + next HF if VRFY_ONLY
-******* TODO [0/2] Write the deparsers
-********* TODO "normal" deparser
-********* TODO ~packet_mod~ deparser
-******* NEXT Test it
-***** WAIT Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
-      Stuck on not having the SDNet license. Sniff sniff.
-      I really hope this will work.
-*** week 4: implement a small subset of SCION forwarding          :dataplane:
-    so we have something to play with
+***** NEXT [0/2] Write the deparsers
+******* TODO "normal" deparser
+******* NEXT ~packet_mod~ deparser
+***** TODO Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
+      No longer stuck on license. Should try this ASAP.
+***** TODO Test it
 *** [0/4] week 5: implement SCION path verification ==> AES       :dataplane:
 ***** TODO find 3rd party AES module                                    :aes:
       make it easily replaceable with commercial solutions
@@ -393,3 +406,7 @@ fixed at compile time).
 However, this would make actually using the fields very difficult, as I would
 need more preprocessor magic to index into such a struct; and additionally it
 would drastically increase my FPGA area usage.
+* Bibliography
+
+
+  [[./references.bib][references]]
