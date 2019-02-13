@@ -24,7 +24,8 @@
 ***** Made significant progress on [[*Write the parser][Write the parser]], but...
 ***** DONE NEW! Terrible terrible things: see [[*P4 spec compatibility (or lack thereof)][P4 spec compatibility (or lack thereof)]]
       Will talk to Benjamin on <2019-02-05 Tue>. Tentative plan for next weeks follows.
-*** TODO [2/3] week 3 first half: Figure out the parser despite setbacks
+*** DONE [3/3] week 3: Figure out the parser despite setbacks
+    CLOSED: [2019-02-13 Wed 12:06]
 ***** DONE Figure out how to create custom architectures
       CLOSED: [2019-02-05 Tue 18:43]
       Currently there's no way to do that: the architectures are built into the
@@ -35,7 +36,8 @@
 ***** NOPE Create a ~packet_mod~-enabled architecture
       Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.
       Rejected because not possible; will use ~XilinxStreamSwitch~.
-***** NEXT update [[*P4 spec compatibility (or lack thereof)]]
+***** DONE update [[*P4 spec compatibility (or lack thereof)]]
+      CLOSED: [2019-02-13 Wed 12:06]
       make it actually correspond to reality:
        - Xilinx is working on a new compiler, old one sucks and will continue
          sucking, new one doesn't have an officially released timeline, so we're
@@ -44,7 +46,7 @@
          => nope
        - can use ~XilinxStreamSwitch~, will need to modify wrapper thingy in some
          unknown way (no docs)
-***** DONE [2/4] Write the parser: 1/2
+***** DONE [2/2] Write the parser: 1/2
       CLOSED: [2019-02-09 Sat 16:23]
       With the fancy idea for using ~packet_mod~ if possible and variable-length
       fields in a "skip" struct otherwise.
@@ -53,13 +55,19 @@
 ******* DONE Parse SCION Address Header
         CLOSED: [2019-02-05 Tue 18:44]
         The 8-byte alignment was super annoying because SDNet.
-*** TODO [0/3] Week 3 second half: Make it run
-***** WAIT Test the toolchain: Complete the =switch_calc= exercise
-      The `master` branch of the NetFPGA repo is broken, but `vivado-2018.2`
-      works. Synthesis finished, just waiting for physical access so I can
-      reboot the host.
+*** INPR [0/4] Week 4: Make it run
+***** WAIT [2/3] Test the toolchain: Complete the =switch_calc= exercise
+******* DONE Simulation
+        CLOSED: [2019-02-13 Wed 12:17]
+******* DONE Synthesis
+        CLOSED: [2019-02-13 Wed 12:16]
+        The `master` branch of the NetFPGA repo is broken, but `vivado-2018.2`
+        works. Synthesis finished.
+******* WAIT Flash and test
+        NetFPGA acting up (can't DMA to it). Waiting for physical access to try
+        power cycling the NetFPGA.
 ***** TODO Add an encaps deparser
-***** TODO [0/4] Create the project structure needed for testing it
+***** TODO [0/4] Create the project structure needed for using it
 ******* TODO make it sim and synth
 ******* TODO add testdata
 ******* TODO make it pass the simulation
@@ -164,6 +172,12 @@ until then.
 Meanwhile, writing the parser assuming one of {fully compliant P4 compiler, the
 `packet_mod` feature}. If it turns out I have neither of those, it will be <2
 extra days of work to make it work without them with the O(K^2) blowup.
+*** INPR until <2019-02-20 Wed>
+ - Working with the real hardware:
+   - discovered, reported, and overcame several problems with the upstream P4-NetFPGA repo's workflow
+   - tested and understood the complete (surprisingly complicated!) process of turning P4 into something that runs on the real hardware
+   - TODO overcame issues with the NetFPGA acting up
+   - TODO improved project structure, such as Makefile targets, to make this repo easy to use (unlike the upstream P4-NetFPGA examples)
 
 * Questions for Benjamin
 *** TODO [[P4 spec compatibility (or lack thereof)]]
@@ -347,32 +361,41 @@ extra days of work to make it work without them with the O(K^2) blowup.
 Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
 created unexpected challenges when implementing SCION.
 The biggest issue [HOPEFULLY :D] was that at the time of writing, with P4-SDNet
-the parser cannot parse any variable-length data: this includes not only
+the parser cannot work with any variable-length data: this includes not only
 =varbit<n>= types, but also header unions, and -- most importantly -- header
 stacks.
+Furthermore, it is unable to even skip over variable-length parts of the packet.
+Simply put, all packet offsets must be compile-time constants.
 This poses a problem for SCION: the path in the packet is variable length (it
 can contain any number of hops).[fn:varlen]
-Therefore, the parser cannot parse the path in the SCION packet.[fn:cantparse]
+Therefore, the parser cannot easily deal with the path in the SCION
+packet.[fn:cantparse]
 
-A workaround (and additionally a performance improvement) is to parse only the
-actually needed data: while the path can be arbitrarily long, any single BR only
-needs to process $O(1)$ hop fields (usually one, or two in case of a shortcut
-path). [TODO is that always true?]
-This workaround cannot, however, be used as is: using only the standard features
+To get around this problem, we employed the following steps:
+
+First of all, we opted to design the parser so that it parses only the actually
+needed data: while the path can be arbitrarily long, any single BR only needs to
+process $O(1)$ hop fields (usually one, or two in case of a shortcut path).
+This not only makes it possible to compile for the NetFPGA, but also improves
+performance on other targets.
+
+Next, we needed to solve the problem of emitting headers we have skipped:
+using only the standard features
 of P4, it is impossible to deparse parts of the header which have not been
 parsed. (The payload is copied without being parsed, but the payload is defined
 as anything *after* the last thing we parsed -- so if we skip parsing something
 in the header, it is lost and we are unable to emit it on the output interface.)
 
-The solution is to use the non-standard ~packet_mod~ feature of P4-SDNet, as
-this (unlike the standard deparsers) allows to modify the existing header
-instead of creating it anew, thereby allowing me to not lose the skipped parts
-of the header.
+The solution on the NetFPGA is to use the non-standard ~packet_mod~ feature of
+P4-SDNet, as this (unlike the standard deparsers) allows to modify the existing
+header instead of creating it anew, thereby allowing me to not lose the skipped
+parts of the header.
 
-Using this feature was not straightforward, either: we needed to create a custom
-architecture, as this feature is not available in the ~SimpleSumeSwitch~
-architecture that is the default on the NetFPGA.
-The custom architecture we created is described [SOMEWHERE ELSE].
+Using the ~packet_mod~ feature is not straightforward, either: we needed to
+switch to the ~XilinxStreamSwitch~ architecture, as this feature is not
+available in the ~SimpleSumeSwitch~ architecture that is the default on the
+NetFPGA.
+This required modifying the Verilog wrappers provided by the NetFPGA developers.
 
 Obviously, using a non-standard SDNet-only feature means that with this
 approach, the program would not compile on a standard P4 compiler.
@@ -383,12 +406,31 @@ an extra struct to keep track of the "skipped" parts of the headers, and instead
 of skipping them, we parse them into the (variable-length) fields of this extra
 struct.
 
-We can use preprocessor macros to hide this difference, thereby keeping our
+We can use the C preprocessor to hide this difference, thereby keeping our
 code portable while being able to use ~packet_mod~ where available.
 This not only allows us to parse the variable-length SCION packet on the
 currently incomplete P4-SDNet compiler, but also allows us to harness the
 performance benefits of the ~packet_mod~ feature on any target where it is
 available.
+
+To make this approach work, the last step is to turn all packet offsets,
+including the ones used only for skipping, into compile-time constants.
+Fortunately, SCION hop fields are constant length.
+Therefore, if we assume a maximum path length $K$, let's say $K = 50$, there are
+only $O(K)$ many options for how many different sizes we might need to skip.
+Therefore, we can use the C preprocessor to "unroll" the parser and create
+separate states for skipping $1$, $2$, $…$ hop fields.
+This causes an $O(K)$ increase in FPGA area usage, but no latency increase --
+our logic becomes wider, but not deeper.
+
+The same tricks must then be applied in the ~packet_mod~ deparser.
+
+The maximum path length $K$ that our BR can handle then becomes a linear
+function of the NetFPGA's area (after subtracting the area we use for the rest
+of the design): the largest $K$ we can use is determined by what we can fit.
+Since our implementation uses the area quite efficiently (TODO number/reference)
+and the NetFPGA is rather large, we are able to fit a $K = TODO$ on the NetFPGA
+SUME.
 
 
 [fn:varlen] The SCION host addresses are also variable-length, as the address
