@@ -55,7 +55,7 @@
 ******* DONE Parse SCION Address Header
         CLOSED: [2019-02-05 Tue 18:44]
         The 8-byte alignment was super annoying because SDNet.
-*** INPR [0/4] Week 4: Make it run
+*** INPR [0/4] Make it run on real HW
 ***** WAIT [2/3] Test the toolchain: Complete the =switch_calc= exercise
 ******* DONE Simulation
         CLOSED: [2019-02-13 Wed 12:17]
@@ -112,6 +112,113 @@
     How fast is it? Where are the bottlenecks? Can we make it faster?
 ***** TODO see [[*Custom architecture]]
 *** [/] week 13: deploy in production
+* Project breakdown
+*** Project structure
+***** [3/3] Directory structure
+******* DONE set up repo skeleton
+        CLOSED: [2019-01-23 Wed 16:39]
+******* DONE Figure out the high-level repo structure
+        CLOSED: [2019-01-29 Tue 18:43]
+***** [1/4] Makefiles
+******* DONE Make things compile with the new repo structure
+        CLOSED: [2019-02-04 Mon 15:28]
+******* TODO make it sim
+        SCHEDULED: <2019-02-14 Thu>
+******* TODO make it synth
+        SCHEDULED: <2019-02-15 Fri>
+******* TODO make it flash!
+        SCHEDULED: <2019-02-20 Wed>
+***** [0/2] Code structure/Modularity/Portability
+******* TODO put the parts that should be easy to switch into separate files:
+        Right now I separate by function (parsers, headers, etc). I should be
+        separating by concern (intra-AS, inter-AS, ...).
+         - SCION encapsulation
+         - IP stack
+         - SCION core
+
+  ------------------------------------------------
+******* TODO document ~TARGET_SUPPORTS_*~ stuff
+
+*** Parsing SCION packets
+***** [1/1] Meta
+******* DONE get some SCION packets
+        CLOSED: [2019-01-23 Wed 19:35]
+        captured stuff from my SCION VM, lives in testdata/*.pcap
+
+***** [1/2] ~packet_mod~
+******* DONE Figure out how to create custom architectures
+        CLOSED: [2019-02-05 Tue 18:43]
+        Currently there's no way to do that: the architectures are built into the
+        compiler, and I don't have the Xilinx compiler's source code.
+
+        I can hopefully use XilinxStreamSwitch with a bit of poking at the Verilog
+        wrapper module.
+******* NOPE Create a ~packet_mod~-enabled architecture
+        Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.
+        Rejected because not possible; will use ~XilinxStreamSwitch~.
+******* NEXT Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
+        SCHEDULED: <2019-02-14 Thu>
+        No longer stuck on license. Should try this ASAP.
+***** [2/4] Write the parser
+      With the fancy idea for using ~packet_mod~ if possible and variable-length
+      fields in a "skip" struct otherwise.
+******* DONE Parse SCION Common Header
+        CLOSED: [2019-02-02 Sat]
+******* DONE Parse SCION Address Header
+        CLOSED: [2019-02-05 Tue 18:44]
+        The 8-byte alignment was super annoying because SDNet.
+******* TODO Parse current SCION Info Field
+******* TODO Parse current SCION Hop Field + next HF if VRFY_ONLY
+***** [0/5] Write the deparser
+      with + without packet_mod
+******* TODO encaps
+******* TODO common
+******* TODO address
+******* TODO info field
+******* TODO hop field
+***** TODO Test it
+*** TODO Forwarding SCION packets
+***** [0/4] week 5: implement SCION path verification ==> AES     :dataplane:
+******* TODO find 3rd party AES module                                  :aes:
+        make it easily replaceable with commercial solutions
+        ==> don't worry about side channels (not my problem) :D
+******* TODO add AES as an extern to P4
+******* TODO test that AES works                                        :aes:
+******* TODO wire it together: implement and test path verification :dataplane:
+***** [1/4] Deploy (existing) P4 router                             :intraAS:
+******* DONE find the router
+        CLOSED: [2019-01-22 Tue 11:46]
+        https://github.com/p4lang/switch
+******* TODO figure out which parts we want and split them out
+******* TODO stuff it in
+******* TODO test it
+***** TODO evaluate it: does it work?
+      how?
+*** [2/6] Real HW
+***** DONE read Seyedali's documentation
+      CLOSED: [2019-01-20 Sun 12:07]
+      ==> background brain
+***** DONE read NetFPGA documentation
+      CLOSED: [2019-01-22 Tue 11:32]
+      [[*SDNet + P4-SDNet]]
+  SCHEDULED: <2019-02-13 Wed>
+***** WAIT [2/3] Test the toolchain: Complete the =switch_calc= exercise
+******* DONE Simulation
+        CLOSED: [2019-02-13 Wed 12:17]
+******* DONE Synthesis
+        CLOSED: [2019-02-13 Wed 12:16]
+        The `master` branch of the NetFPGA repo is broken, but `vivado-2018.2`
+        works. Synthesis finished.
+******* WAIT Flash and test
+        SCHEDULED: <2019-02-15 Fri>
+        NetFPGA acting up (can't DMA to it). Need physical access to try
+        power cycling the NetFPGA.
+***** TODO add testdata
+***** TODO make it pass the simulation
+***** TODO synth and test IRL
+*** [/] Performance
+    How fast is it? Where are the bottlenecks? Can we make it faster?
+*** [/] Production deployment
 * Timeline summaries
 *** DONE beginning - <2019-02-06 Wed>
     CLOSED: [2019-02-07 Thu 10:18]
@@ -243,39 +350,6 @@ extra days of work to make it work without them with the O(K^2) blowup.
      1. Read this first: [[./hw-doc/ug1252-p4-sdnet.pdf][P4-SDNet]]
      2. Read this when you want to make your own externs: [[./hw-doc/ug1012-sdnet-packet-processor.pdf][SDNet]]
 * Ideas to revisit when the time comes
-*** Custom architecture
-    Instead of sticking with the =SimpleSUMESwitch(parser, pipeline, deparser)=
-    architecture, it might be useful to define a custom architecture designed
-    specifically for SCION. This might be for example something like:
-    #+begin_src p4_16
-    ScionSUMESwitch(
-        my_parser,
-        my_path_verification,
-        my_pipeline,
-        my_deparser
-    )
-    #+end_src
-
-    ...Or maybe (this might be a terrible idea): explicitly separate the
-    intra-AS and inter-AS thing:
-    #+begin_src p4_16
-    ScionSUMESwitch(
-        my_intraAS_parser,     // handles the intra-AS encapsulation: in our case, IP + UDP (but could be e.g. MPLS for other ASs)
-        my_scion_parser,       // parses the SCION header
-        my_path_verification,  // read-only; handles the path verification
-        my_pipeline,           // updates the "next segment" pointers and picks the output port
-        my_scion_deparser      // deparses the SCION header
-        my_intraAS_deparser    // adds the intra-AS encapsulation
-    )
-    #+end_src
-    (For this case we might want a hardcoded component that dispatches to the
-    intra-AS en/decapsulation only if needed ==> gets non-trivial. So that's why
-    it's maybe a terrible idea)
-
-    Before spending time on this, I should:
-
-***** TODO find out whether there actually are performance advantages to custom architectures
-***** TODO talk to people about whether this is a good idea and what is a good architecture
 *** Eventual code-related TODOs:
 ***** TODO README files everywhere
       every directory should have a README file
