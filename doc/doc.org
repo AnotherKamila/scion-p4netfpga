@@ -180,10 +180,8 @@ extra days of work to make it work without them with the O(K^2) blowup.
    - TODO improved project structure, such as Makefile targets, to make this repo easy to use (unlike the upstream P4-NetFPGA examples)
 
 * Questions for Benjamin
-*** TODO [[P4 spec compatibility (or lack thereof)]]
 *** TODO Should we also add an "L2 learning switch"?
     ARP + remembering MAC addresses
-
 *** Archive:
 ***** DONE Is Scion *always* encapsulated? And is it always in IP/UDP?
       CLOSED: [2019-01-30 Wed 18:48]
@@ -198,6 +196,8 @@ extra days of work to make it work without them with the O(K^2) blowup.
 ***** DONE LICENSE?
       CLOSED: [2019-01-30 Wed 14:59]
       check scion repo
+***** DONE [[P4 spec compatibility (or lack thereof)]]
+      CLOSED: [2019-02-13 Wed 16:53]
 * Questions about FPGAs
 *** DONE VHDL vs Verilog: what's the relationship?
     CLOSED: [2019-01-23 Wed 11:05]
