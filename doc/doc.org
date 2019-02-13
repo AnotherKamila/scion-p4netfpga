@@ -1,4 +1,4 @@
-#+SEQ_TODO: TODO NEXT INPR WAIT DONE
+#+SEQ_TODO: NEXT TODO INPR WAIT | NOPE DONE
 
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
@@ -114,7 +114,7 @@
 *** [/] week 13: deploy in production
 * Project breakdown
 *** Project structure
-***** [3/3] Directory structure
+***** [2/2] Directory structure
 ******* DONE set up repo skeleton
         CLOSED: [2019-01-23 Wed 16:39]
 ******* DONE Figure out the high-level repo structure
@@ -125,27 +125,25 @@
 ******* TODO make it sim
         SCHEDULED: <2019-02-14 Thu>
 ******* TODO make it synth
-        SCHEDULED: <2019-02-15 Fri>
+        SCHEDULED: <2019-02-14 Thu>
 ******* TODO make it flash!
-        SCHEDULED: <2019-02-20 Wed>
-***** [0/2] Code structure/Modularity/Portability
+        SCHEDULED: <2019-02-18 Mon>
+***** [0/2] Code structure + Modularity + Portability
 ******* TODO put the parts that should be easy to switch into separate files:
+        SCHEDULED: <2019-04-22 Mon>
         Right now I separate by function (parsers, headers, etc). I should be
         separating by concern (intra-AS, inter-AS, ...).
          - SCION encapsulation
          - IP stack
          - SCION core
-
-  ------------------------------------------------
-******* TODO document ~TARGET_SUPPORTS_*~ stuff
-
+******* TODO document =TARGET_SUPPORTS_*= stuff
+        SCHEDULED: <2019-04-23 Tue>
 *** Parsing SCION packets
 ***** [1/1] Meta
 ******* DONE get some SCION packets
         CLOSED: [2019-01-23 Wed 19:35]
         captured stuff from my SCION VM, lives in testdata/*.pcap
-
-***** [1/2] ~packet_mod~
+***** [2/3] ~packet_mod~
 ******* DONE Figure out how to create custom architectures
         CLOSED: [2019-02-05 Tue 18:43]
         Currently there's no way to do that: the architectures are built into the
@@ -168,7 +166,9 @@
         CLOSED: [2019-02-05 Tue 18:44]
         The 8-byte alignment was super annoying because SDNet.
 ******* TODO Parse current SCION Info Field
+        SCHEDULED: <2019-02-18 Mon>
 ******* TODO Parse current SCION Hop Field + next HF if VRFY_ONLY
+        SCHEDULED: <2019-02-18 Mon>
 ***** [0/5] Write the deparser
       with + without packet_mod
 ******* TODO encaps
@@ -177,15 +177,17 @@
 ******* TODO info field
 ******* TODO hop field
 ***** TODO Test it
+      check how to easily generate SCION packets -- there is something in the
+      scion repo
 *** TODO Forwarding SCION packets
-***** [0/4] week 5: implement SCION path verification ==> AES     :dataplane:
-******* TODO find 3rd party AES module                                  :aes:
+***** [0/4] week 5: implement SCION path verification ==> AES
+******* TODO find 3rd party AES module
         make it easily replaceable with commercial solutions
         ==> don't worry about side channels (not my problem) :D
 ******* TODO add AES as an extern to P4
-******* TODO test that AES works                                        :aes:
-******* TODO wire it together: implement and test path verification :dataplane:
-***** [1/4] Deploy (existing) P4 router                             :intraAS:
+******* TODO test that AES works
+******* TODO wire it together: implement and test path verification
+***** [1/4] Deploy (existing) P4 router
 ******* DONE find the router
         CLOSED: [2019-01-22 Tue 11:46]
         https://github.com/p4lang/switch
@@ -201,23 +203,26 @@
 ***** DONE read NetFPGA documentation
       CLOSED: [2019-01-22 Tue 11:32]
       [[*SDNet + P4-SDNet]]
-  SCHEDULED: <2019-02-13 Wed>
-***** WAIT [2/3] Test the toolchain: Complete the =switch_calc= exercise
+***** NEXT [2/3] Test the toolchain: Complete the =switch_calc= exercise
 ******* DONE Simulation
         CLOSED: [2019-02-13 Wed 12:17]
 ******* DONE Synthesis
         CLOSED: [2019-02-13 Wed 12:16]
         The `master` branch of the NetFPGA repo is broken, but `vivado-2018.2`
         works. Synthesis finished.
-******* WAIT Flash and test
-        SCHEDULED: <2019-02-15 Fri>
+******* NEXT Flash and test
+        SCHEDULED: <2019-02-14 Thu>
         NetFPGA acting up (can't DMA to it). Need physical access to try
         power cycling the NetFPGA.
 ***** TODO add testdata
 ***** TODO make it pass the simulation
 ***** TODO synth and test IRL
-*** [/] Performance
-    How fast is it? Where are the bottlenecks? Can we make it faster?
+*** [0/3] Performance
+***** TODO Measure performance
+      how?
+***** TODO Find bottlenecks
+***** TODO Can we make it faster?
+      if needed
 *** [/] Production deployment
 * Timeline summaries
 *** DONE beginning - <2019-02-06 Wed>
