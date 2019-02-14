@@ -1,4 +1,4 @@
-#+SEQ_TODO: NEXT TODO INPR WAIT | NOPE DONE
+#+SEQ_TODO: NEXT TODO INPR WAIT | DONE NOPE
 
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
@@ -123,11 +123,11 @@
 ******* DONE Make things compile with the new repo structure
         CLOSED: [2019-02-04 Mon 15:28]
 ******* TODO make it sim
-        SCHEDULED: <2019-02-14 Thu>
-******* TODO make it synth
-        SCHEDULED: <2019-02-14 Thu>
-******* TODO make it flash!
         SCHEDULED: <2019-02-18 Mon>
+******* TODO make it synth
+        SCHEDULED: <2019-02-18 Mon>
+******* TODO make it flash!
+        SCHEDULED: <2019-02-20 Wed>
 ***** [0/2] Code structure + Modularity + Portability
 ******* TODO put the parts that should be easy to switch into separate files:
         SCHEDULED: <2019-04-22 Mon>
@@ -165,65 +165,106 @@
 ******* DONE Parse SCION Address Header
         CLOSED: [2019-02-05 Tue 18:44]
         The 8-byte alignment was super annoying because SDNet.
-******* TODO Parse current SCION Info Field
-        SCHEDULED: <2019-02-18 Mon>
-******* TODO Parse current SCION Hop Field + next HF if VRFY_ONLY
-        SCHEDULED: <2019-02-18 Mon>
-***** [0/5] Write the deparser
+******* TODO Parse current Info Field
+        SCHEDULED: <2019-02-19 Tue>
+******* TODO Parse current Hop Field + next HF if VRFY_ONLY
+        SCHEDULED: <2019-02-19 Tue>
+***** [0/2] Write the deparser
       with + without packet_mod
-******* TODO encaps
-******* TODO common
-******* TODO address
-******* TODO info field
-******* TODO hop field
-***** TODO Test it
+******* TODO deparse encaps+common+address
+        with + without packet_mod;
+        make it compile
+        SCHEDULED: <2019-02-14 Thu>
+******* TODO deparse info+HF
+        SCHEDULED: <2019-02-19 Tue>
+***** [0/4] Test it
       check how to easily generate SCION packets -- there is something in the
       scion repo
-*** TODO Forwarding SCION packets
-***** [0/4] week 5: implement SCION path verification ==> AES
+******* TODO test encaps+common+address w/ emit
+        SCHEDULED: <2019-02-18 Mon>
+******* TODO test encaps+common+address w/ packet_mod
+        SCHEDULED: <2019-02-18 Mon>
+******* TODO test complete parser w/ emit
+        SCHEDULED: <2019-02-20 Wed>
+******* TODO test complete parser w/ packet_mod
+        SCHEDULED: <2019-02-20 Wed>
+*** Forwarding SCION packets
+***** [0/4] blind forwarding
+******* TODO think about forwarding :D
+        SCHEDULED: <2019-02-21 Thu>
+******* TODO talk with the control plane about interface numbering
+        SCHEDULED: <2019-02-22 Fri>
+******* TODO forward
+        SCHEDULED: <2019-02-25 Mon>
+******* TODO test it
+        SCHEDULED: <2019-02-26 Tue>
+***** [0/4] implement SCION path verification
 ******* TODO find 3rd party AES module
+        SCHEDULED: <2019-03-04 Mon>
         make it easily replaceable with commercial solutions
         ==> don't worry about side channels (not my problem) :D
 ******* TODO add AES as an extern to P4
+        SCHEDULED: <2019-03-04 Mon>
 ******* TODO test that AES works
+        SCHEDULED: <2019-03-05 Tue>
 ******* TODO wire it together: implement and test path verification
-***** [1/4] Deploy (existing) P4 router
+        SCHEDULED: <2019-03-05 Tue>
+***** [1/4] IP and below
 ******* DONE find the router
         CLOSED: [2019-01-22 Tue 11:46]
         https://github.com/p4lang/switch
 ******* TODO figure out which parts we want and split them out
-******* TODO stuff it in
+        SCHEDULED: <2019-02-27 Wed>
+        probably only L2 learning
+******* TODO stuff in IP and below
+        SCHEDULED: <2019-02-25 Mon>
 ******* TODO test it
+        SCHEDULED: <2019-03-01 Fri>
 ***** TODO evaluate it: does it work?
+      SCHEDULED: <2019-03-06 Wed>
       how?
-*** [2/6] Real HW
+*** [3/6] Real HW
 ***** DONE read Seyedali's documentation
       CLOSED: [2019-01-20 Sun 12:07]
       ==> background brain
 ***** DONE read NetFPGA documentation
       CLOSED: [2019-01-22 Tue 11:32]
       [[*SDNet + P4-SDNet]]
-***** NEXT [2/3] Test the toolchain: Complete the =switch_calc= exercise
+***** DONE [3/3] Test the toolchain: Complete the =switch_calc= exercise
+      CLOSED: [2019-02-14 Thu 15:03]
 ******* DONE Simulation
         CLOSED: [2019-02-13 Wed 12:17]
 ******* DONE Synthesis
         CLOSED: [2019-02-13 Wed 12:16]
         The `master` branch of the NetFPGA repo is broken, but `vivado-2018.2`
         works. Synthesis finished.
-******* NEXT Flash and test
-        SCHEDULED: <2019-02-14 Thu>
-        NetFPGA acting up (can't DMA to it). Need physical access to try
-        power cycling the NetFPGA.
+******* DONE [#A] Flash and test
+        CLOSED: [2019-02-14 Thu 15:01] SCHEDULED: <2019-02-14 Thu>
+        NetFPGA was acting up (couldn't DMA to it, didn't see the PCI device). 
+        Fixed by:
+         1. Pushing the reset button. (It's one of the 3 buttons, just push all 3 :D)
+         2. Powering off the host machine, including pulling out the power cable.
+         3. Rebooting the host machine (without power off).
+        Afterwards, it flashed successfully.
+
+        Test fails, unsure why. Don't care enough.
 ***** TODO add testdata
+      SCHEDULED: <2019-02-18 Mon>
 ***** TODO make it pass the simulation
+      SCHEDULED: <2019-02-26 Tue>
 ***** TODO synth and test IRL
+      SCHEDULED: <2019-02-27 Wed>
 *** [0/3] Performance
 ***** TODO Measure performance
+      SCHEDULED: <2019-03-28 Thu>
       how?
 ***** TODO Find bottlenecks
+      SCHEDULED: <2019-03-22 Fri>
 ***** TODO Can we make it faster?
+      SCHEDULED: <2019-03-22 Fri>
       if needed
-*** [/] Production deployment
+*** TODO [/] Production deployment
+    SCHEDULED: <2019-03-28 Thu>
 * Timeline summaries
 *** DONE beginning - <2019-02-06 Wed>
     CLOSED: [2019-02-07 Thu 10:18]
@@ -284,14 +325,15 @@ until then.
 Meanwhile, writing the parser assuming one of {fully compliant P4 compiler, the
 `packet_mod` feature}. If it turns out I have neither of those, it will be <2
 extra days of work to make it work without them with the O(K^2) blowup.
-*** INPR until <2019-02-20 Wed>
+*** INPR progress report <2019-02-20 Wed>
  - Working with the real hardware:
    - discovered, reported, and overcame several problems with the upstream P4-NetFPGA repo's workflow
    - tested and understood the complete (surprisingly complicated!) process of turning P4 into something that runs on the real hardware
-   - TODO overcame issues with the NetFPGA acting up
-   - TODO improved project structure, such as Makefile targets, to make this repo easy to use (unlike the upstream P4-NetFPGA examples)
+   - overcame issues with the NetFPGA, managed to flash it successfully
+   - TODO added to + improved project structure, such as Makefile targets, to make this repo easy to use (unlike the upstream P4-NetFPGA examples)
 
 * Questions for Benjamin
+*** TODO gimme 4 cables
 *** TODO Should we also add an "L2 learning switch"?
     ARP + remembering MAC addresses
 *** Archive:
