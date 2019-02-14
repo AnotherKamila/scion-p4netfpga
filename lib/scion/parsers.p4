@@ -85,8 +85,8 @@ parser ScionEncapsulationParser(packet_in packet,
 // Parses the SCION Common Header
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser ScionCommonHeaderParser(packet_in packet, 
-                               out scion_common_h   hdr,
-                               out scion_metadata_t meta) {
+                               out scion_common_h     hdr,
+                               inout scion_metadata_t meta) {
     state start {
         meta.pos_in_hdr = 0;
 
@@ -162,7 +162,7 @@ parser ScionAddressHeaderParser(packet_in packet,
         meta.pos_in_hdr = meta.pos_in_hdr + host_addr_len;
 
         // align to 8 bytes
-        bit<4> skip = 8 - (bit<4>)meta.pos_in_hdr[2:0]; // last 3 bits => mod 8
+        bit<4> skip = 4w8 - (bit<4>)meta.pos_in_hdr[2:0]; // last 3 bits => mod 8
         meta.pos_in_hdr = meta.pos_in_hdr + (packet_size_t)skip;
 
 #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING

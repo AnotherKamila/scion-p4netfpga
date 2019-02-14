@@ -17,35 +17,29 @@ compiler-test-failed: # TODO
 	@echo $(MARK) "Compiler test FAILED!" $(ENDMARK)
 	@echo TODO point to documentation about -DTARGET_SUPPORTS_* and stuff
 
-# TODO build and SW test for all architectures
-
-build: ## Compile the P4 code
+build: ## Build everything needed for using the design
 	@echo $(MARK) "Building for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
 	$(MAKE) -C platforms/$(PLATFORM) build ARCH=$(ARCH)
 
 for-all-archs: # Hello, I am a hack!
-	@set -e;                                                    \
-	for p in `$(MAKE) -s -C platforms list-platforms-only`; do  \
-		for a in `$(MAKE) -s -C platforms/$$p listarchs` ; do     \
-			$(MAKE) $(WHAT) PLATFORM=$$p ARCH=$$a ;                 \
-		done ;                                                    \
+	@set -e;                                                          \
+	for p in `$(MAKE) -s -C platforms list-platforms-only`; do        \
+		for a in `$(MAKE) -s -C platforms/$$p listarchs` ; do           \
+			$(MAKE) $(WHAT) --no-print-directory PLATFORM=$$p ARCH=$$a ;  \
+		done ;                                                          \
 	done
 
 test-all: ## Build and test for all platforms and architectures.
-	@$(MAKE) -s for-all-archs WHAT=test
+	@$(MAKE) --no-print-directory for-all-archs WHAT=test
 	@echo $(MARK) "Nothing broke! Yay!" $(ENDMARK)
-
-sim: ## TODO
-	@echo 'Not implemented yet'
-	@/bin/false
 
 synth: ## Synthesise the something something TODO terminology
 	@echo 'Not implemented yet'
 	@/bin/false
 
-test: ## TODO
+test: ## Verify the design and run simulations.
 	@echo $(MARK) "Testing for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
-	$(MAKE) -C platforms/$(PLATFORM) build ARCH=$(ARCH)
+	$(MAKE) -C platforms/$(PLATFORM) test ARCH=$(ARCH)
 
 flash: ## TODO
 	@echo 'Not implemented yet'

@@ -159,7 +159,7 @@
         No longer stuck on license. Should try this ASAP.
 ********* DONE switch the P4 source code and make it compile
           CLOSED: [2019-02-14 Thu 15:34] SCHEDULED: <2019-02-14 Thu>
-********* NEXT Turn SDNet into HDL: make the =sdnet= compiler happy
+********* INPR Turn SDNet into HDL: make the =sdnet= compiler happy
           SCHEDULED: <2019-02-14 Thu>
 ********* TODO figure out what's next :D
           SCHEDULED: <2019-02-14 Thu>
@@ -341,6 +341,7 @@ extra days of work to make it work without them with the O(K^2) blowup.
 
 * Questions for Benjamin
 *** NEXT gimme 4 cables
+    SCHEDULED: <2019-02-20 Wed>
 *** TODO Should we also add an "L2 learning switch"?
     ARP + remembering MAC addresses
 *** Archive:
