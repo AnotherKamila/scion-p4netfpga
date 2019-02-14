@@ -1,6 +1,9 @@
-// main for NetFPGA SUME switch with the XilinxStreamSwitch arch9tecture
-#include <core.p4>
-#include <sume_switch.p4>
+// main for NetFPGA SUME switch with the XilinxStreamSwitch architecture
+
+#include <core.p4>        // P4 core
+#include <xilinx_core.p4> // packet_mod
+#include <xilinx.p4>      // XilinxStreamSwitch
+#include <sume_switch.p4> // sume_metadata
 
 #include "settings.p4" // must be included *before* SCION
 
@@ -10,42 +13,42 @@
 
 #include "datatypes.p4"
 
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
-parser TopParser(packet_in packet, 
-                 out   scion_all_headers_t hdr, 
-                 out user_metadata_t meta,
-                 out digest_data_t digest_data,
-                 inout sume_metadata_t sume_metadata) {
+struct local_t {
+    digest_data_t       digest;
+    user_metadata_t     meta;
+    scion_all_headers_t hdr;
+}
 
+@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+parser TopParser(packet_in packet, out local_t d) {
+    
     ScionParser() scion_parser;
     state start {
-        scion_parser.apply(packet, hdr, meta.scion);
+        scion_parser.apply(packet, d.hdr, d.meta.scion);
         transition accept;
     }
 }
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
-control TopPipe(inout scion_all_headers_t hdr,
-                inout user_metadata_t user_metadata, 
-                inout digest_data_t digest_data, 
-                inout sume_metadata_t sume_metadata) {
+control TopPipe(inout local_t d,
+                inout sume_metadata_t sume) {
 
     apply {
-        hdr.ethernet.ethertype = 0x47;
+        d.hdr.ethernet.ethertype = 0x47;
+        sume.dst_port = 8w1; // nf0
     }
 }
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
-control TopDeparser(packet_out packet,
-                    in scion_all_headers_t hdr,
-                    in user_metadata_t user_metadata,
-                    inout digest_data_t digest_data, 
-                    inout sume_metadata_t sume_metadata) { 
+parser TopDeparser(in local_t d,
+                   packet_mod pkt) {
 
-    ScionDeparser() scion_deparser;
-    apply {
-        scion_deparser.apply(packet, hdr);
+    // ScionModDeparser() scion_deparser;
+    state start{
+        // scion_deparser.apply(pkt, d.hdr);
+        pkt.update(d.hdr.ethernet);
+        transition accept;
     }
 }
 
-SimpleSumeSwitch(TopParser(), TopPipe(), TopDeparser()) main;
+XilinxStreamSwitch(TopParser(), TopPipe(), TopDeparser()) main;
