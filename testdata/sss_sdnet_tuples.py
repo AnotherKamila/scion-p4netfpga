@@ -100,7 +100,12 @@ def write_tuples():
         for field_name, value in dig_tuple_expect.iteritems():
             bin_val = get_bin_val(field_name, value, dig_field_len)
             tup_bin_string += bin_val
-        f.write(bin_to_hex(tup_bin_string) + ' ')
+        f.write(bin_to_hex(tup_bin_string))
+
+        # We do NOT space-separate, because the module doesn't know that the
+        # first 256 bits are special.
+        # TODO Actually, this is a bit complicated. This file is arch specific,
+        # while the other one isn't. How do we want to handle that?
 
         tup_bin_string = ''
         for field_name, value in sume_tuple_expect.iteritems():

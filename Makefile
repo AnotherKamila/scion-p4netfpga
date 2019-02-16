@@ -29,7 +29,7 @@ for-all-archs: # Hello, I am a hack!
 		done ;                                                          \
 	done
 
-test-all: ## Build and test for all platforms and architectures.
+all: ## Build and test for all platforms and architectures.
 	@$(MAKE) --no-print-directory for-all-archs WHAT=test
 	@echo $(MARK) "Nothing broke! Yay!" $(ENDMARK)
 

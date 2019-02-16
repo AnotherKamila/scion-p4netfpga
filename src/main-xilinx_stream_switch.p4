@@ -14,9 +14,13 @@
 #include "datatypes.p4"
 
 struct local_t {
-    digest_data_t       digest;
     user_metadata_t     meta;
     scion_all_headers_t hdr;
+}
+
+struct switch_meta_t {
+    digest_data_t   digest;
+    sume_metadata_t sume;
 }
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
@@ -31,11 +35,14 @@ parser TopParser(packet_in packet, out local_t d) {
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control TopPipe(inout local_t d,
-                inout sume_metadata_t sume) {
+                inout switch_meta_t s) {
 
     apply {
+        eth_addr_t tmp_src_addr = d.hdr.ethernet.src_addr;
+        d.hdr.ethernet.src_addr = d.hdr.ethernet.dst_addr;
+        d.hdr.ethernet.dst_addr = tmp_src_addr;
         d.hdr.ethernet.ethertype = 0x47;
-        sume.dst_port = 8w1; // nf0
+        s.sume.dst_port = 8w1; // nf0
     }
 }
 
@@ -43,10 +50,9 @@ control TopPipe(inout local_t d,
 parser TopDeparser(in local_t d,
                    packet_mod pkt) {
 
-    // ScionModDeparser() scion_deparser;
+    ScionModDeparser() scion_deparser;
     state start{
-        // scion_deparser.apply(pkt, d.hdr);
-        pkt.update(d.hdr.ethernet);
+        scion_deparser.apply(pkt, d.hdr);
         transition accept;
     }
 }

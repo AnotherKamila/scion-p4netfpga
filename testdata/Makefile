@@ -30,12 +30,18 @@
 
 # Makefile to build the testdata
 
-all:
-	./gen_testdata.py
-	${SUME_SDNET}/bin/pcap2axi --output Packet_in.axi --bus_width 256 src.pcap
-	${SUME_SDNET}/bin/pcap2axi --output Packet_expect.axi --bus_width 256 dst.pcap
+TOP=..
+include $(TOP)/Makefile.inc
 
-clean:
+all: Packet_in.axi Packet_expect.axi ## Generate test data
+
+%.pcap: ./gen_testdata.py
+	./gen_testdata.py
+
+Packet_%.axi: %.pcap
+	$(SUME_SDNET)/bin/pcap2axi --output $@ --bus_width 256 $<
+
+clean: ## Remove generated files
 	rm -f *.pcap *.txt *.pyc *.axi config_writes.* *_reg_defines.py
 
 

@@ -5,6 +5,7 @@ include $(TOP)/Makefile.inc
 PLATFORM=netfpga ## Select the platform. Try make -C platforms ls
 ARCH=xilinx_stream_switch ## Select the architecture
 SYSTEM_NAME=Scion ## Name of the HDL module
+P4_SWITCH_BASE_ADDR=0x44020000
 include $(strip $(ARCH))/Makefile.inc
 
 # Clean up whitespace (grr)
@@ -16,6 +17,7 @@ SYSTEM_NAME := $(strip $(SYSTEM_NAME))
 SDNET_OUT_DIR=$(ARCH)/scion_module
 SWITCHINFO=$(ARCH)/sdnet_switch.info
 
+# we need to -skipEval because eval is broken and doesn't link :D
 SDNET_FLAGS=-busType axi -busWidth 256 -altVivadoScripts -skipEval
 
 # paths determined by sdnet
@@ -41,6 +43,14 @@ ls: listarchs ## Shorthand for listarchs
 build: hdl ## Build everything needed for using the design
 
 test: build ## Verify the design and run simulations.
+	make -C $(TOP)/testdata all
+	cp $(TOP)/testdata/*.txt $(SDNET_GENERATED)
+	cp $(TOP)/testdata/*.axi $(SDNET_GENERATED)
+	# ${SUME_SDNET}/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(SDNET_GENERATED) ${SUME_SDNET}/templates/ $(TOP)/testdata/ $(ARCH)/sw/ --base_address ${P4_SWITCH_BASE_ADDR}
+	# cp src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/
+	# cp $(TOP)/testdata/in.pcap $(SDNET_GENERATED)/Packet.user
+	# cp $(TOP)/testdata/Tuple_in.txt $(SDNET_GENERATED)/Tuple.user
+
 	cd $(SDNET_OUT_DIR)/$(SYSTEM_NAME) && ./vivado_sim.bash
 
 sdnet: $(ARCH)/$(SYSTEM_NAME).sdnet ## Compile for SDNet
@@ -66,6 +76,14 @@ $(ARCH)/$(SYSTEM_NAME).sdnet: $(basename $(MAIN)).sdnet
 
 $(SDNET_GENERATED_VERILOG): $(ARCH)/$(SYSTEM_NAME).sdnet
 	sdnet $< $(SDNET_FLAGS) -workDir $(SDNET_OUT_DIR)
-	sed -i 's/xsim\.dir\/xsc\/dpi\.so/dpi\.so/g' $(SDNET_GENERATED)/vivado_sim*.bash  # SDNet is apparently incompatible with its own output :D
+
+	# SDNet is apparently incompatible with its own output :D
+	sed -i 's/xsim\.dir\/xsc\/dpi\.so/dpi\.so/g' $(SDNET_GENERATED)/vivado_sim*.bash
+	sed -i 's/glbl_sim/glbl/g' $(SDNET_GENERATED)/vivado_sim_waveform.bash
+	sed -i 's/$(SYSTEM_NAME)_tb_sim#work.glbl/$(SYSTEM_NAME)_tb/g' $(SDNET_GENERATED)/vivado_sim_waveform.bash
+
+	# fix for ubuntu
+	# sed -i 's/vsim/vsim \-ldflags \"\-B\/usr\/lib\/x86\_64\-linux-gnu\"/g' $(SDNET_GENERATED)/questa.bash
+
 	@echo $(MARK) "Generated HDL in $(SDNET_GENERATED)" $(ENDMARK)
 

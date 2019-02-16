@@ -254,8 +254,9 @@ parser ScionParser(packet_in packet,
     ScionHeaderParser()        scion_header_parser;
 
     state start {
-        encapsulation_parser.apply(packet, hdr.ethernet, hdr.encaps);
-        scion_header_parser.apply(packet, hdr.scion, meta);
+        packet.extract(hdr.ethernet);
+    //     encapsulation_parser.apply(packet, hdr.ethernet, hdr.encaps);
+    //     scion_header_parser.apply(packet, hdr.scion, meta);
         transition accept;
     }
 }

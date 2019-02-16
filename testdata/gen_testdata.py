@@ -81,8 +81,8 @@ def expPkt(pkt, egress):
         nf_expected[3].append(pkt)
 
 def write_pcap_files():
-    wrpcap("src.pcap", pktsApplied)
-    wrpcap("dst.pcap", pktsExpected)
+    wrpcap("in.pcap",     pktsApplied)
+    wrpcap("expect.pcap", pktsExpected)
 
     for i in nf_applied.keys():
         if (len(nf_applied[i]) > 0):
@@ -98,6 +98,14 @@ def write_pcap_files():
 #####################
 # generate testdata #
 #####################
+
+for i in range(5):
+    pkt = Ether(dst='08:11:11:11:11:11:11', src='08:22:22:22:22:22:22', type=0x42)
+    pad_pkt(pkt, 64)
+    applyPkt(pkt, 'nf0', i)
+    exp = Ether(src='08:11:11:11:11:11:11', dst='08:22:22:22:22:22:22', type=0x47)
+    pad_pkt(exp, 64)
+    expPkt(exp, 'nf0')
 
 
 write_pcap_files()

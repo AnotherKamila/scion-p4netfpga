@@ -122,7 +122,7 @@
 ***** [1/4] Makefiles
 ******* DONE Make things compile with the new repo structure
         CLOSED: [2019-02-04 Mon 15:28]
-******* TODO make it sim
+******* INPR make it sim
         SCHEDULED: <2019-02-18 Mon>
 ******* TODO make it synth
         SCHEDULED: <2019-02-18 Mon>
@@ -154,16 +154,18 @@
 ******* NOPE Create a ~packet_mod~-enabled architecture
         Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.
         Rejected because not possible; will use ~XilinxStreamSwitch~.
-******* INPR [1/3] Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
+******* INPR [3/4] Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
         SCHEDULED: <2019-02-14 Thu>
         No longer stuck on license. Should try this ASAP.
+        See also [[*Turning source code into bits in the FPGA]] (and fill it in)
 ********* DONE switch the P4 source code and make it compile
           CLOSED: [2019-02-14 Thu 15:34] SCHEDULED: <2019-02-14 Thu>
-********* INPR Turn SDNet into HDL: make the =sdnet= compiler happy
+********* DONE Turn SDNet into HDL: make the =sdnet= compiler happy
+          CLOSED: [2019-02-14 Thu 22:40] SCHEDULED: <2019-02-14 Thu>
+********* DONE make Vivado sim pass
+          CLOSED: [2019-02-16 Sat 10:44] SCHEDULED: <2019-02-15 Fri>
+********* INPR figure out what's next :D
           SCHEDULED: <2019-02-14 Thu>
-********* TODO figure out what's next :D
-          SCHEDULED: <2019-02-14 Thu>
-        See also [[*Turning source code into bits in the FPGA]] (and fill it in)
 ***** [2/4] Write the parser
       With the fancy idea for using ~packet_mod~ if possible and variable-length
       fields in a "skip" struct otherwise.
@@ -179,9 +181,9 @@
 ***** [0/2] Write the deparser
       with + without packet_mod
 ******* TODO deparse encaps+common+address
+        SCHEDULED: <2019-02-18 Mon>
         with + without packet_mod;
         make it compile
-        SCHEDULED: <2019-02-18 Mon>
 ******* TODO deparse info+HF
         SCHEDULED: <2019-02-19 Tue>
 ***** [0/4] Test it
@@ -461,12 +463,20 @@ extra days of work to make it work without them with the O(K^2) blowup.
           project makefile has Axi).
           Makefile target: ~module~ (doesn't exist yet, TODO)
           From now on it's the usual FPGA workflow.
-       3. TODO Figure out what to do with it once it's in Vivado.
+       3. check with Vivado sim: generate input and output packets and tuples
+          and compare.
+          Tuples are the ~switch_meta_t~ struct.
+       4. TODO Figure out what to do with it once it's in Vivado.
           Probably something like ~synth~, route & place, ~bitfile~...
 ***** TODO How do custom architectures work?
 *** documentation
 ***** TODO SCION Parser
 ***** TODO portability
+***** NEXT Enabling ~XilinxStreamSwitch~
+       1. change the includes and ~main~ :D
+       2. different signature (tuples); therefore:
+          * testdata: your digest is now not separate from switch_meta => no space
+          * verilog module: digest and rest is now together on one bus
 * Things to write about
 *** Aim: SCION BR
     => only SCION

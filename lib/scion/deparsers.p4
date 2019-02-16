@@ -21,13 +21,23 @@ control ScionDeparser(packet_out packet,
                       in scion_all_headers_t hdr) {
     apply {
         packet.emit(hdr.ethernet); 
-        packet.emit(hdr.encaps.ip.v4); // - union => only one will be valid
-        packet.emit(hdr.encaps.ip.v6); // /
-        packet.emit(hdr.encaps.udp);
+        // packet.emit(hdr.encaps.ip.v4); // - only one will be valid
+        // packet.emit(hdr.encaps.ip.v6); // /
+        // packet.emit(hdr.encaps.udp);
     }
 }
 
-// TODO: ScionPacketModDeparser
+#ifdef TARGET_SUPPORTS_PACKET_MOD
+
+@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+parser ScionModDeparser(packet_mod pkt, in scion_all_headers_t hdr) {
+    state start{
+        pkt.update(hdr.ethernet);
+        transition accept;
+    }
+}
+
+#endif
 
 
 #endif
