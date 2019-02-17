@@ -1,6 +1,7 @@
 # Compiler-generated files
 *.sdnet
 *.dat
+*.tbl
 *.info
 scion_module/
 sw/

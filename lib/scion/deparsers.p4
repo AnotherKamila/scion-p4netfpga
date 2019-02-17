@@ -28,6 +28,8 @@ control ScionDeparser(packet_out packet,
 }
 
 #ifdef TARGET_SUPPORTS_PACKET_MOD
+// TODO remove:
+#ifndef TARGET_SUPPORTS_SUCKING_AND_IM_LYING_ABOUT_PACKET_MOD
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 parser ScionModDeparser(packet_mod pkt, in scion_all_headers_t hdr) {
@@ -37,6 +39,7 @@ parser ScionModDeparser(packet_mod pkt, in scion_all_headers_t hdr) {
     }
 }
 
+#endif
 #endif
 
 

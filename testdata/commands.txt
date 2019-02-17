@@ -1,0 +1,2 @@
+# NOTE: These are only for NetFPGA and therefore should be platform-dependent!
+table_cam_add_entry sdnet_is_weird set_ethertype 0x42 => 0x47

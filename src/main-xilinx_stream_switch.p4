@@ -35,14 +35,29 @@ parser TopParser(packet_in packet, out local_t d) {
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control TopPipe(inout local_t d,
-                inout switch_meta_t s) {
+                inout switch_meta_t meta) {
 
+    action set_ethertype(ethertype_t type) {
+        d.hdr.ethernet.ethertype = type;
+    }
+
+    // apparently I need to use a table to generate a control port... which is
+    // needed to fit into the verilog wrapper :D
+    table sdnet_is_weird {
+        key = {d.hdr.ethernet.ethertype: exact;}
+        actions = {
+            set_ethertype;
+            NoAction;
+        }
+        size=64;
+    }
     apply {
         eth_addr_t tmp_src_addr = d.hdr.ethernet.src_addr;
         d.hdr.ethernet.src_addr = d.hdr.ethernet.dst_addr;
         d.hdr.ethernet.dst_addr = tmp_src_addr;
-        d.hdr.ethernet.ethertype = 0x47;
-        s.sume.dst_port = 8w1; // nf0
+        // d.hdr.ethernet.ethertype = 0x47;
+        sdnet_is_weird.apply();
+        meta.sume.dst_port = 8w1; // nf0
     }
 }
 

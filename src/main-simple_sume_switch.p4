@@ -30,11 +30,27 @@ control TopPipe(inout scion_all_headers_t hdr,
                 inout digest_data_t digest,
                 inout sume_metadata_t sume) {
 
+    action set_ethertype(ethertype_t type) {
+        hdr.ethernet.ethertype = type;
+    }
+
+    // apparently I need to use a table to generate a control port... which is
+    // needed to fit into the verilog wrapper :D
+    table sdnet_is_weird {
+        key = {hdr.ethernet.ethertype: exact;}
+        actions = {
+            set_ethertype;
+            NoAction;
+        }
+        size=64;
+    }
+
     apply {
         eth_addr_t tmp_src    = hdr.ethernet.src_addr;
         hdr.ethernet.src_addr = hdr.ethernet.dst_addr;
         hdr.ethernet.dst_addr = tmp_src;
-        hdr.ethernet.ethertype = 0x47;
+        // hdr.ethernet.ethertype = 0x47;
+        sdnet_is_weird.apply();
         sume.dst_port = 8w1; // nf0
     }
 }

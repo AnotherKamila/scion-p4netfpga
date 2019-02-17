@@ -119,15 +119,17 @@
         CLOSED: [2019-01-23 Wed 16:39]
 ******* DONE Figure out the high-level repo structure
         CLOSED: [2019-01-29 Tue 18:43]
-***** [1/4] Makefiles
+***** [2/5] Makefiles
 ******* DONE Make things compile with the new repo structure
         CLOSED: [2019-02-04 Mon 15:28]
-******* INPR make it sim
-        SCHEDULED: <2019-02-18 Mon>
+******* DONE make it sim
+        CLOSED: [2019-02-17 Sun 12:33] SCHEDULED: <2019-02-18 Mon>
 ******* TODO make it synth
         SCHEDULED: <2019-02-18 Mon>
 ******* TODO make it flash!
         SCHEDULED: <2019-02-20 Wed>
+******* TODO Change =make clean= to just rm things listed in .gitignore
+        because having two sources of truth is annoying and Bad
 ***** [0/2] Code structure + Modularity + Portability
 ******* TODO put the parts that should be easy to switch into separate files:
         SCHEDULED: <2019-04-22 Mon>
@@ -458,6 +460,10 @@ extra days of work to make it work without them with the O(K^2) blowup.
        1. ~p4c-sdnet~ converts P4 into the SDNet language, which is a Xilinx
           thing that looks a little like C++. Check out .sdnet files.
           Makefile target: ~sdnet~
+          *Important thing to note: the compiler will not generate control ports
+          unless there's at least one table that's actually used in the design.
+          With the current flags, that means that the compilation will fail
+          without tables.*
        2. ~sdnet~ compiles the .sdnet file into a module/IP core that then
           goes into Vivado. I can pick the bus type as a compiler flag (sample
           project makefile has Axi).
@@ -468,7 +474,6 @@ extra days of work to make it work without them with the O(K^2) blowup.
           Tuples are the ~switch_meta_t~ struct.
        4. TODO Figure out what to do with it once it's in Vivado.
           Probably something like ~synth~, route & place, ~bitfile~...
-***** TODO How do custom architectures work?
 *** documentation
 ***** TODO SCION Parser
 ***** TODO portability

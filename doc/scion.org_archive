@@ -27,3 +27,12 @@ Archived entries from file /scp:scion-netfpga:/home/scion/scion-p4netfpga/doc/sc
   :ARCHIVE_CATEGORY: scion
   :ARCHIVE_TODO: DONE
   :END:
+
+* TODO How do custom architectures work?
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2019-02-17 Sun 11:48
+  :ARCHIVE_FILE: /scp:scion-netfpga:/home/scion/scion-p4netfpga/doc/scion.org
+  :ARCHIVE_OLPATH: Notes to self/about NetFPGA
+  :ARCHIVE_CATEGORY: scion
+  :ARCHIVE_TODO: TODO
+  :END:
