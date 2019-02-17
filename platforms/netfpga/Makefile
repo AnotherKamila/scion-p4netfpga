@@ -40,7 +40,7 @@ ARCHS=xilinx_stream_switch
 
 .PHONY: help all listarchs ls build sdnet clean find-all-target-supports
 
-all: ## TODO
+all: test wrap_core ## Prepare and verify everything needed for programming the NetFPGA
 
 listarchs: ## List supported architectures
 	@echo $(ARCHS)
@@ -53,7 +53,7 @@ test: build ## Verify the design and run simulations.
 	make -C $(TOP)/testdata all
 	cp $(TOP)/testdata/*.txt $(SDNET_GENERATED)
 	cp $(TOP)/testdata/*.axi $(SDNET_GENERATED)
-	${SUME_SDNET}/bin/p4_px_tables.py $(TOP)/testdata/commands.txt $(SWITCHINFO)
+	$(SUME_SDNET)/bin/p4_px_tables.py $(TOP)/testdata/commands.txt $(SWITCHINFO)
 	cp *.tbl $(SDNET_GENERATED)
 	# ${SUME_SDNET}/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(SDNET_GENERATED) ${SUME_SDNET}/templates/ $(TOP)/testdata/ $(ARCH)/sw/ --base_address ${P4_SWITCH_BASE_ADDR}
 
@@ -62,6 +62,19 @@ test: build ## Verify the design and run simulations.
 sdnet: $(ARCH)/$(MODULE_NAME).sdnet ## Compile for SDNet
 
 hdl: $(SDNET_GENERATED_VERILOG) ## Generate HDL
+
+wrap_core: hdl ## Wrap the Scion module and create a Vivado library core
+	mkdir -p $(IP_CORES_DIR)
+	cp -r $(SDNET_GENERATED) $(IP_CORES_DIR)
+
+TARGET=$(SUME_FOLDER)/lib/hw/contrib/cores
+install_sdnet: hdl ## TEMPORARY, should be replaced with wrap_core
+	cp -r $(SDNET_OUT_DIR) $(TARGET)
+	mkdir -p $(TARGET)/scion_module/wrapper
+	cp $(HW)/wrapper/hdl/* $(TARGET)/scion_module/wrapper
+	cp $(HW)/wrapper/tcl/* $(TARGET)/scion_module
+	cp $(HW)/wrapper/Makefile $(TARGET)/scion_module
+	make -C $(TARGET)/scion_module
 
 clean: ## Remove generated files
 	rm -f *.sdnet $(ARCH)/*.sdnet *.tbl $(SWITCHINFO)
@@ -75,6 +88,11 @@ $(ARCH)/$(MODULE_NAME).sdnet: $(basename $(MAIN)).sdnet
 %.sdnet: $(TOP)/$(SRCDIR)/%.p4 $(shell find $(TOP)/$(INCDIR) -name '*.p4')
 	p4c-sdnet --toplevel_name $(MODULE_NAME) -o $@ --sdnet_info $(SWITCHINFO) $(TARGET_DEFINES) -I$(TOP)/$(INCDIR) $<
 	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
+
+# TODO what's this?
+config_writes:
+	${SUME_SDNET}/bin/gen_config_writes.py $(SDNET_GENERATED)/config_writes.txt $(P4_SWITCH_BASE_ADDR) $(TOP)/testdata
+
 
 
 $(SDNET_GENERATED_VERILOG): $(ARCH)/$(MODULE_NAME).sdnet

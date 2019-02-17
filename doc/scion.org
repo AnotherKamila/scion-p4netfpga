@@ -156,7 +156,7 @@
 ******* NOPE Create a ~packet_mod~-enabled architecture
         Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.
         Rejected because not possible; will use ~XilinxStreamSwitch~.
-******* INPR [3/4] Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
+******* INPR [3/5] Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
         SCHEDULED: <2019-02-14 Thu>
         No longer stuck on license. Should try this ASAP.
         See also [[*Turning source code into bits in the FPGA]] (and fill it in)
@@ -166,7 +166,9 @@
           CLOSED: [2019-02-14 Thu 22:40] SCHEDULED: <2019-02-14 Thu>
 ********* DONE make Vivado sim pass
           CLOSED: [2019-02-16 Sat 10:44] SCHEDULED: <2019-02-15 Fri>
-********* INPR figure out what's next :D
+********* NEXT wrap the SDNet module
+          SCHEDULED: <2019-02-17 Sun>
+********* TODO figure out what's next :D
           SCHEDULED: <2019-02-14 Thu>
 ***** [2/4] Write the parser
       With the fancy idea for using ~packet_mod~ if possible and variable-length
