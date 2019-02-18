@@ -119,17 +119,22 @@
         CLOSED: [2019-01-23 Wed 16:39]
 ******* DONE Figure out the high-level repo structure
         CLOSED: [2019-01-29 Tue 18:43]
-***** [2/5] Makefiles
+***** [4/7] Makefiles
 ******* DONE Make things compile with the new repo structure
         CLOSED: [2019-02-04 Mon 15:28]
 ******* DONE make it sim
         CLOSED: [2019-02-17 Sun 12:33] SCHEDULED: <2019-02-18 Mon>
-******* TODO make it synth
-        SCHEDULED: <2019-02-18 Mon>
-******* TODO make it flash!
-        SCHEDULED: <2019-02-20 Wed>
+******* DONE make it synth
+        CLOSED: [2019-02-18 Mon 22:03] SCHEDULED: <2019-02-18 Mon>
+******* DONE make it flash!
+        CLOSED: [2019-02-18 Mon 22:14] SCHEDULED: <2019-02-20 Wed>
 ******* TODO Change =make clean= to just rm things listed in .gitignore
+        SCHEDULED: <2019-02-19 Tue>
         because having two sources of truth is annoying and Bad
+******* TODO Clean up horrible mess in platforms/netfpga
+        SCHEDULED: <2019-02-19 Tue>
+******* TODO Add a test for real HW (check what they have, or use scapy)
+        SCHEDULED: <2019-02-19 Tue>
 ***** [0/2] Code structure + Modularity + Portability
 ******* TODO put the parts that should be easy to switch into separate files:
         SCHEDULED: <2019-04-22 Mon>
@@ -145,7 +150,7 @@
 ******* DONE get some SCION packets
         CLOSED: [2019-01-23 Wed 19:35]
         captured stuff from my SCION VM, lives in testdata/*.pcap
-***** [2/4] ~packet_mod~
+***** [3/3] ~packet_mod~
 ******* DONE Figure out how to create custom architectures
         CLOSED: [2019-02-05 Tue 18:43]
         Currently there's no way to do that: the architectures are built into the
@@ -156,8 +161,8 @@
 ******* NOPE Create a ~packet_mod~-enabled architecture
         Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.
         Rejected because not possible; will use ~XilinxStreamSwitch~.
-******* INPR [3/5] Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
-        SCHEDULED: <2019-02-14 Thu>
+******* DONE [5/5] Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
+        CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-14 Thu>
         No longer stuck on license. Should try this ASAP.
         See also [[*Turning source code into bits in the FPGA]] (and fill it in)
 ********* DONE switch the P4 source code and make it compile
@@ -166,10 +171,10 @@
           CLOSED: [2019-02-14 Thu 22:40] SCHEDULED: <2019-02-14 Thu>
 ********* DONE make Vivado sim pass
           CLOSED: [2019-02-16 Sat 10:44] SCHEDULED: <2019-02-15 Fri>
-********* NEXT wrap the SDNet module
-          SCHEDULED: <2019-02-17 Sun>
-********* TODO figure out what's next :D
-          SCHEDULED: <2019-02-14 Thu>
+********* DONE wrap the SDNet module
+          CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-17 Sun>
+********* DONE make it synth
+          CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-14 Thu>
 ***** [2/4] Write the parser
       With the fancy idea for using ~packet_mod~ if possible and variable-length
       fields in a "skip" struct otherwise.
@@ -179,24 +184,24 @@
         CLOSED: [2019-02-05 Tue 18:44]
         The 8-byte alignment was super annoying because SDNet.
 ******* TODO Parse current Info Field
-        SCHEDULED: <2019-02-19 Tue>
+        SCHEDULED: <2019-02-20 Wed>
 ******* TODO Parse current Hop Field + next HF if VRFY_ONLY
-        SCHEDULED: <2019-02-19 Tue>
+        SCHEDULED: <2019-02-20 Wed>
 ***** [0/2] Write the deparser
       with + without packet_mod
 ******* TODO deparse encaps+common+address
-        SCHEDULED: <2019-02-18 Mon>
+        SCHEDULED: <2019-02-20 Wed>
         with + without packet_mod;
         make it compile
 ******* TODO deparse info+HF
-        SCHEDULED: <2019-02-19 Tue>
+        SCHEDULED: <2019-02-20 Wed>
 ***** [0/4] Test it
       check how to easily generate SCION packets -- there is something in the
       scion repo
 ******* TODO test encaps+common+address w/ emit
-        SCHEDULED: <2019-02-18 Mon>
+        SCHEDULED: <2019-02-20 Wed>
 ******* TODO test encaps+common+address w/ packet_mod
-        SCHEDULED: <2019-02-18 Mon>
+        SCHEDULED: <2019-02-20 Wed>
 ******* TODO test complete parser w/ emit
         SCHEDULED: <2019-02-20 Wed>
 ******* TODO test complete parser w/ packet_mod
@@ -262,7 +267,7 @@
 
         Test fails, unsure why. Don't care enough.
 ***** TODO add testdata
-      SCHEDULED: <2019-02-18 Mon>
+      SCHEDULED: <2019-02-20 Wed>
 ***** TODO make it pass the simulation
       SCHEDULED: <2019-02-26 Tue>
 ***** TODO synth and test IRL
@@ -278,6 +283,8 @@
       if needed
 *** [/] Production deployment
     SCHEDULED: <2019-03-28 Thu>
+********* TODO test it IRL
+          SCHEDULED: <2019-02-18 Mon>
 * Timeline summaries
 *** DONE beginning - <2019-02-06 Wed>
     CLOSED: [2019-02-07 Thu 10:18]
@@ -457,8 +464,8 @@ extra days of work to make it work without them with the O(K^2) blowup.
       replayed from memory. Therefore...
 ***** Performace testing
       Just make a big pcap file :D ^^
-***** INPR Turning source code into bits in the FPGA
-      SCHEDULED: <2019-02-14 Thu>: complete this
+***** DONE Turning source code into bits in the FPGA
+      CLOSED: [2019-02-18 Mon 22:05] SCHEDULED: <2019-02-14 Thu>: complete this
        1. ~p4c-sdnet~ converts P4 into the SDNet language, which is a Xilinx
           thing that looks a little like C++. Check out .sdnet files.
           Makefile target: ~sdnet~
@@ -474,8 +481,11 @@ extra days of work to make it work without them with the O(K^2) blowup.
        3. check with Vivado sim: generate input and output packets and tuples
           and compare.
           Tuples are the ~switch_meta_t~ struct.
-       4. TODO Figure out what to do with it once it's in Vivado.
-          Probably something like ~synth~, route & place, ~bitfile~...
+          Target: ~sim~
+       4. Create Vivado project: Target: ~project~
+       5. Synth. Target: ~synth~
+       6. Create bitfile. Target: ~bitfile~
+       7. Flash! Target: ~flash~
 *** documentation
 ***** TODO SCION Parser
 ***** TODO portability

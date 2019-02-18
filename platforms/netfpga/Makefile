@@ -5,7 +5,6 @@ include $(TOP)/Makefile.inc
 PLATFORM=netfpga ## Select the platform. Try make -C platforms ls
 ARCH=xilinx_stream_switch ## Select the architecture
 MODULE_NAME=Scion ## Name of the HDL module
-P4_SWITCH_BASE_ADDR=0x44020000
 include $(strip $(ARCH))/Makefile.inc
 
 # Clean up whitespace (grr)
@@ -19,6 +18,9 @@ HW=$(ARCH)/hw
 SDNET_OUT_DIR=$(HW)/scion_module
 IP_CORES_DIR=$(HW)/lib/cores
 WRAPPER=$(HW)/wrapper
+COMMON_HW=hw
+BITFILES=$(HW)/bitfiles/
+BITFILE=$(BITFILES)/$(MODULE_NAME).bit
 
 # Important: With these flags, sdnet will complain unless you're using at least
 # one table. It must be actually used, not just declared. Reason: if you aren't,
@@ -30,6 +32,8 @@ SDNET_FLAGS=-busType axi -busWidth 256 -singlecontrolport -altVivadoScripts -ski
 # paths determined by sdnet
 SDNET_GENERATED=$(SDNET_OUT_DIR)/$(MODULE_NAME)
 SDNET_GENERATED_VERILOG=$(SDNET_GENERATED)/$(MODULE_NAME).v
+
+# TODO this makefile will need a *lot* of cleanup :D
 
 ### User-facing targets ######################################################
 
@@ -47,17 +51,74 @@ listarchs: ## List supported architectures
 
 ls: listarchs ## Shorthand for listarchs
 
-build: hdl ## Build everything needed for using the design
+build: synth hdl ## Build everything needed for using the design
 
-test: build ## Verify the design and run simulations.
+# test: vivado_sim sume_sim  ## Verify the design and run simulations.
+test: vivado_sim  ## Verify the design and run simulations.
+
+vivado_sim: hdl ## Run an initial sim (only the generated module)
 	make -C $(TOP)/testdata all
 	cp $(TOP)/testdata/*.txt $(SDNET_GENERATED)
 	cp $(TOP)/testdata/*.axi $(SDNET_GENERATED)
 	$(SUME_SDNET)/bin/p4_px_tables.py $(TOP)/testdata/commands.txt $(SWITCHINFO)
 	cp *.tbl $(SDNET_GENERATED)
 	# ${SUME_SDNET}/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(SDNET_GENERATED) ${SUME_SDNET}/templates/ $(TOP)/testdata/ $(ARCH)/sw/ --base_address ${P4_SWITCH_BASE_ADDR}
+	# modify the P4_SWITCH_tb so that it writes the table config writes to a file
+	$(SUME_SDNET)/bin/modify_P4_SWITCH_tb.py $(SDNET_GENERATED)/Testbench/$(MODULE_NAME)_tb.sv
 
 	cd $(SDNET_OUT_DIR)/$(MODULE_NAME) && ./vivado_sim.bash
+
+# TODO figure out how to handle this withour remaking
+# $(SDNET_GENERATED)/config_writes.txt: vivado_sim
+
+# $(ARCH)/config_writes.py: $(SDNET_GENERATED)/config_writes.txt
+# 	${SUME_SDNET}/bin/gen_config_writes.py $< $(P4_SWITCH_BASE_ADDR) $(TOP)/testdata
+# 	# mv $(TOP)/testdata/config_writes.py $@
+
+# sume_sim: $(ARCH)/config_writes.py
+# 	make -C $(TOP)/testdata all
+# 	# cp $< $(ARCH)/test/sim_switch_default
+# 	$(SUME_FOLDER)/tools/scripts/nf_test.py sim --src_test_dir $(ARCH)/test --major switch --minor default
+
+$(ARCH)/config_writes.sh: $(SDNET_GENERATED)/config_writes.txt
+	${SUME_SDNET}/bin/gen_config_writes.py $< $(P4_SWITCH_BASE_ADDR) $(TOP)/testdata
+	cp $(TOP)/testdata/config_writes.sh $@
+
+project: hdl ## Create the design (Vivado project)
+	make -C $(HW)/nf_sume project  # TODO some genius put the synth into this -- split this!
+	make -C $(HW)/nf_sume export_to_sdk
+	# make -C ${SW} project
+	# make -C ${SW} compile
+	make -C $(HW)/nf_sume load_elf
+
+
+# synth: project ## Synth the design and generate the bitfile
+synth: $(ARCH)/config_writes.sh ## Synth the design and generate the bitfile
+	# TODO move synth here
+	# TODO actually bitfiles should probably be a separate step
+	mkdir -p $(HW)/bitfiles
+	# TODO when this has the bitfile as dependency, it could be move
+	cp $(HW)/nf_sume/project/nf_sume.runs/impl_1/top.bit $(BITFILE)
+
+# TODO config_writes won't be needed once we have a control plane :D
+# unless we want to have a default route without control plane
+flash: _env _root $(BITFILE) $(ARCH)/config_writes.sh ## Program the NetFPGA
+	bash ./scripts/program_switch.sh $(BITFILE)
+	bash $(ARCH)/config_writes.sh
+
+# TODO move to top .inc
+# TODO merge with gmake
+_env:
+	@which vivado || { echo "ERROR: Xilinx tools not in PATH, source something like /opt/Xilinx/Vivado/2018.2/settings64.sh"; exit 78; }
+
+_root:
+	@[ `id -u` = 0 ] || { echo "ERROR: You must be root to run this target. (Don't forget to setup the env!)"; exit 77; }
+
+# TODO:
+# clean:
+# 	make -C ${HW} distclean
+#   make -C ${SW} distclean
+#   rm -rfv vivado*;\
 
 sdnet: $(ARCH)/$(MODULE_NAME).sdnet ## Compile for SDNet
 
@@ -68,13 +129,16 @@ wrap_core: hdl ## Wrap the Scion module and create a Vivado library core
 	cp -r $(SDNET_GENERATED) $(IP_CORES_DIR)
 
 TARGET=$(SUME_FOLDER)/lib/hw/contrib/cores
-install_sdnet: hdl ## TEMPORARY, should be replaced with wrap_core
+install_sdnet: hdl uninstall_sdnet ## TEMPORARY, should be replaced with wrap_core
 	cp -r $(SDNET_OUT_DIR) $(TARGET)
 	mkdir -p $(TARGET)/scion_module/wrapper
 	cp $(HW)/wrapper/hdl/* $(TARGET)/scion_module/wrapper
 	cp $(HW)/wrapper/tcl/* $(TARGET)/scion_module
 	cp $(HW)/wrapper/Makefile $(TARGET)/scion_module
-	make -C $(TARGET)/scion_module
+	$(MAKE) -C $(TARGET)/scion_module
+
+uninstall_sdnet: ## TEMPORARY, should be replaced with um something
+	rm -rf $(TARGET)/scion_module
 
 clean: ## Remove generated files
 	rm -f *.sdnet $(ARCH)/*.sdnet *.tbl $(SWITCHINFO)
@@ -89,9 +153,6 @@ $(ARCH)/$(MODULE_NAME).sdnet: $(basename $(MAIN)).sdnet
 	p4c-sdnet --toplevel_name $(MODULE_NAME) -o $@ --sdnet_info $(SWITCHINFO) $(TARGET_DEFINES) -I$(TOP)/$(INCDIR) $<
 	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
-# TODO what's this?
-config_writes:
-	${SUME_SDNET}/bin/gen_config_writes.py $(SDNET_GENERATED)/config_writes.txt $(P4_SWITCH_BASE_ADDR) $(TOP)/testdata
 
 
 
