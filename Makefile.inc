@@ -66,7 +66,10 @@ gmake:
 find-all-target-supports:
 	@find $(TOP) -name '*.p4' | xargs cat | grep -o -E 'TARGET_SUPPORTS_\w+' | sort -u | sed s/TARGET_SUPPORTS_//
 
-target-supports: # Does NOT work in the toplevel directory!
+target-supports: # TODO Does NOT work in the toplevel directory!
 	@echo $(TARGET_SUPPORTS)
 
 ###### Common targets needed for actually doing stuff ########################
+
+clean:  ## Remove all files listed in ./.gitignore
+	rm -rfv $$(cat ./.gitignore | grep -v '^#')

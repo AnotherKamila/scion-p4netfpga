@@ -13,9 +13,11 @@ ARCH        := $(strip $(ARCH))
 MODULE_NAME := $(strip $(MODULE_NAME))
 
 # Settings that usually shouldn't be changed by the user
+SDNET_MODULE_NAME=scion_sdnet_ip
 SWITCHINFO=$(ARCH)/sdnet_switch.info
 HW=$(ARCH)/hw
-SDNET_OUT_DIR=$(HW)/scion_module
+WORKDIR=$(ARCH)/work
+SDNET_OUT_DIR=$(WORKDIR)/$(SDNET_MODULE_NAME)
 IP_CORES_DIR=$(HW)/lib/cores
 WRAPPER=$(HW)/wrapper
 COMMON_HW=hw
@@ -53,14 +55,14 @@ ls: listarchs ## Shorthand for listarchs
 
 build: synth hdl ## Build everything needed for using the design
 
-# test: vivado_sim sume_sim  ## Verify the design and run simulations.
-test: vivado_sim  ## Verify the design and run simulations.
+hwtest: ## Test the real hardware
+	make -C $(TOP)/test test
 
-vivado_sim: hdl ## Run an initial sim (only the generated module)
-	make -C $(TOP)/testdata all
-	cp $(TOP)/testdata/*.txt $(SDNET_GENERATED)
-	cp $(TOP)/testdata/*.axi $(SDNET_GENERATED)
-	$(SUME_SDNET)/bin/p4_px_tables.py $(TOP)/testdata/commands.txt $(SWITCHINFO)
+sim: hdl ## Verify the design and run simulations.
+	make -C $(TOP)/test gen
+	cp $(TOP)/test/*.txt $(SDNET_GENERATED)
+	cp $(TOP)/test/*.axi $(SDNET_GENERATED)
+	$(SUME_SDNET)/bin/p4_px_tables.py $(TOP)/test/commands.txt $(SWITCHINFO)
 	cp *.tbl $(SDNET_GENERATED)
 	# ${SUME_SDNET}/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(SDNET_GENERATED) ${SUME_SDNET}/templates/ $(TOP)/testdata/ $(ARCH)/sw/ --base_address ${P4_SWITCH_BASE_ADDR}
 	# modify the P4_SWITCH_tb so that it writes the table config writes to a file
@@ -81,15 +83,15 @@ vivado_sim: hdl ## Run an initial sim (only the generated module)
 # 	$(SUME_FOLDER)/tools/scripts/nf_test.py sim --src_test_dir $(ARCH)/test --major switch --minor default
 
 $(ARCH)/config_writes.sh: $(SDNET_GENERATED)/config_writes.txt
-	${SUME_SDNET}/bin/gen_config_writes.py $< $(P4_SWITCH_BASE_ADDR) $(TOP)/testdata
-	cp $(TOP)/testdata/config_writes.sh $@
+	${SUME_SDNET}/bin/gen_config_writes.py $< $(P4_SWITCH_BASE_ADDR) $(TOP)/test
+	cp $(TOP)/test/config_writes.sh $@
 
 project: hdl ## Create the design (Vivado project)
 	make -C $(HW)/nf_sume project  # TODO some genius put the synth into this -- split this!
-	make -C $(HW)/nf_sume export_to_sdk
+	# make -C $(HW)/nf_sume export_to_sdk
 	# make -C ${SW} project
 	# make -C ${SW} compile
-	make -C $(HW)/nf_sume load_elf
+	# make -C $(HW)/nf_sume load_elf
 
 
 # synth: project ## Synth the design and generate the bitfile
@@ -131,18 +133,14 @@ wrap_core: hdl ## Wrap the Scion module and create a Vivado library core
 TARGET=$(SUME_FOLDER)/lib/hw/contrib/cores
 install_sdnet: hdl uninstall_sdnet ## TEMPORARY, should be replaced with wrap_core
 	cp -r $(SDNET_OUT_DIR) $(TARGET)
-	mkdir -p $(TARGET)/scion_module/wrapper
-	cp $(HW)/wrapper/hdl/* $(TARGET)/scion_module/wrapper
-	cp $(HW)/wrapper/tcl/* $(TARGET)/scion_module
-	cp $(HW)/wrapper/Makefile $(TARGET)/scion_module
-	$(MAKE) -C $(TARGET)/scion_module
+	mkdir -p $(TARGET)/$(SDNET_MODULE_NAME)/wrapper
+	cp $(HW)/wrapper/hdl/* $(TARGET)/$(SDNET_MODULE_NAME)/wrapper
+	cp $(HW)/wrapper/tcl/* $(TARGET)/$(SDNET_MODULE_NAME)
+	cp $(HW)/wrapper/Makefile $(TARGET)/$(SDNET_MODULE_NAME)
+	$(MAKE) -C $(TARGET)/$(SDNET_MODULE_NAME)
 
 uninstall_sdnet: ## TEMPORARY, should be replaced with um something
-	rm -rf $(TARGET)/scion_module
-
-clean: ## Remove generated files
-	rm -f *.sdnet $(ARCH)/*.sdnet *.tbl $(SWITCHINFO)
-	rm -rf $(SDNET_OUT_DIR)
+	rm -rf $(TARGET)/$(SDNET_MODULE_NAME)
 
 compiler-test: compiler-test-$(ARCH).sdnet ## Compile a test program to check support for P4 features
 
@@ -169,3 +167,7 @@ $(SDNET_GENERATED_VERILOG): $(ARCH)/$(MODULE_NAME).sdnet
 
 	@echo $(MARK) "Generated HDL in $(SDNET_GENERATED)" $(ENDMARK)
 
+# clean: ## Remove generated files
+# 	rm -f *.sdnet $(ARCH)/*.sdnet *.tbl $(SWITCHINFO)
+# 	rm -rf $(SDNET_OUT_DIR)
+# 	make -C $(HW)/nf_sume clean

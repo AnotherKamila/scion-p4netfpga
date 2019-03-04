@@ -1,0 +1,7 @@
+Tuple_*.txt
+*.axi
+*.pcap
+config_writes.py
+config_writes.sh
+
+*.py[co]
