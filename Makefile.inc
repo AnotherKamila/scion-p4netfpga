@@ -71,5 +71,5 @@ target-supports: # TODO Does NOT work in the toplevel directory!
 
 ###### Common targets needed for actually doing stuff ########################
 
-clean:  ## Remove all files listed in ./.gitignore
+clean-gitignore: # Remove all files listed in ./.gitignore
 	rm -rfv $$(cat ./.gitignore | grep -v '^#')

@@ -15,6 +15,9 @@ compiler](https://github.com/p4lang/p4c) (software-only).
 Open-source and freely available. Useful to quickly test functionality without
 requiring vendor-specific toolchains.
 
+**Note: Currently this target compiles, but it does not have tests. Will be
+fixed as time allows.**
+
 #### Available Architectures:
 
 * `V1Switch`: the [`simple_switch`](https://github.com/p4lang/behavioral-model/blob/master/targets/README.md#simple_switch) target with the [v1model](https://github.com/p4lang/p4c/blob/master/p4include/v1model.p4) reference architecture

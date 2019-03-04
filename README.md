@@ -20,8 +20,8 @@ This reference implementation assumes that the AS uses IP for internal routing. 
 
 ### `platforms/`: Files that allow the reference router to run on various hardware
 
-Currently supported: Xilinx NetFPGA SUME, with the `SimpleSumeSwitch`
-architecture. In the future, a custom architecture might be provided if useful.
+Currently supported: Xilinx NetFPGA SUME, with the `XilinxStreamSwitch`
+architecture. In the future, SimpleSumeSwitch might be supported, as welll as the `bmv2` software switch.
 
 ### `controller/`: The control plane for the router
 

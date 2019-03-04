@@ -58,6 +58,8 @@ build: synth hdl ## Build everything needed for using the design
 hwtest: ## Test the real hardware
 	make -C $(TOP)/test test
 
+test: sim ## Alias for sim
+
 sim: hdl ## Verify the design and run simulations.
 	make -C $(TOP)/test gen
 	cp $(TOP)/test/*.txt $(SDNET_GENERATED)
@@ -116,12 +118,6 @@ _env:
 _root:
 	@[ `id -u` = 0 ] || { echo "ERROR: You must be root to run this target. (Don't forget to setup the env!)"; exit 77; }
 
-# TODO:
-# clean:
-# 	make -C ${HW} distclean
-#   make -C ${SW} distclean
-#   rm -rfv vivado*;\
-
 sdnet: $(ARCH)/$(MODULE_NAME).sdnet ## Compile for SDNet
 
 hdl: $(SDNET_GENERATED_VERILOG) ## Generate HDL
@@ -167,7 +163,12 @@ $(SDNET_GENERATED_VERILOG): $(ARCH)/$(MODULE_NAME).sdnet
 
 	@echo $(MARK) "Generated HDL in $(SDNET_GENERATED)" $(ENDMARK)
 
-# clean: ## Remove generated files
-# 	rm -f *.sdnet $(ARCH)/*.sdnet *.tbl $(SWITCHINFO)
-# 	rm -rf $(SDNET_OUT_DIR)
-# 	make -C $(HW)/nf_sume clean
+# TODO:
+# clean:
+# 	make -C ${HW} distclean
+#   make -C ${SW} distclean
+#   rm -rfv vivado*;\
+
+clean: clean-gitignore ## Remove generated files
+	$(MAKE) -C $(HW)/nf_sume clean
+
