@@ -1,0 +1,11 @@
+This folder contains stuff that assembles the generated SCION module with some other modules to create the full design for the NetFPGA board.
+
+Based on the upstream P4-NetFPGA project.
+
+Changes:
+
+- changed module name from SimpleSumeSwitch to Scion (to accomodate different architectures)
+- switched to Non-Project Mode to avoid driving software people crazy
+- changed some paths to make it work with my project structure
+- split up project creation, synth, and bitfiles steps
+- set the Makefile on fire and wrote a sane one

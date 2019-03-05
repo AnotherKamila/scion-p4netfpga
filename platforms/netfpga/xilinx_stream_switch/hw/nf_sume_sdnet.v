@@ -28,11 +28,12 @@
 //
 // @NETFPGA_LICENSE_HEADER_END@
 //
+// Modifications for XilinxStreamSwitch (c) 2019 Kamila Souckova, ETH Zurich
 
 
 //////////////////////////////////////////////////////////////////////////////////
-// Affiliation: Stanford University
-// Author: Stephen Ibanez 
+// Affiliation: Stanford University; ETH Zurich
+// Author: Stephen Ibanez; modified for XilinxStreamSwitch by Kamila Souckova
 // 
 // Create Date: 03/23/2017
 // Module Name: nf_sume_sdnet

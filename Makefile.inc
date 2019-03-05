@@ -9,8 +9,8 @@ PLATFORM := $(strip $(PLATFORM))
 ARCH     := $(strip $(ARCH))
 
 ### Project settings #########################################################
-SRCDIR=src/
-INCDIR=lib/
+SRCDIR=src
+INCDIR=lib
 
 MAIN=main-$(ARCH).p4
 
@@ -34,13 +34,13 @@ ENDMARK='-----\033[0m\n'
 
 ###### The auto-documenting target (here be dragons) #########################
 
-help: gmake ## Show this help
+help: ## Show this help
 	@$(MAKE) -s _help | column -t -s'|'
 	@echo
 	@echo 'To override the settings, run: make <VARIABLE>=<value> <target>'
 
-_help: gmake
-	@echo Targets:
+_help: _gmake
+	@echo Frequently used targets:
 	@echo
 	@$(MAKE) -s _show-targets | sed 's/^/  /'
 	@echo Settings:
@@ -49,25 +49,33 @@ _help: gmake
 _show-targets:
 	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "%s|%s\n", $$1, $$2}'
 
-_show-setting: gmake
+_show-setting: _gmake
 	@echo "$(SHOW_SETTING)=$($(SHOW_SETTING))|`cat $(ALL_MAKEFILES) | sed -n '/^$(SHOW_SETTING)=/s/[^#]*## *//p' | tail -n1`"
 
-list-settings-vars: gmake
+list-settings-vars: _gmake
 	@cat $(ALL_MAKEFILES) | grep -E '^[a-zA-Z0-9_-]+=.*?## .*$$' | cut -d= -f1 | awk '!x[$$0]++'
 
-_show-settings:
+_show-settings: _gmake
 	@$(foreach var,$(shell $(MAKE) -s list-settings-vars),$(MAKE) -s _show-setting SHOW_SETTING=$(var);)
 
-gmake:
-	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'GNU make required (run with gmake)'; exit 70; }
+###### Targets that complain if the environment smells wrong ###############
+
+_gmake:
+	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'ERROR: GNU make required (run with gmake)'; exit 70; }
+
+_env: _gmake
+	@which vivado || { echo "ERROR: Xilinx tools not in PATH, source something like /opt/Xilinx/Vivado/2018.2/settings64.sh"; exit 78; }
+
+_root:
+	@[ `id -u` = 0 ] || { echo "ERROR: You must be root to run this target. (Don't forget to setup the env!)"; exit 77; }
 
 ###### Helper targets for humans #############################################
 
-find-all-target-supports:
+find-all-target-supports: # TODO MOOORE DOCS :D
 	@find $(TOP) -name '*.p4' | xargs cat | grep -o -E 'TARGET_SUPPORTS_\w+' | sort -u | sed s/TARGET_SUPPORTS_//
 
-target-supports: # TODO Does NOT work in the toplevel directory!
-	@echo $(TARGET_SUPPORTS)
+target-supports: # TODO :D
+	@[ -n "$(TARGET_SUPPORTS)" ] && echo $(TARGET_SUPPORTS) || $(MAKE) --no-print-directory -C $(TOP)/platforms/$(PLATFORM) target-supports
 
 ###### Common targets needed for actually doing stuff ########################
 

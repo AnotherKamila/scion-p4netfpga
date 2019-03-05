@@ -2,6 +2,7 @@
 
 TOP=.
 include $(TOP)/Makefile.inc
+include $(TOP)/platforms/$(PLATFORM)/Makefile.inc
 
 .PHONY: help all build sim synth test flash graph clean
 

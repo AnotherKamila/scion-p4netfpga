@@ -1,8 +1,0 @@
-More or less copied from upstream NetFPGA project.
-
-Changes:
-
-- changed module name from SimpleSumeSwitch to Scion
-- changed some paths to make it work with my project structure
-- split up project creation, synth, and bitfiles steps
-- cleaned up the Makefile a bit

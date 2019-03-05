@@ -1,13 +1,10 @@
+# TODO should this Makefile exist?
 TOP=../../..
 include $(TOP)/Makefile.inc
 
 ### Settings #################################################################
+include ../Makefile.inc
 include Makefile.inc
-
-# Clean up whitespace (grr)
-PLATFORM := $(strip $(PLATFORM))
-ARCH     := $(strip $(ARCH))
-# TOPLEVEL_NAME := $(strip $(TOPLEVEL_NAME))
 
 ### User-facing targets ######################################################
 
