@@ -32,7 +32,7 @@ listarchs: ## List supported architectures
 
 ls: listarchs ## Shorthand for listarchs
 
-build: $(SDNET_TOP) ## TODO: Build everything needed for using the design
+build: ## TODO: Build everything needed for using the design
 	make -C $(HW) build
 
 compiler-test: compiler-test-$(ARCH).sdnet ## Compile a test program to check support for P4 features
@@ -56,7 +56,7 @@ $(SDNET_TOP): $(basename $(MAIN)).sdnet
 	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
 $(GENERATED_HDL_TOP): $(SDNET_TOP)
-	sdnet $< $(SDNET_FLAGS) -workDir $(WORKDIR)
+	sdnet $< $(SDNET_FLAGS) -workDir $(SCION_IP_DIR)
 	# SDNet is apparently incompatible with its own output :D
 	sed -i 's/xsim\.dir\/xsc\/dpi\.so/dpi\.so/g' $(GENERATED_HDL)/vivado_sim*.bash
 	sed -i 's/glbl_sim/glbl/g' $(GENERATED_HDL)/vivado_sim_waveform.bash

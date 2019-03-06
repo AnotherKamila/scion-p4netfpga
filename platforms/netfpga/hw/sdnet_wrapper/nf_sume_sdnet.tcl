@@ -22,11 +22,16 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 # Vivado Launch Script
-#### Change design settings here #######
-set design nf_sume_scion
-set top nf_sume_scion
+#### Settings #######################
+# TODO put these into an included file
+set ip_dir $::env(IP_DIR)
+set sdnet_module_name $::env(HDL_MODULE_NAME)
+set arch_wrapper_file $::env(ARCH_WRAPPER)
+set proj_dir ${ip_dir}/ip_proj
+
+set design nf_sume_sdnet
+set top nf_sume_sdnet
 set device xc7vx690t-3-ffg1761
-set proj_dir ./ip_proj
 set ip_version 1.00
 set lib_name NetFPGA
 
@@ -34,32 +39,19 @@ set lib_name NetFPGA
 # Project Settings
 #####################################
 create_project -name ${design} -force -dir "./${proj_dir}" -part ${device}
-set_property source_mgmt_mode All [current_project]  
+set_property source_mgmt_mode All [current_project]
 set_property top ${top} [current_fileset]
 set_property ip_repo_paths $::env(SUME_FOLDER)/lib/hw/  [current_fileset]
 update_ip_catalog
 puts "${design}"
+set nf_ip_path $::env(SUME_FOLDER)/lib/hw
 
-#####################################
-# Project Structure & IP Build
-#####################################
-#read_verilog "./wrapper/sdnet_to_sume.v"
-read_verilog "./wrapper/sume_to_sdnet.v"
-read_verilog "./wrapper/nf_sume_sdnet.v"
-read_verilog "./wrapper/changeEndian.v"
+#### IP build #######################
 
-## to compile SDNet 2016.3
-#add_files -scan_for_includes ./SimpleSumeSwitch/axi_lite_ipif_v3_0b/
-
-add_files -scan_for_includes ./Scion/
+read_verilog [ glob ./*.v ]
+read_verilog ${arch_wrapper_file}
+add_files -scan_for_includes ${ip_dir}/${sdnet_module_name}/
 import_files -force
-
-## to compile SDNet 2016.3
-#set_property library axi_lite_ipif_v3_0b [get_files $proj_dir/nf_sume_sdnet.srcs/sources_1/imports/nf_sume_sdnet_ip/SimpleSumeSwitch/axi_lite_ipif_v3_0b/hdl/src/vhdl/address_decoder.vhd]
-#set_property library axi_lite_ipif_v3_0b [get_files $proj_dir/nf_sume_sdnet.srcs/sources_1/imports/nf_sume_sdnet_ip/SimpleSumeSwitch/axi_lite_ipif_v3_0b/hdl/src/vhdl/axi_lite_ipif.vhd]
-#set_property library axi_lite_ipif_v3_0b [get_files $proj_dir/nf_sume_sdnet.srcs/sources_1/imports/nf_sume_sdnet_ip/SimpleSumeSwitch/axi_lite_ipif_v3_0b/hdl/src/vhdl/ipif_pkg.vhd]
-#set_property library axi_lite_ipif_v3_0b [get_files $proj_dir/nf_sume_sdnet.srcs/sources_1/imports/nf_sume_sdnet_ip/SimpleSumeSwitch/axi_lite_ipif_v3_0b/hdl/src/vhdl/pselect_f.vhd]
-#set_property library axi_lite_ipif_v3_0b [get_files $proj_dir/nf_sume_sdnet.srcs/sources_1/imports/nf_sume_sdnet_ip/SimpleSumeSwitch/axi_lite_ipif_v3_0b/hdl/src/vhdl/slave_attachment.vhd]
 
 update_compile_order -fileset sources_1
 update_compile_order -fileset sim_1
@@ -77,46 +69,46 @@ set_property display_name ${design} [ipx::current_core]
 set_property description ${design} [ipx::current_core]
 
 ipx::add_user_parameter {C_M_AXIS_DATA_WIDTH} [ipx::current_core]
-set_property value_resolve_type {user} [ipx::get_user_parameter C_M_AXIS_DATA_WIDTH [ipx::current_core]]
-set_property display_name {C_M_AXIS_DATA_WIDTH} [ipx::get_user_parameter C_M_AXIS_DATA_WIDTH [ipx::current_core]]
-set_property value {256} [ipx::get_user_parameter C_M_AXIS_DATA_WIDTH [ipx::current_core]]
-set_property value_format {long} [ipx::get_user_parameter C_M_AXIS_DATA_WIDTH [ipx::current_core]]
+set_property value_resolve_type {user} [ipx::get_user_parameters C_M_AXIS_DATA_WIDTH -of_objects [ipx::current_core]]
+set_property display_name {C_M_AXIS_DATA_WIDTH} [ipx::get_user_parameters C_M_AXIS_DATA_WIDTH -of_objects [ipx::current_core]]
+set_property value {256} [ipx::get_user_parameters C_M_AXIS_DATA_WIDTH -of_objects [ipx::current_core]]
+set_property value_format {long} [ipx::get_user_parameters C_M_AXIS_DATA_WIDTH -of_objects [ipx::current_core]]
 
 ipx::add_user_parameter {C_S_AXIS_DATA_WIDTH} [ipx::current_core]
-set_property value_resolve_type {user} [ipx::get_user_parameter C_S_AXIS_DATA_WIDTH [ipx::current_core]]
-set_property display_name {C_S_AXIS_DATA_WIDTH} [ipx::get_user_parameter C_S_AXIS_DATA_WIDTH [ipx::current_core]]
-set_property value {256} [ipx::get_user_parameter C_S_AXIS_DATA_WIDTH [ipx::current_core]]
-set_property value_format {long} [ipx::get_user_parameter C_S_AXIS_DATA_WIDTH [ipx::current_core]]
+set_property value_resolve_type {user} [ipx::get_user_parameters C_S_AXIS_DATA_WIDTH -of_objects [ipx::current_core]]
+set_property display_name {C_S_AXIS_DATA_WIDTH} [ipx::get_user_parameters C_S_AXIS_DATA_WIDTH -of_objects [ipx::current_core]]
+set_property value {256} [ipx::get_user_parameters C_S_AXIS_DATA_WIDTH -of_objects [ipx::current_core]]
+set_property value_format {long} [ipx::get_user_parameters C_S_AXIS_DATA_WIDTH -of_objects [ipx::current_core]]
   
 ipx::add_user_parameter {C_M_AXIS_TUSER_WIDTH} [ipx::current_core]
-set_property value_resolve_type {user} [ipx::get_user_parameter C_M_AXIS_TUSER_WIDTH [ipx::current_core]]
-set_property display_name {C_M_AXIS_TUSER_WIDTH} [ipx::get_user_parameter C_M_AXIS_TUSER_WIDTH [ipx::current_core]]
-set_property value {128} [ipx::get_user_parameter C_M_AXIS_TUSER_WIDTH [ipx::current_core]]
-set_property value_format {long} [ipx::get_user_parameter C_M_AXIS_TUSER_WIDTH [ipx::current_core]]
+set_property value_resolve_type {user} [ipx::get_user_parameters C_M_AXIS_TUSER_WIDTH -of_objects [ipx::current_core]]
+set_property display_name {C_M_AXIS_TUSER_WIDTH} [ipx::get_user_parameters C_M_AXIS_TUSER_WIDTH -of_objects [ipx::current_core]]
+set_property value {128} [ipx::get_user_parameters C_M_AXIS_TUSER_WIDTH -of_objects [ipx::current_core]]
+set_property value_format {long} [ipx::get_user_parameters C_M_AXIS_TUSER_WIDTH -of_objects [ipx::current_core]]
 
 ipx::add_user_parameter {C_S_AXIS_TUSER_WIDTH} [ipx::current_core]
-set_property value_resolve_type {user} [ipx::get_user_parameter C_S_AXIS_TUSER_WIDTH [ipx::current_core]]
-set_property display_name {C_S_AXIS_TUSER_WIDTH} [ipx::get_user_parameter C_S_AXIS_TUSER_WIDTH [ipx::current_core]]
-set_property value {128} [ipx::get_user_parameter C_S_AXIS_TUSER_WIDTH [ipx::current_core]]
-set_property value_format {long} [ipx::get_user_parameter C_S_AXIS_TUSER_WIDTH [ipx::current_core]]
+set_property value_resolve_type {user} [ipx::get_user_parameters C_S_AXIS_TUSER_WIDTH -of_objects [ipx::current_core]]
+set_property display_name {C_S_AXIS_TUSER_WIDTH} [ipx::get_user_parameters C_S_AXIS_TUSER_WIDTH -of_objects [ipx::current_core]]
+set_property value {128} [ipx::get_user_parameters C_S_AXIS_TUSER_WIDTH -of_objects [ipx::current_core]]
+set_property value_format {long} [ipx::get_user_parameters C_S_AXIS_TUSER_WIDTH -of_objects [ipx::current_core]]
 
 ipx::add_user_parameter {C_S_AXI_DATA_WIDTH} [ipx::current_core]
-set_property value_resolve_type {user} [ipx::get_user_parameter C_S_AXI_DATA_WIDTH [ipx::current_core]]
-set_property display_name {C_S_AXI_DATA_WIDTH} [ipx::get_user_parameter C_S_AXI_DATA_WIDTH [ipx::current_core]]
-set_property value {32} [ipx::get_user_parameter C_S_AXI_DATA_WIDTH [ipx::current_core]]
-set_property value_format {long} [ipx::get_user_parameter C_S_AXI_DATA_WIDTH [ipx::current_core]]
+set_property value_resolve_type {user} [ipx::get_user_parameters C_S_AXI_DATA_WIDTH -of_objects [ipx::current_core]]
+set_property display_name {C_S_AXI_DATA_WIDTH} [ipx::get_user_parameters C_S_AXI_DATA_WIDTH -of_objects [ipx::current_core]]
+set_property value {32} [ipx::get_user_parameters C_S_AXI_DATA_WIDTH -of_objects [ipx::current_core]]
+set_property value_format {long} [ipx::get_user_parameters C_S_AXI_DATA_WIDTH -of_objects [ipx::current_core]]
 
 ipx::add_user_parameter {C_S_AXI_ADDR_WIDTH} [ipx::current_core]
-set_property value_resolve_type {user} [ipx::get_user_parameter C_S_AXI_ADDR_WIDTH [ipx::current_core]]
-set_property display_name {C_S_AXI_ADDR_WIDTH} [ipx::get_user_parameter C_S_AXI_ADDR_WIDTH [ipx::current_core]]
-set_property value {12} [ipx::get_user_parameter C_S_AXI_ADDR_WIDTH [ipx::current_core]]
-set_property value_format {long} [ipx::get_user_parameter C_S_AXI_ADDR_WIDTH [ipx::current_core]]
+set_property value_resolve_type {user} [ipx::get_user_parameters C_S_AXI_ADDR_WIDTH -of_objects [ipx::current_core]]
+set_property display_name {C_S_AXI_ADDR_WIDTH} [ipx::get_user_parameters C_S_AXI_ADDR_WIDTH -of_objects [ipx::current_core]]
+set_property value {12} [ipx::get_user_parameters C_S_AXI_ADDR_WIDTH -of_objects [ipx::current_core]]
+set_property value_format {long} [ipx::get_user_parameters C_S_AXI_ADDR_WIDTH -of_objects [ipx::current_core]]
 
 ipx::add_user_parameter {SDNET_ADDR_WIDTH} [ipx::current_core]
-set_property value_resolve_type {user} [ipx::get_user_parameter SDNET_ADDR_WIDTH [ipx::current_core]]
-set_property display_name {SDNET_ADDR_WIDTH} [ipx::get_user_parameter SDNET_ADDR_WIDTH [ipx::current_core]]
-set_property value {11} [ipx::get_user_parameter SDNET_ADDR_WIDTH [ipx::current_core]]
-set_property value_format {long} [ipx::get_user_parameter SDNET_ADDR_WIDTH [ipx::current_core]]
+set_property value_resolve_type {user} [ipx::get_user_parameters SDNET_ADDR_WIDTH -of_objects [ipx::current_core]]
+set_property display_name {SDNET_ADDR_WIDTH} [ipx::get_user_parameters SDNET_ADDR_WIDTH -of_objects [ipx::current_core]]
+set_property value {11} [ipx::get_user_parameters SDNET_ADDR_WIDTH -of_objects [ipx::current_core]]
+set_property value_format {long} [ipx::get_user_parameters SDNET_ADDR_WIDTH -of_objects [ipx::current_core]]
 
 ipx::add_subcore xilinx.com:ip:axis_data_fifo:1.1 [ipx::get_file_groups xilinx_anylanguagesynthesis -of_objects [ipx::current_core]]
 ipx::add_subcore xilinx.com:ip:axis_data_fifo:1.1 [ipx::get_file_groups xilinx_anylanguagebehavioralsimulation -of_objects [ipx::current_core]]

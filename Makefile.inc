@@ -79,5 +79,8 @@ target-supports: # TODO :D
 
 ###### Common targets needed for actually doing stuff ########################
 
+# Note that this does not try to cover all possible cases of .gitignore syntax!
+# If using this, check that it does what you need!
 clean-gitignore: # Remove all files listed in ./.gitignore
-	rm -rfv $$(cat ./.gitignore | grep -v '^#')
+	for pat in `cat .gitignore | grep -v '^#' | grep -v /`; do find . -name $$pat | xargs rm -rfv; done
+	for pat in `cat .gitignore | grep -v '^#' | grep /`; do rm -rfv $$pat; done

@@ -8,12 +8,12 @@ include ../$(ARCH)/Makefile.inc
 # path overrides
 # this is a bit ugly, but... ¯\_(ツ)_/¯
 HW           = .
+ARCH_HW      = ../$(ARCH)/hw
 WORKDIR      = ../$(ARCH)/work
-MY_SDNET_TOP = ../$(SDNET_TOP)
 
 ### User-facing targets ######################################################
 
-.PHONY: help all build clean
+.PHONY: help all build design clean
 
 all: ## TODO
 
@@ -36,14 +36,20 @@ test: sim ## Alias for sim
 # 	# TODO when this has the bitfile as dependency, it could be move
 # 	cp $(HW)/nf_sume/project/nf_sume.runs/impl_1/top.bit $(BITFILE)
 
-design: $(SDNET_GENERATED_TOP) ## Create the design for the NetFPGA board
-	cd $(HW)/wrapper && vivado -mode batch -source nf_sume_sdnet.tcl
+design: scion_ip ## TODO Create the design for the NetFPGA board
+	make -C nf_sume project SDNET_IP_DIR=../$(SCION_IP_DIR)
+	# make -C nf_sume export_to_sdk
+	# make -C nf_sume load_elf
 
-# TODO
-# clean:
-# 	make -C ${HW} distclean
-#   make -C ${SW} distclean
-#   rm -rfv vivado*;\
+
+# TODO split the actual target that checks whether it's built
+scion_ip: $(GENERATED_HDL_TOP) ## Create and package the SCION IP core
+	cd $(SDNET_WRAPPER) && env                     \
+		IP_DIR=../$(SCION_IP_DIR)                    \
+		ARCH_WRAPPER=../$(ARCH_HW)/nf_sume_sdnet.v   \
+		HDL_MODULE_NAME=$(HDL_MODULE_NAME)           \
+		vivado -mode batch -source nf_sume_sdnet.tcl
+
 
 # TODO config_writes won't be needed once we have a control plane :D
 # unless we want to have a default route without control plane
@@ -66,4 +72,14 @@ synth: $(ARCH)/config_writes.sh ## Synth the design and generate the bitfile
 	# TODO when this has the bitfile as dependency, it could be move
 	cp $(HW)/nf_sume/project/nf_sume.runs/impl_1/top.bit $(BITFILE)
 
+$(BITFILE): design
+	mkdir -p $(BITFILES_DIR)
+	cp $(HW)/nf_sume/project/nf_sume.runs/impl_1/top.bit $(BITFILE)
+
+$(GENERATED_HDL_TOP):
+	make -C .. hdl
+
 clean: clean-gitignore ## Remove generated files
+	make -C nf_sume distclean
+#	make -C ${SW} distclean
+#	rm -rfv vivado*;\

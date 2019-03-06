@@ -59,7 +59,7 @@ project: identifier
 	if test -d project/; then\
 		echo "Project already exists"; \
 	else \
-		env NF_PROJECT_NAME=${PROJ} vivado -mode batch -source tcl/${PROJ}.tcl;\
+		env NF_PROJECT_NAME=${PROJ} SDNET_IP_DIR=$(SDNET_IP_DIR) vivado -mode batch -source tcl/${PROJ}.tcl;\
 		if [ -f patch/${PROJ}.patch ]; then\
 			patch -p1 < patch/${PROJ}.patch;\
 		fi;\

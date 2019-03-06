@@ -136,7 +136,7 @@ wire      SDNet_in_TLAST;
 //########################
 //## SDNet -> SUME signals
 //########################
-wire  [C_S_AXIS_TUSER_WIDTH-1:0]         sume_tuple_out_DATA; 
+wire  [C_S_AXIS_TUSER_WIDTH-1:0]         sume_tuple_out_DATA;
 
 //#####################
 //## debugging signals
@@ -168,7 +168,7 @@ sume_to_sdnet sume_to_sdnet_i (
 //#################################
 //####     SDNet module
 //#################################
-SimpleSumeSwitch SimpleSumeSwitch_inst (
+Scion Scion_inst (
 
 // AXIS PACKET INPUT INTERFACE
 .packet_in_packet_in_TVALID                                        (s_axis_tvalid),
@@ -178,8 +178,8 @@ SimpleSumeSwitch SimpleSumeSwitch_inst (
 .packet_in_packet_in_TLAST                                         (SDNet_in_TLAST),
 
 // TUPLE INPUT INTERFACE
-.tuple_in_s_data_VALID                                              (sume_tuple_in_VALID),
-.tuple_in_s_data_DATA                                               (s_axis_tuser),
+.tuple_in_s_VALID                                              (sume_tuple_in_VALID),
+.tuple_in_s_DATA                                               (s_axis_tuser),
 
 
 // AXI-LITE CONTROL INTERFACE
@@ -212,8 +212,8 @@ SimpleSumeSwitch SimpleSumeSwitch_inst (
 .packet_out_packet_out_TLAST                                       (m_axis_tlast),
 
 // TUPLE OUTPUT INTERFACE
-.tuple_out_s_data_VALID                                            (sume_tuple_out_VALID),   // unused
-.tuple_out_s_data_DATA                                             (sume_tuple_out_DATA),
+.tuple_out_s_VALID                                            (sume_tuple_out_VALID),   // unused
+.tuple_out_s_DATA                                             (sume_tuple_out_DATA),
 
 // LINE CLK & RST SIGNALS
 .clk_line_rst                                                      (~axis_resetn), // INV
@@ -238,9 +238,10 @@ SimpleSumeSwitch SimpleSumeSwitch_inst (
  *     [31:24]   dst_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
  *     [39:32]   drop; // only bit 32 is used
  *     [47:40]   send_dig_to_cpu; // only bit 40 is used
- *     [127:48]  digest_data;
+ *     [303:48]  digest_data;
  */
-assign m_axis_tuser = sume_tuple_out_DATA[C_M_AXIS_TUSER_WIDTH-1:0];
+// assign m_axis_tuser = sume_tuple_out_DATA[C_M_AXIS_TUSER_WIDTH-1:0];
+assign m_axis_tuser = {sume_tuple_out_DATA[384-1:384-256], sume_tuple_out_data[304-256-1:0]};
 
 // debugging signals
 wire [15:0] in_pkt_len    = s_axis_tuser[15:0];

@@ -30,6 +30,7 @@
 # Vivado Launch Script
 #### Change design settings here #######
 set design $::env(NF_PROJECT_NAME) 
+set sdnet_ip_dir $::env(SDNET_IP_DIR)
 set top top
 set device xc7vx690t-3-ffg1761
 set proj_dir ./project
@@ -60,6 +61,14 @@ puts "Creating User Datapath reference project"
 #####################################
 create_fileset -constrset -quiet constraints
 file copy ${public_repo_dir}/ ${repo_dir}
+
+
+
+# :'( TODO
+file copy ${sdnet_ip_dir} ${repo_dir}/contrib/cores
+
+
+
 set_property ip_repo_paths ${repo_dir} [current_fileset]
 add_files -fileset constraints -norecurse ${bit_settings}
 add_files -fileset constraints -norecurse ${project_constraints}

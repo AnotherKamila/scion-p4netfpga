@@ -55,9 +55,13 @@ struct digest_data_t {
 }
 
 struct local_t {
-    digest_data_t digest;
     user_metadata_t meta;
-    headers_t hdr;
+    headers_t       hdr;
+}
+
+struct switch_meta_t {
+    digest_data_t   digest;
+    sume_metadata_t sume;
 }
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
@@ -73,7 +77,7 @@ parser TopParser(packet_in pkt,
 
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control TopPipe(inout local_t local,
-                inout sume_metadata_t sume) {
+                inout switch_meta_t s) {
 
     apply {
         local.hdr.xy.x.val = 16w47;

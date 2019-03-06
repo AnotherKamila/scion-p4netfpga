@@ -18,6 +18,8 @@ struct local_t {
     scion_all_headers_t hdr;
 }
 
+// DO NOT change this: the NetFPGA expects exactly this format
+// TODO maybe I should move this to its own header?
 struct switch_meta_t {
     digest_data_t   digest;
     sume_metadata_t sume;
@@ -33,6 +35,9 @@ parser TopParser(packet_in packet, out local_t d) {
     }
 }
 
+// DO NOT RENAME the "s" parameter: the generated Verilog derives wire names
+// from it, so if you change it, you'll have to also change
+// platforms/netfpga/xilinx-stream-switch/hw/nf_sume_sdnet.v.
 @Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control TopPipe(inout local_t d,
                 inout switch_meta_t s) {
