@@ -59,7 +59,10 @@ parameter                                                      C_S_AXI_DATA_WIDT
 parameter                                                      C_S_AXI_ADDR_WIDTH = 12,
 
 // SDNet Address Width
-parameter                                                      SDNET_ADDR_WIDTH = 12
+parameter                                                      SDNET_ADDR_WIDTH = 12,
+
+// NF SUME digest width
+parameter                                                      NF_SUME_DIGEST_WIDTH = 256
 
 )
 (
@@ -131,6 +134,7 @@ output                                                          S_AXI_AWREADY
 //## SUME -> SDNet signals
 //########################
 wire      sume_tuple_in_VALID;
+wire      sume_tuple_in_DATA;
 wire      SDNet_in_TLAST;
 
 //########################
@@ -179,7 +183,7 @@ Scion Scion_inst (
 
 // TUPLE INPUT INTERFACE
 .tuple_in_s_VALID                                              (sume_tuple_in_VALID),
-.tuple_in_s_DATA                                               (s_axis_tuser),
+.tuple_in_s_DATA                                               (sume_tuple_in_DATA),
 
 
 // AXI-LITE CONTROL INTERFACE
@@ -232,6 +236,9 @@ Scion Scion_inst (
   
 ); // p4_processor_inst
 
+// pad with zeros -- there's space for the digest in this bus
+assign sume_tuple_in_DATA = {s_axis_tuser[C_S_AXIS_TUSER_WIDTH-1:0], {NF_SUME_DIGEST_WIDTH{1'b0}}};
+
 /* Format of m_axis_tuser signal:
  *     [15:0]    pkt_len; // unsigned int
  *     [23:16]   src_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
@@ -240,8 +247,8 @@ Scion Scion_inst (
  *     [47:40]   send_dig_to_cpu; // only bit 40 is used
  *     [303:48]  digest_data;
  */
-// assign m_axis_tuser = sume_tuple_out_DATA[C_M_AXIS_TUSER_WIDTH-1:0];
-assign m_axis_tuser = {sume_tuple_out_DATA[384-1:384-256], sume_tuple_out_data[304-256-1:0]};
+// TODO replace magic numbers with named constants
+assign m_axis_tuser = {sume_tuple_out_DATA[384-1:384-NF_SUME_DIGEST_WIDTH], sume_tuple_out_data[304-NF_SUME_DIGEST_WIDTH-1:0]};
 
 // debugging signals
 wire [15:0] in_pkt_len    = s_axis_tuser[15:0];
