@@ -1,8 +1,7 @@
 # Common Makefile included from the top-level and sub-directory Makefiles
 
 ### User settings ############################################################
-PLATFORM=bmv2 ## Select the platform. Try make -C platforms ls
-ARCH=v1model  ## Select the architecture
+PLATFORM=netfpga          ## Select the platform. Try make -C platforms ls
 
 # Clean up whitespace (grr)
 PLATFORM := $(strip $(PLATFORM))

@@ -114,12 +114,16 @@
 *** [/] week 13: deploy in production
 * Project breakdown
 *** Project structure
-***** [2/2] Directory structure
+***** [2/3] Directory structure
 ******* DONE set up repo skeleton
         CLOSED: [2019-01-23 Wed 16:39]
 ******* DONE Figure out the high-level repo structure
         CLOSED: [2019-01-29 Tue 18:43]
-***** [4/7] Makefiles
+***** [1/1] Change to non-project mode
+      build it yourself!
+******* DONE read [[UG892]], [[UG896]]
+        CLOSED: [2019-03-06 Wed 15:12] SCHEDULED: <2019-03-04 Mon>
+***** [5/8] Makefiles cleanup
 ******* DONE Make things compile with the new repo structure
         CLOSED: [2019-02-04 Mon 15:28]
 ******* DONE make it sim
@@ -127,14 +131,18 @@
 ******* DONE make it synth
         CLOSED: [2019-02-18 Mon 22:03] SCHEDULED: <2019-02-18 Mon>
 ******* DONE make it flash!
-        CLOSED: [2019-02-18 Mon 22:14] SCHEDULED: <2019-02-20 Wed>
-******* TODO Change =make clean= to just rm things listed in .gitignore
-        SCHEDULED: <2019-02-19 Tue>
+        SCHEDULED: <2019-02-18 Mon>
+******* DONE Change =make clean= to just rm things listed in .gitignore
+        SCHEDULED: <2019-03-04 Mon>
         because having two sources of truth is annoying and Bad
 ******* TODO Clean up horrible mess in platforms/netfpga
-        SCHEDULED: <2019-02-19 Tue>
+        SCHEDULED: <2019-03-12 Tue>
 ******* TODO Add a test for real HW (check what they have, or use scapy)
-        SCHEDULED: <2019-02-19 Tue>
+        SCHEDULED: <2019-03-14 Thu>
+******* TODO Add a "check timing" target
+        SCHEDULED: <2019-03-11 Mon>
+        something like:
+        ~set pass [expr {[get_property SLACK [get_timing_paths]] >= 0}]~
 ***** [0/2] Code structure + Modularity + Portability
 ******* TODO put the parts that should be easy to switch into separate files:
         SCHEDULED: <2019-04-22 Mon>
@@ -184,62 +192,62 @@
         CLOSED: [2019-02-05 Tue 18:44]
         The 8-byte alignment was super annoying because SDNet.
 ******* TODO Parse current Info Field
-        SCHEDULED: <2019-02-20 Wed>
+        SCHEDULED: <2019-03-14 Thu>
 ******* TODO Parse current Hop Field + next HF if VRFY_ONLY
-        SCHEDULED: <2019-02-20 Wed>
+        SCHEDULED: <2019-03-14 Thu>
 ***** [0/2] Write the deparser
       with + without packet_mod
 ******* TODO deparse encaps+common+address
-        SCHEDULED: <2019-02-20 Wed>
+        SCHEDULED: <2019-03-14 Thu>
         with + without packet_mod;
         make it compile
 ******* TODO deparse info+HF
-        SCHEDULED: <2019-02-20 Wed>
+        SCHEDULED: <2019-03-14 Thu>
 ***** [0/4] Test it
       check how to easily generate SCION packets -- there is something in the
       scion repo
 ******* TODO test encaps+common+address w/ emit
-        SCHEDULED: <2019-02-20 Wed>
+        SCHEDULED: <2019-03-15 Fri>
 ******* TODO test encaps+common+address w/ packet_mod
-        SCHEDULED: <2019-02-20 Wed>
+        SCHEDULED: <2019-03-15 Fri>
 ******* TODO test complete parser w/ emit
-        SCHEDULED: <2019-02-20 Wed>
+        SCHEDULED: <2019-03-15 Fri>
 ******* TODO test complete parser w/ packet_mod
-        SCHEDULED: <2019-02-20 Wed>
+        SCHEDULED: <2019-03-15 Fri>
 *** Forwarding SCION packets
 ***** [0/4] blind forwarding
 ******* TODO think about forwarding :D
-        SCHEDULED: <2019-02-21 Thu>
+        SCHEDULED: <2019-03-18 Mon>
 ******* TODO talk with the control plane about interface numbering
-        SCHEDULED: <2019-02-22 Fri>
+        SCHEDULED: <2019-03-20 Wed>
 ******* TODO forward
-        SCHEDULED: <2019-02-25 Mon>
+        SCHEDULED: <2019-03-22 Fri>
 ******* TODO test it
-        SCHEDULED: <2019-02-26 Tue>
+        SCHEDULED: <2019-03-22 Fri>
 ***** [0/4] implement SCION path verification
 ******* TODO find 3rd party AES module
-        SCHEDULED: <2019-03-04 Mon>
+        SCHEDULED: <2019-03-28 Thu>
         make it easily replaceable with commercial solutions
         ==> don't worry about side channels (not my problem) :D
 ******* TODO add AES as an extern to P4
-        SCHEDULED: <2019-03-04 Mon>
+        SCHEDULED: <2019-03-28 Thu>
 ******* TODO test that AES works
-        SCHEDULED: <2019-03-05 Tue>
+        SCHEDULED: <2019-03-28 Thu>
 ******* TODO wire it together: implement and test path verification
-        SCHEDULED: <2019-03-05 Tue>
+        SCHEDULED: <2019-03-29 Fri>
 ***** [1/4] IP and below
 ******* DONE find the router
         CLOSED: [2019-01-22 Tue 11:46]
         https://github.com/p4lang/switch
 ******* TODO figure out which parts we want and split them out
-        SCHEDULED: <2019-02-27 Wed>
+        SCHEDULED: <2019-03-27 Wed>
         probably only L2 learning
 ******* TODO stuff in IP and below
-        SCHEDULED: <2019-02-25 Mon>
+        SCHEDULED: <2019-03-14 Thu>
 ******* TODO test it
-        SCHEDULED: <2019-03-01 Fri>
+        SCHEDULED: <2019-03-29 Fri>
 ***** TODO evaluate it: does it work?
-      SCHEDULED: <2019-03-06 Wed>
+      SCHEDULED: <2019-03-29 Fri>
       how?
 *** [3/6] Real HW
 ***** DONE read Seyedali's documentation
@@ -267,11 +275,11 @@
 
         Test fails, unsure why. Don't care enough.
 ***** TODO add testdata
-      SCHEDULED: <2019-02-20 Wed>
+      SCHEDULED: <2019-03-15 Fri>
 ***** TODO make it pass the simulation
-      SCHEDULED: <2019-02-26 Tue>
+      SCHEDULED: <2019-03-22 Fri>
 ***** TODO synth and test IRL
-      SCHEDULED: <2019-02-27 Wed>
+      SCHEDULED: <2019-03-22 Fri>
 *** [0/3] Performance
 ***** TODO Measure performance
       SCHEDULED: <2019-03-28 Thu>
@@ -284,7 +292,7 @@
 *** [/] Production deployment
     SCHEDULED: <2019-03-28 Thu>
 ********* TODO test it IRL
-          SCHEDULED: <2019-02-18 Mon>
+          SCHEDULED: <2019-03-20 Wed>
 * Timeline summaries
 *** DONE beginning - <2019-02-06 Wed>
     CLOSED: [2019-02-07 Thu 10:18]
@@ -345,16 +353,44 @@ until then.
 Meanwhile, writing the parser assuming one of {fully compliant P4 compiler, the
 `packet_mod` feature}. If it turns out I have neither of those, it will be <2
 extra days of work to make it work without them with the O(K^2) blowup.
-*** INPR progress report <2019-02-20 Wed>
- - Working with the real hardware:
-   - discovered, reported, and overcame several problems with the upstream P4-NetFPGA repo's workflow
-   - tested and understood the complete (surprisingly complicated!) process of turning P4 into something that runs on the real hardware
-   - overcame issues with the NetFPGA, managed to flash it successfully
-   - TODO added to + improved project structure, such as Makefile targets, to make this repo easy to use (unlike the upstream P4-NetFPGA examples)
+*** DONE progress report <2019-02-20 Wed>
+    CLOSED: [2019-03-04 Mon 15:40]
+This is a summary of what happened since my last progress report.
+
+The main news is that my modified design is happily running on the physical
+hardware.
+
+ * Working with the real hardware:
+   - Discovered, reported, and overcame several problems with the upstream
+     P4-NetFPGA repo's workflow.
+   - Tested, understood, adapted, and documented the complete (surprisingly
+     complicated!) process of making P4 run on the NetFPGA.
+   - Overcame issues with the NetFPGA and managed to flash and test it
+     successfully.
+ * `XilinxStreamSwitch`: "Experimental" architecture that helps with variable
+   length parsing + improves performance
+   - Adapted the hardware design to make it possible to use `XilinxStreamSwitch`
+     on the NetFPGA.
+   - Tested `XilinxStreamSwitch` in real life and verified the basic
+     functionality.
+ * Improved project structure to make this repo easy to work with (unlike the
+   upstream P4-NetFPGA repository).
+ * Added basic testing infrastructure: behavioural simulation + real HW.
+*** NEXT progress report<2019-03-06 Wed> 
+This is a summary of what happened since my last progress report.
+
+I was travelling, so this time it is somewhat shorter, but the tasks I completed
+were important.
+
+ 1. Learned a lot about the Xilinx Vivado toolchain
+ 2. Completely rewrote the build process: Now it is simplified and fully automated, instead of being a weird combination of Makefiles and clicking in Vivado IDE
+ 3. Fixed a major "stale state is tainting the build" problem (inherited from the NetFPGA template)
+ 5. Learned some more Verilog basics and fixed bugs in NetFPGA Verilog wrappers
+ 6. Probably really made XilinxStreamSwitch/packet_mod work (point 3's problem had been hiding an issue with it)
 
 * Questions for Benjamin
 *** NEXT gimme 4 cables
-    SCHEDULED: <2019-02-20 Wed>
+    SCHEDULED: <2019-03-13 Wed>
 *** TODO Should we also add an "L2 learning switch"?
     ARP + remembering MAC addresses
 *** Archive:
@@ -417,6 +453,9 @@ extra days of work to make it work without them with the O(K^2) blowup.
     downloaded from: https://www.xilinx.com/products/design-tools/software-zone/sdnet.html#documentation
      1. Read this first: [[./hw-doc/ug1252-p4-sdnet.pdf][P4-SDNet]]
      2. Read this when you want to make your own externs: [[./hw-doc/ug1012-sdnet-packet-processor.pdf][SDNet]]
+*** Vivado
+***** UG892
+***** UG896
 * Ideas to revisit when the time comes
 *** Eventual code-related TODOs:
 ***** TODO README files everywhere
