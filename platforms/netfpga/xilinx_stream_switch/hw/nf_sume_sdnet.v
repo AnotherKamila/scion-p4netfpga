@@ -237,7 +237,8 @@ Scion Scion_inst (
 ); // p4_processor_inst
 
 // pad with zeros -- there's space for the digest in this bus
-assign sume_tuple_in_DATA = {s_axis_tuser[C_S_AXIS_TUSER_WIDTH-1:0], {NF_SUME_DIGEST_WIDTH{1'b0}}};
+// note the endianity flip => digest goes to end here, though beginning in P4
+assign sume_tuple_in_DATA = { {NF_SUME_DIGEST_WIDTH{1'b0}}, s_axis_tuser[C_S_AXIS_TUSER_WIDTH-1:0] };
 
 /* Format of m_axis_tuser signal:
  *     [15:0]    pkt_len; // unsigned int
