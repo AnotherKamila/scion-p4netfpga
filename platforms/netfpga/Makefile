@@ -83,7 +83,7 @@ sim: hdl _env ## Run a behavioural simulation for the SCION module
 # 	${SUME_SDNET}/bin/gen_config_writes.py $< $(P4_SWITCH_BASE_ADDR) $(TOP)/testdata
 # 	# mv $(TOP)/testdata/config_writes.py $@
 
-$(WORKDIR)/config_writes.sh: $(SDNET_GENERATED)/config_writes.txt
+$(WORKDIR)/config_writes.sh: $(GENERATED_HDL)/config_writes.txt
 	${SUME_SDNET}/bin/gen_config_writes.py $< $(P4_SWITCH_BASE_ADDR) $(TOP)/test
 	cp $(TOP)/test/config_writes.sh $@
 

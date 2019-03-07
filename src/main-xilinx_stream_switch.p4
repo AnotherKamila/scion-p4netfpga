@@ -58,11 +58,10 @@ control TopPipe(inout local_t d,
     }
     apply {
         eth_addr_t tmp_src_addr = d.hdr.ethernet.src_addr;
+        sdnet_is_weird.apply();
         d.hdr.ethernet.src_addr = d.hdr.ethernet.dst_addr;
         d.hdr.ethernet.dst_addr = tmp_src_addr;
-        // d.hdr.ethernet.ethertype = 0x47;
-        sdnet_is_weird.apply();
-        s.sume.dst_port = 8w1; // nf0
+        s.sume.dst_port = s.sume.src_port;
     }
 }
 

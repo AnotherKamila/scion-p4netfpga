@@ -53,9 +53,9 @@ scion_ip: $(GENERATED_HDL_TOP) ## Create and package the SCION IP core
 
 # TODO config_writes won't be needed once we have a control plane :D
 # unless we want to have a default route without control plane
-flash: _env _root $(BITFILE) $(ARCH)/config_writes.sh ## Program the NetFPGA
-	bash ./scripts/program_switch.sh $(BITFILE)
-	bash $(ARCH)/config_writes.sh
+flash: _env _root $(BITFILE) $(WORKDIR)/config_writes.sh ## Program the NetFPGA
+	bash ../scripts/program_switch.sh $(BITFILE)
+	bash $(WORKDIR)/config_writes.sh
 
 ### Targets that actually do stuff #############
 

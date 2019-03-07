@@ -1,3 +1,4 @@
+!/bin/sh
 
 KMOD=sume_riffa
 
