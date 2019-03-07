@@ -134,13 +134,13 @@ output                                                          S_AXI_AWREADY
 //## SUME -> SDNet signals
 //########################
 wire      sume_tuple_in_VALID;
-wire      sume_tuple_in_DATA;
+wire      [NF_SUME_DIGEST_WIDTH+C_S_AXIS_TUSER_WIDTH-1:0]  sume_tuple_in_DATA;
 wire      SDNet_in_TLAST;
 
 //########################
 //## SDNet -> SUME signals
 //########################
-wire  [C_S_AXIS_TUSER_WIDTH-1:0]         sume_tuple_out_DATA;
+wire  [NF_SUME_DIGEST_WIDTH+C_S_AXIS_TUSER_WIDTH-1:0]      sume_tuple_out_DATA;
 
 //#####################
 //## debugging signals
@@ -248,7 +248,7 @@ assign sume_tuple_in_DATA = {s_axis_tuser[C_S_AXIS_TUSER_WIDTH-1:0], {NF_SUME_DI
  *     [303:48]  digest_data;
  */
 // TODO replace magic numbers with named constants
-assign m_axis_tuser = {sume_tuple_out_DATA[384-1:384-NF_SUME_DIGEST_WIDTH], sume_tuple_out_data[304-NF_SUME_DIGEST_WIDTH-1:0]};
+assign m_axis_tuser = {sume_tuple_out_DATA[384-1:384-NF_SUME_DIGEST_WIDTH], sume_tuple_out_DATA[304-NF_SUME_DIGEST_WIDTH-1:0]};
 
 // debugging signals
 wire [15:0] in_pkt_len    = s_axis_tuser[15:0];
