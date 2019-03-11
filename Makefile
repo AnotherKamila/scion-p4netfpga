@@ -50,6 +50,7 @@ graph: graphs ## Visualise the control flow of the P4 program
 
 clean: ## Remove generated files
 	$(MAKE) -C platforms/$(PLATFORM) clean
+	$(MAKE) -C test clean
 	rm -rf graphs/
 
 clean-all: ## Remove generated files for all platforms and architectures

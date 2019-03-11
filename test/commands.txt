@@ -1,2 +1,3 @@
 # NOTE: These are only for NetFPGA and therefore should be platform-dependent!
-table_cam_add_entry sdnet_is_weird set_ethertype 0x1242 => 0x1247
+table_cam_add_entry dmac_to_port set_dst_port 00:60:dd:44:c2:c4 => 1
+table_cam_add_entry dmac_to_port set_dst_port 00:60:dd:44:c2:c5 => 4

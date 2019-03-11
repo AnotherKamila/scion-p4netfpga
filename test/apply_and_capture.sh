@@ -21,7 +21,7 @@ sleep 1  # give tcpdump time to start sniffing the interface
 for pcap in *_applied.pcap; do
     intf="${pcap%_*}"
     # tcpreplay --topspeed -i $intf "$pcap" &
-    tcpreplay --pps=1 -i $intf "$pcap" &
+    tcpreplay --pps=1000 -i $intf "$pcap" &
 done
 
 # wait for all tcpdumps to get their packets or timeout

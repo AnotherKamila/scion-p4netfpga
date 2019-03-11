@@ -2,10 +2,9 @@
 #ifndef SC__SRC__SETTINGS_P4
 #define SC__SRC__SETTINGS_P4
 
-
-// TODO is this just the headers we work with or the whole packet?
-// TODO(optimisation): grep for this and make it precise
-#define MAX_PACKET_REGION  16384  
+// Max *Ethernet* frame size (L2!), in bits
+// Jumbo frames needed to get line rate => using 9218 bytes = 73744 bits
+#define MTU 73744
 
 
 #endif

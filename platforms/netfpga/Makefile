@@ -63,6 +63,7 @@ $(GENERATED_HDL_TOP): $(SDNET_TOP)
 	sed -i 's/$(HDL_MODULE_NAME)_tb_sim#work.glbl/$(HDL_MODULE_NAME)_tb/g' $(GENERATED_HDL)/vivado_sim_waveform.bash
 	# fix for ubuntu
 	# sed -i 's/vsim/vsim \-ldflags \"\-B\/usr\/lib\/x86\_64\-linux-gnu\"/g' $(GENERATED_HDL)/questa.bash
+	# $(SUME_SDNET)/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(GENERATED_HDL) $(SUME_SDNET)/templates/ $(TOP)/test/ $(ARCH)/sw/ --base_address $(P4_SWITCH_BASE_ADDR)
 	@echo $(MARK) "Generated HDL in $(GENERATED_HDL)" $(ENDMARK)
 
 sim: hdl _env ## Run a behavioural simulation for the SCION module
@@ -71,7 +72,6 @@ sim: hdl _env ## Run a behavioural simulation for the SCION module
 	cp $(TOP)/test/*.axi $(GENERATED_HDL)
 	$(SUME_SDNET)/bin/p4_px_tables.py $(TOP)/test/commands.txt $(SWITCHINFO)
 	cp *.tbl $(GENERATED_HDL)
-	# ${SUME_SDNET}/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(GENERATED_HDL) ${SUME_SDNET}/templates/ $(TOP)/testdata/ $(ARCH)/sw/ --base_address ${P4_SWITCH_BASE_ADDR}
 	# modify the P4_SWITCH_tb so that it writes the table config writes to a file
 	$(SUME_SDNET)/bin/modify_P4_SWITCH_tb.py $(GENERATED_HDL)/Testbench/$(HDL_MODULE_NAME)_tb.sv
 	cd $(GENERATED_HDL) && ./vivado_sim.bash
@@ -84,7 +84,7 @@ sim: hdl _env ## Run a behavioural simulation for the SCION module
 # 	# mv $(TOP)/testdata/config_writes.py $@
 
 $(WORKDIR)/config_writes.sh: $(GENERATED_HDL)/config_writes.txt
-	${SUME_SDNET}/bin/gen_config_writes.py $< $(P4_SWITCH_BASE_ADDR) $(TOP)/test
+	$(SUME_SDNET)/bin/gen_config_writes.py $< $(P4_SWITCH_BASE_ADDR) $(TOP)/test
 	cp $(TOP)/test/config_writes.sh $@
 
 clean: clean-gitignore ## Remove generated files

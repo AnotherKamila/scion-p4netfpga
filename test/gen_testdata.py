@@ -99,6 +99,8 @@ def write_pcap_files():
 # generate testdata #
 #####################
 
+MTU=8888
+
 # Yes, nf_sim_tools has a function like this.
 # It doesn't work.
 def padded(pkt, pad_to):
@@ -109,13 +111,12 @@ def padded(pkt, pad_to):
     return pkt/pad
 
 
-for i in range(1):
-    sender='08:11:11:11:11:{:02}'.format(i)
-    recver='08:22:22:22:22:{:02}'.format(i)
-    pkt = Ether(dst=recver, src=sender, type=0x1242)
-    applyPkt(padded(pkt, 16), 'nf0', i)
-    exp = Ether(dst=sender, src=recver, type=0x1247)
-    expPkt(padded(exp, 16), 'nf0')
+for i in range(100):
+    sender = '00:60:dd:44:c2:c4' # enp3s0
+    recver = '00:60:dd:44:c2:c5' # enp5s0
+    pkt = Ether(dst=recver, src=sender) / IP(src='1.1.1.1', dst='2.2.2.2') / UDP(dport=50000) / "hello {}\n".format(i)
+    applyPkt(padded(pkt, MTU), 'nf0', i)
+    expPkt(padded(pkt, MTU), 'nf1')
 
 
 write_pcap_files()

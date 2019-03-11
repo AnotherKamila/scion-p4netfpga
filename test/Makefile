@@ -18,3 +18,5 @@ test: send check ## Send, capture and diff packets
 
 Packet_%.axi: %.pcap
 	$(SUME_SDNET)/bin/pcap2axi --output $@ --bus_width 256 $<
+
+clean: clean-gitignore ## Remove generated files

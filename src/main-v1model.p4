@@ -32,7 +32,6 @@ control TopPipe(inout scion_all_headers_t hdr,
     }
 }
 
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
 control TopDeparser(packet_out packet,
                     in scion_all_headers_t hdr) {
 

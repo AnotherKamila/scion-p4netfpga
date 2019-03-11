@@ -9,7 +9,7 @@
 
 #include <scion/headers.p4>
 #include <scion/parsers.p4>
-#include <scion/deparsers.p4>
+#include <scion/mod_deparsers.p4>
 
 #include "datatypes.p4"
 
@@ -25,7 +25,18 @@ struct switch_meta_t {
     sume_metadata_t sume;
 }
 
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+// // TODO move to its own file
+
+// // Data will be zero-padded to 128 bits
+// // Result will be truncated to fit the R result type. Call with a 128-bit
+// // `result` param to get the complete MAC.
+// @Xilinx_MaxLatency(5)
+// @Xilinx_ControlWidth(0)
+// extern void aes_mac<D, O>(in D data, out R result);
+
+//////// end just for fun
+
+@Xilinx_MaxPacketRegion(MTU)
 parser TopParser(packet_in packet, out local_t d) {
     
     ScionParser() scion_parser;
@@ -38,34 +49,60 @@ parser TopParser(packet_in packet, out local_t d) {
 // DO NOT RENAME the "s" parameter: the generated Verilog derives wire names
 // from it, so if you change it, you'll have to also change
 // platforms/netfpga/xilinx-stream-switch/hw/nf_sume_sdnet.v.
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 control TopPipe(inout local_t d,
                 inout switch_meta_t s) {
 
-    action set_ethertype(ethertype_t type) {
-        d.hdr.ethernet.ethertype = type;
+    // TODO modularise this once the architecture is clear
+
+    action reflect_L2() {
+        eth_addr_t tmp_src_addr = d.hdr.ethernet.src_addr;
+        d.hdr.ethernet.src_addr = d.hdr.ethernet.dst_addr;
+        d.hdr.ethernet.dst_addr = tmp_src_addr;
+
+        s.sume.dst_port = s.sume.src_port;
     }
 
-    // apparently I need to use a table to generate a control port... which is
-    // needed to fit into the verilog wrapper :D
-    table sdnet_is_weird {
-        key = {d.hdr.ethernet.ethertype: exact;}
+    action set_dst_port(port_t port) {
+        s.sume.dst_port = port;
+    }
+
+    // Mapping of SCION interface number to physical port
+    // TODO maybe it's not worth it having it in a table -- check with people if
+    // they want this configurable
+    // 1:1 mapping for now
+    // table if_to_port {
+    //     key = {
+    // }
+    //     actions = {
+    //         set_dst_port;
+    //         NoAction;
+    //     }
+    //     size=64;
+    // }
+
+    table dmac_to_port {
+        key = {d.hdr.ethernet.dst_addr: exact;}
         actions = {
-            set_ethertype;
+            set_dst_port;
             NoAction;
         }
         size=64;
     }
+
     apply {
-        eth_addr_t tmp_src_addr = d.hdr.ethernet.src_addr;
-        sdnet_is_weird.apply();
-        d.hdr.ethernet.src_addr = d.hdr.ethernet.dst_addr;
-        d.hdr.ethernet.dst_addr = tmp_src_addr;
-        s.sume.dst_port = s.sume.src_port;
+        // bit<32> mac;
+        // aes_mac((bit<128>){64w0, 32w0, 32w47}, mac);
+        // d.hdr.encaps.udp.dst_port = (udp_port_t)mac[15:0];
+        // d.hdr.encaps.udp.src_port = (udp_port_t)mac[31:16];
+        
+        // For now we just pretend to be a very expensive piece of wire, to be
+        // able to run initial speed measurements.
+        dmac_to_port.apply();
     }
 }
 
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 parser TopDeparser(in local_t d,
                    packet_mod pkt) {
 

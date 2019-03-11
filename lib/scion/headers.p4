@@ -82,7 +82,7 @@ struct scion_header_t {
 
 struct scion_all_headers_t {
     ethernet_h     ethernet; 
-    // scion_encaps_t encaps;
+    scion_encaps_t encaps;
     // scion_header_t scion;
 }
 

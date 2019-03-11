@@ -28,13 +28,12 @@
 // TODO clean up param ordering: in first, inout middle, out last
 
 // Parses Ethernet and IP/UDP encapsulation (if present).
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 parser ScionEncapsulationParser(packet_in packet,
-                                out   ethernet_h     ethernet,
-                                out   scion_encaps_t encaps) {
+                                in  ethertype_t    ethertype,
+                                out scion_encaps_t encaps) {
     state start {
-        packet.extract(ethernet);
-        transition select(ethernet.ethertype) {
+        transition select(ethertype) {
             ETHERTYPE_IPV4: parse_ipv4;
             ETHERTYPE_IPV6: parse_ipv6;
             // TODO non-encapsulated SCION, once we have an Ethertype:
@@ -83,7 +82,7 @@ parser ScionEncapsulationParser(packet_in packet,
 }
 
 // Parses the SCION Common Header
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 parser ScionCommonHeaderParser(packet_in packet, 
                                out scion_common_h     hdr,
                                inout scion_metadata_t meta) {
@@ -100,7 +99,7 @@ parser ScionCommonHeaderParser(packet_in packet,
 
 // Parses the given type of SCION host address (IPv4, IPv6 or Service).
 // Used inside ScionAddressHeaderParser.
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 parser ScionHostAddressParser(packet_in packet,
                               in  scion_host_addr_type_t type,
                               out scion_host_addr_h      hdr,
@@ -141,7 +140,7 @@ parser ScionHostAddressParser(packet_in packet,
 }
 
 // Parses the SCION Address Header
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 parser ScionAddressHeaderParser(packet_in packet, 
                                 out   scion_addr_header_t hdr,
                                 inout scion_metadata_t    meta) {
@@ -204,7 +203,7 @@ parser ScionAddressHeaderParser(packet_in packet,
 }
 
 // TODO
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 parser ScionPathParser(packet_in packet, 
                        out scion_header_t hdr) {
     state start {
@@ -213,7 +212,7 @@ parser ScionPathParser(packet_in packet,
 }
 
 // TODO
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 parser ScionExtensionsParser(packet_in packet, 
                              out scion_header_t hdr) {
 
@@ -223,7 +222,7 @@ parser ScionExtensionsParser(packet_in packet,
 }
 
 // Parses the SCION header (NOT including encapsulation).
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 parser ScionHeaderParser(packet_in packet, 
                          out scion_header_t hdr,
                          out scion_metadata_t meta) {
@@ -245,17 +244,17 @@ parser ScionHeaderParser(packet_in packet,
 }
 
 // As stated above, this expects the full packet including Ethernet.
-@Xilinx_MaxPacketRegion(MAX_PACKET_REGION)
+@Xilinx_MaxPacketRegion(MTU)
 parser ScionParser(packet_in packet, 
                    out scion_all_headers_t hdr,
                    out scion_metadata_t meta) {
 
-    ScionEncapsulationParser() encapsulation_parser;
+    ScionEncapsulationParser() encaps_parser;
     ScionHeaderParser()        scion_header_parser;
 
     state start {
         packet.extract(hdr.ethernet);
-    //     encapsulation_parser.apply(packet, hdr.ethernet, hdr.encaps);
+        encaps_parser.apply(packet, hdr.ethernet.ethertype, hdr.encaps);
     //     scion_header_parser.apply(packet, hdr.scion, meta);
         transition accept;
     }
