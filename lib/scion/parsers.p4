@@ -91,10 +91,25 @@ parser ScionCommonHeaderParser(packet_in packet,
 
         packet.extract(hdr);
         meta.pos_in_hdr = meta.pos_in_hdr + SCION_COMMON_H_SIZE;
-        meta.dst_addr_type = hdr.dst_type;
-        meta.src_addr_type = hdr.src_type;
-        transition accept;
+        transition check_offsets;
     }
+
+    // This has to be a select instead of just a call to verify() because SDNet
+    // doesn't support verify
+    // TODO might be worth it to re-write with #ifdef TARGET_SUPPORTS_VERIFY
+    state check_offsets {
+        // check that INF/HF isn't beyond end of header
+        transition select(hdr.curr_INF < hdr.hdr_len &&
+                          hdr.curr_HF  < hdr.hdr_len) {
+            true:  accept;
+            false: err_invalid_pointer;
+        }
+    }
+
+    state err_invalid_pointer {
+        ERROR(error.HeaderTooShort);
+    }
+
 }
 
 // Parses the given type of SCION host address (IPv4, IPv6 or Service).
@@ -142,6 +157,7 @@ parser ScionHostAddressParser(packet_in packet,
 // Parses the SCION Address Header
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionAddressHeaderParser(packet_in packet, 
+                                in    scion_common_h      common,
                                 out   scion_addr_header_t hdr,
                                 inout scion_metadata_t    meta) {
 
@@ -154,10 +170,10 @@ parser ScionAddressHeaderParser(packet_in packet,
         packet.extract(hdr.src_isdas);
         meta.pos_in_hdr = meta.pos_in_hdr + 2*SCION_ISDAS_ADDR_H_SIZE;
 
-        dst_host_parser.apply(packet, meta.dst_addr_type, hdr.dst_host, host_addr_len);
+        dst_host_parser.apply(packet, common.dst_addr_type, hdr.dst_host, host_addr_len);
         meta.pos_in_hdr = meta.pos_in_hdr + host_addr_len;
 
-        src_host_parser.apply(packet, meta.src_addr_type, hdr.src_host, host_addr_len);
+        src_host_parser.apply(packet, common.src_addr_type, hdr.src_host, host_addr_len);
         meta.pos_in_hdr = meta.pos_in_hdr + host_addr_len;
 
         // align to 8 bytes
@@ -185,7 +201,7 @@ parser ScionAddressHeaderParser(packet_in packet,
     }
 
 #ifndef TARGET_SUPPORTS_VAR_LEN_PARSING
-    // TODO kill it!!!! (with a macro)
+    // TODO kill it!!!! (with a higher-level macro)
     state skip_2 {
         packet.advance(8*2);
         transition accept;
@@ -205,10 +221,21 @@ parser ScionAddressHeaderParser(packet_in packet,
 // TODO
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionPathParser(packet_in packet, 
-                       out scion_header_t hdr) {
+                       in  scion_common_h common,
+                       out scion_path_header_t hdr,
+                       inout scion_metadata_t meta) {
     state start {
+        transition skip_to_inf;
+    }
+
+    state skip_to_inf {
+        transition skip_to_hf;
+    }
+
+    state skip_to_hf {
         transition accept;
     }
+
 }
 
 // TODO
@@ -234,9 +261,9 @@ parser ScionHeaderParser(packet_in packet,
 
     state start {
         common_header_parser.apply(packet, hdr.common, meta);
-        address_header_parser.apply(packet, hdr.addr, meta);
+        address_header_parser.apply(packet, hdr.common, hdr.addr, meta);
         // TODO:
-        // path_parser.apply(packet, hdr, meta);
+        // path_parser.apply(packet, hdr.path, meta);
         // extensions_parser.apply(packet, hdr, meta);
 
         transition accept;
@@ -255,7 +282,7 @@ parser ScionParser(packet_in packet,
     state start {
         packet.extract(hdr.ethernet);
         encaps_parser.apply(packet, hdr.ethernet.ethertype, hdr.encaps);
-    //     scion_header_parser.apply(packet, hdr.scion, meta);
+        scion_header_parser.apply(packet, hdr.scion, meta);
         transition accept;
     }
 }

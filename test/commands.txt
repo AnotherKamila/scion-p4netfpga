@@ -1,3 +1,5 @@
 # NOTE: These are only for NetFPGA and therefore should be platform-dependent!
-table_cam_add_entry dmac_to_port set_dst_port 00:60:dd:44:c2:c4 => 1
-table_cam_add_entry dmac_to_port set_dst_port 00:60:dd:44:c2:c5 => 4
+# TODO this is currently a hack
+# TODO how to add entry to direct table?
+table_cam_add_entry egress_ifid_to_port set_dst_port 0 => 1
+table_cam_add_entry egress_ifid_to_port set_dst_port 1 => 4

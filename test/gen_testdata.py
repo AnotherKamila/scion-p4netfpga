@@ -29,11 +29,13 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 
+from scapy.all import*
 
 from nf_sim_tools import *
 import random
 from collections import OrderedDict
 import sss_sdnet_tuples
+from scion_scapy import * # yes, I am terrible too
 
 ###########
 # pkt generation tools
@@ -99,25 +101,41 @@ def write_pcap_files():
 # generate testdata #
 #####################
 
-MTU=8888
-
 # Yes, nf_sim_tools has a function like this.
 # It doesn't work.
 def padded(pkt, pad_to):
-    if len(pkt) >= pad_to: return pkt
     pad_len = pad_to - len(pkt)
-    pad = Padding()
-    pad.load = b'\x00'*pad_len
-    return pkt/pad
-
+    if pad_len <= 0: return pkt
+    return pkt/Padding(b'\x00'*pad_len)
 
 for i in range(100):
     sender = '00:60:dd:44:c2:c4' # enp3s0
     recver = '00:60:dd:44:c2:c5' # enp5s0
-    pkt = Ether(dst=recver, src=sender) / IP(src='1.1.1.1', dst='2.2.2.2') / UDP(dport=50000) / "hello {}\n".format(i)
-    applyPkt(padded(pkt, MTU), 'nf0', i)
-    expPkt(padded(pkt, MTU), 'nf1')
-
+    scion = SCION(
+        addr=SCIONAddr(
+            dst_isdas=ISD_AS(ISD=47, AS=0x4747), src_isdas=ISD_AS(ISD=42, AS=0x4242),
+            dst_host='10.0.0.47', src_host='10.0.0.42',
+        ),
+        path=[
+            PathSegment(timestamp=147, isd=42, hops=[
+                HopField(ingress_if=0, egress_if=1),
+                HopField(ingress_if=1, egress_if=0),
+            ]),
+            PathSegment(timestamp=147, isd=43, hops=[
+                HopField(ingress_if=0, egress_if=1),
+            ]),
+            PathSegment(timestamp=147, isd=47, hops=[
+                HopField(ingress_if=1, egress_if=0),
+            ]),
+        ]
+    )
+    # scion.show2()
+    encaps = (Ether(dst=recver, src=sender) /
+              IP(dst='2.2.2.2', src='1.1.1.1') /
+              UDP(dport=50000, sport=50000))
+    payload = UDP(dport=1047, sport=1042) / "hello {}\n".format(i)
+    applyPkt(encaps/set_current_inf_hf(0,0, scion)/payload, 'nf0', i)
+    expPkt(  encaps/set_current_inf_hf(0,1, scion)/payload, 'nf1')
 
 write_pcap_files()
 

@@ -67,38 +67,28 @@ control TopPipe(inout local_t d,
         s.sume.dst_port = port;
     }
 
-    // Mapping of SCION interface number to physical port
-    // TODO maybe it's not worth it having it in a table -- check with people if
-    // they want this configurable
+    // SCION egress interface ID to physical port
     // 1:1 mapping for now
-    // table if_to_port {
-    //     key = {
-    // }
-    //     actions = {
-    //         set_dst_port;
-    //         NoAction;
-    //     }
-    //     size=64;
-    // }
-
-    table dmac_to_port {
-        key = {d.hdr.ethernet.dst_addr: exact;}
+    table egress_ifid_to_port {
+        key = {
+            // d.hdr.scion.path.egress_if: direct;
+            d.hdr.scion.common.curr_HF: exact; // TESTING, TODO put back the right thing
+            // ha ha, netfpga scripts don't support direct match type
+        }
         actions = {
             set_dst_port;
             NoAction;
         }
-        size=64;
+        size=64; // smallest possible for exact match
     }
 
     apply {
         // bit<32> mac;
-        // aes_mac((bit<128>){64w0, 32w0, 32w47}, mac);
-        // d.hdr.encaps.udp.dst_port = (udp_port_t)mac[15:0];
-        // d.hdr.encaps.udp.src_port = (udp_port_t)mac[31:16];
-        
-        // For now we just pretend to be a very expensive piece of wire, to be
-        // able to run initial speed measurements.
-        dmac_to_port.apply();
+        // aes_mac(64w0 ++ 32w0 ++ 32w47, mac);
+
+        // TODO move current pointer properly
+        d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
+        egress_ifid_to_port.apply();
     }
 }
 

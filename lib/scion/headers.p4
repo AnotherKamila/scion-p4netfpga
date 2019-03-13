@@ -19,8 +19,8 @@ struct scion_encaps_t {
 
 header scion_common_h {
     bit<4>                 version;
-    scion_host_addr_type_t dst_type;
-    scion_host_addr_type_t src_type;
+    scion_host_addr_type_t dst_addr_type;
+    scion_host_addr_type_t src_addr_type;
     bit<16>                total_len;
     bit<8>                 hdr_len;
     bit<8>                 curr_INF; // absolute offset to the info field (from beginning of SCION common header), in units of 8B
@@ -71,27 +71,28 @@ struct scion_addr_header_t {
 #endif
 }
 
+struct scion_path_header_t {
+    bit<8> unused; // TODO
+}
 
 /// Top-level SCION header
 
 struct scion_header_t {
     scion_common_h      common;
     scion_addr_header_t addr;
-    // TODO
+    // scion_path_header_t path;
 }
 
 struct scion_all_headers_t {
     ethernet_h     ethernet; 
     scion_encaps_t encaps;
-    // scion_header_t scion;
+    scion_header_t scion;
 }
 
 
 /// SCION metadata
 struct scion_metadata_t {
-    scion_host_addr_type_t dst_addr_type;
-    scion_host_addr_type_t src_addr_type;
-    packet_size_t          pos_in_hdr; // absolute position in the SCION header, in bytes
+    packet_size_t          pos_in_hdr; // current absolute position in the SCION header, in bytes
 }
 
 

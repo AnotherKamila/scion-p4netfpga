@@ -50,9 +50,9 @@ class HopField(scapy.Packet):
     fields_desc = [
         scapy.BitField('flags', 0x0, 8),
         scapy.ByteField('expiry', 63),
-        scapy.BitField('in_if', None, 12),
-        scapy.BitField('eg_if', None, 12),
-        scapy.ThreeBytesField('mac', 0), # TODO
+        scapy.BitField('ingress_if', None, 12),
+        scapy.BitField('egress_if', None, 12),
+        scapy.BitField('mac', 0, 3*8), # TODO
     ]
 
     def extract_padding(self, p):
@@ -127,19 +127,19 @@ def set_current_inf_hf(seg, hf, pkt):
 def some_scion_packet():
     return SCION(
         addr=SCIONAddr(
-            dst_isdas=47, src_isdas=42,
+            dst_isdas=ISD_AS(ISD=47, AS=0x4747), src_isdas=ISD_AS(ISD=42, AS=0x4242),
             dst_host='10.0.0.47', src_host='10.0.0.42',
         ),
         path=[
             PathSegment(timestamp=147, isd=42, hops=[
-                HopField(ingress_ifid=1, egress_ifid=2),
-                HopField(ingress_ifid=0, egress_ifid=3),
+                HopField(ingress_if=1, egress_if=2),
+                HopField(ingress_if=0, egress_if=3),
             ]),
             PathSegment(timestamp=147, isd=43, hops=[
-                HopField(ingress_ifid=0, egress_ifid=3),
+                HopField(ingress_if=0, egress_if=3),
             ]),
             PathSegment(timestamp=147, isd=47, hops=[
-                HopField(ingress_ifid=1, egress_ifid=2),
+                HopField(ingress_if=1, egress_if=2),
             ]),
         ]
     )
@@ -157,6 +157,8 @@ def gen_packet():
     )
 
 def main():
+    gen_packet().show()
+    print()
     gen_packet().show2()
     # wrpcap([gen_packet()])
     # scapy.rdpcap('./packets.pcap')[0].show()

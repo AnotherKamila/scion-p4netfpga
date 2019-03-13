@@ -15,6 +15,7 @@
 #ifdef TARGET_SUPPORTS_VERIFY
 #define ERROR(err)  verify(false, err)
 #else
+// TODO this should actually set a metadata flag and accept, so that we can react to the error
 #define ERROR(err)  transition reject
 #endif
 
