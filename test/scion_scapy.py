@@ -45,7 +45,6 @@ class SCIONAddr(scapy.Packet):
     #     pass
 
 class HopField(scapy.Packet):
-    __slots__ = ('_current',)
     name = 'SCION Hop field'
     fields_desc = [
         scapy.BitField('flags', 0x0, 8),
@@ -59,7 +58,6 @@ class HopField(scapy.Packet):
         return "", p
 
 class PathSegment(scapy.Packet):
-    __slots__ = ('_current',)
     name = 'SCION Path segment'
     fields_desc = [
         scapy.BitField('flags', 0x0, 8),
@@ -119,9 +117,12 @@ def set_current_inf_hf(seg, hf, pkt):
     """Calculates offsets for hf-th HF in seg-th segment and saves them in the packet.
     """
     # TODO will break when ipv4 is not hard-coded
-    total_before = sum((1 + len(pkt.path[prev])) for prev in range(seg-1))
+    total_before = sum((1 + len(pkt.path[prev].hops)) for prev in range(seg))
     pkt.curr_inf = 32/8 + total_before
     pkt.curr_hf  = 32/8 + total_before + 1 + hf
+    print("DEBUG: set_current_inf_hf({}, {}, ...): total_before={}, curr_inf{}, curr_hf={}".format(
+        seg, hf, total_before, pkt.curr_inf, pkt.curr_hf
+    ))
     return pkt
 
 def some_scion_packet():

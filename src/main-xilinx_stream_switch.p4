@@ -41,7 +41,7 @@ parser TopParser(packet_in packet, out local_t d) {
     
     ScionParser() scion_parser;
     state start {
-        scion_parser.apply(packet, d.hdr, d.meta.scion);
+        scion_parser.apply(packet, d.meta.scion, d.hdr);
         transition accept;
     }
 }
@@ -71,9 +71,9 @@ control TopPipe(inout local_t d,
     // 1:1 mapping for now
     table egress_ifid_to_port {
         key = {
-            // d.hdr.scion.path.egress_if: direct;
+            d.hdr.scion.path.current_hf.egress_if: exact;
             // ha ha, netfpga scripts don't support direct match type
-            d.hdr.ethernet.dst_addr: exact; // TESTING; TODO put back the right thing
+            // but TODO use direct one of these days, maybe
         }
         actions = {
             set_dst_port;
@@ -86,17 +86,34 @@ control TopPipe(inout local_t d,
         d.hdr.encaps.udp.checksum = 0; // checksum not used -- TODO one day :D
     }
 
+    action increment_hf() {
+        // TODO move current pointer properly -- with xover and stuff
+        d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
+    }
+
+    action copy_error_to_digest() {
+        s.digest.error_flag = d.meta.scion.error_flag;
+    }
+
+    action copy_debug_to_digest() {
+        s.digest.debug1     = d.meta.scion.debug1;
+        s.digest.debug2     = d.meta.scion.debug2;
+        s.digest.marker1    = 32w0xfeeefeee;
+        s.digest.marker2    = 32w0xfeeefeee;
+        s.digest.marker3    = 32w0xfeeefeee;
+    }
+
     apply {
         // bit<32> mac;
         // aes_mac(64w0 ++ 32w0 ++ 32w47, mac);
 
-        // TODO move current pointer properly
-        d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
+        d.meta.scion.debug1 = 4w0 ++ d.hdr.scion.path.current_hf.egress_if ++ 4w0 ++ d.hdr.scion.path.current_hf.ingress_if ++ d.hdr.scion.common.curr_HF ++ d.hdr.scion.common.curr_INF ++ 16w0;
+
         egress_ifid_to_port.apply();
-
+        increment_hf();
         update_checksums();
-
-        s.digest.debug = d.meta.scion.debug;
+        copy_error_to_digest();
+        // copy_debug_to_digest();
     }
 }
 
@@ -105,9 +122,7 @@ control TopPipe(inout local_t d,
 // However: TODO this could be split into a "fwd-only deparser" with the
 // contract of changing L2, encaps and INF+HF offsets and nothing else.
 @Xilinx_MaxPacketRegion(MTU)
-parser TopDeparser(in local_t d,
-                   packet_mod pkt) {
-
+parser TopDeparser(in local_t d, packet_mod pkt) {
     ScionEncapsulationModDeparser() encaps_deparser;
 
     state start{

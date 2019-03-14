@@ -5,6 +5,8 @@
 
 #include <common/datatypes.p4>
 
+// I cannot use enums because SDNet doesn't support enums with assigned values
+
 /// Ethernet
 const ethertype_t ETHERTYPE_IPV4 = 0x0800;
 const ethertype_t ETHERTYPE_IPV6 = 0x86DD;

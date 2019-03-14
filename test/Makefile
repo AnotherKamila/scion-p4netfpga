@@ -13,7 +13,7 @@ check: ## Check that the actual packets match the expected ones
 
 test: send check ## Send, capture and diff packets
 
-%.pcap: ./gen_testdata.py
+%.pcap: ./gen_testdata.py ./scion_scapy.py
 	./gen_testdata.py
 
 Packet_%.axi: %.pcap

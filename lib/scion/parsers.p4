@@ -18,20 +18,24 @@
 #define SC__LIB__SCION__PARSERS_P4_
 
 
+// TODO clean up parameter order
+
 #include <compat/macros.p4>
 #include <common/constants.p4>
 #include <scion/constants.p4>
 #include <scion/datatypes.p4>
-#include <scion/errors.p4>
 #include <scion/headers.p4>
 
-// TODO clean up param ordering: in first, inout middle, out last
+#if !(defined TARGET_SUPPORTS_VAR_LEN_PARSING || defined TARGET_SUPPORTS_PACKET_MOD)
+#error This parser requires one of TARGET_SUPPORTS_{VAR_LEN_PARSING,PACKET_MOD}.
+#endif
 
 // Parses Ethernet and IP/UDP encapsulation (if present).
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionEncapsulationParser(packet_in packet,
-                                in  ethertype_t    ethertype,
-                                out scion_encaps_t encaps) {
+                                inout scion_metadata_t meta,
+                                in    ethertype_t      ethertype,
+                                out   scion_encaps_t   encaps) {
     state start {
         transition select(ethertype) {
             ETHERTYPE_IPV4: parse_ipv4;
@@ -74,23 +78,19 @@ parser ScionEncapsulationParser(packet_in packet,
     }
 
     state not_scion {
-        // TODO
-        // verify(false, error.NotScion);
-        ERROR(error.NoMatch);
-        // transition reject;
+        ERROR(NotScion);
     }
 }
 
 // Parses the SCION Common Header
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionCommonHeaderParser(packet_in packet, 
-                               out scion_common_h     hdr,
-                               inout scion_metadata_t meta) {
+                               inout scion_metadata_t meta,
+                               inout packet_size_t    pos_in_hdr,
+                               out   scion_common_h   hdr) {
     state start {
-        meta.pos_in_hdr = 0;
-
         packet.extract(hdr);
-        meta.pos_in_hdr = meta.pos_in_hdr + SCION_COMMON_H_SIZE;
+        pos_in_hdr = pos_in_hdr + SCION_COMMON_H_SIZE;
         transition check_offsets;
     }
 
@@ -100,14 +100,15 @@ parser ScionCommonHeaderParser(packet_in packet,
     state check_offsets {
         // check that INF/HF isn't beyond end of header
         transition select(hdr.curr_INF < hdr.hdr_len &&
-                          hdr.curr_HF  < hdr.hdr_len) {
-            true:  accept;
-            false: err_invalid_pointer;
+                          hdr.curr_HF  < hdr.hdr_len &&
+                          hdr.curr_INF < hdr.curr_HF) {
+            true:    accept;
+            default: invalid_offset;
         }
     }
 
-    state err_invalid_pointer {
-        ERROR(error.HeaderTooShort);
+    state invalid_offset {
+        ERROR(InvalidOffset);
     }
 
 }
@@ -116,15 +117,16 @@ parser ScionCommonHeaderParser(packet_in packet,
 // Used inside ScionAddressHeaderParser.
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionHostAddressParser(packet_in packet,
-                              in  scion_host_addr_type_t type,
-                              out scion_host_addr_h      hdr,
-                              out packet_size_t          addr_len) {
+                              inout scion_metadata_t       meta,
+                              in    scion_host_addr_type_t type,
+                              out   packet_size_t          addr_len,
+                              out   scion_host_addr_h      hdr) {
     state start {
         transition select(type) {
             SCION_HOST_ADDR_IPV4: ipv4;
             SCION_HOST_ADDR_IPV6: ipv6;
             SCION_HOST_ADDR_SVC:  svc;
-            default:              error_unknown_host_addr_type;
+            default:              unknown_host_addr_type;
         }
     }
 
@@ -146,43 +148,39 @@ parser ScionHostAddressParser(packet_in packet,
         transition accept;
     }
 
-    state error_unknown_host_addr_type {
-        // verify(false, error.UnknownScionHostAddrType);
-        // TODO
-        ERROR(error.NoMatch);
-        // transition reject;
+    state unknown_host_addr_type {
+        ERROR(UnknownHostAddrType);
     }
 }
 
 // Parses the SCION Address Header
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionAddressHeaderParser(packet_in packet, 
+                                inout scion_metadata_t    meta,
+                                inout packet_size_t       pos_in_hdr,
                                 in    scion_common_h      common,
-                                out   scion_addr_header_t hdr,
-                                inout scion_metadata_t    meta) {
+                                out   scion_addr_header_t hdr) {
 
     ScionHostAddressParser() dst_host_parser;
     ScionHostAddressParser() src_host_parser;
-    packet_size_t host_addr_len;
+    packet_size_t host_addr_len1;
+    packet_size_t host_addr_len2;
 
     state start {
         packet.extract(hdr.dst_isdas);
         packet.extract(hdr.src_isdas);
-        meta.pos_in_hdr = meta.pos_in_hdr + 2*SCION_ISDAS_ADDR_H_SIZE;
 
-        dst_host_parser.apply(packet, common.dst_addr_type, hdr.dst_host, host_addr_len);
-        meta.pos_in_hdr = meta.pos_in_hdr + host_addr_len;
+        dst_host_parser.apply(packet, meta, common.dst_addr_type, host_addr_len1, hdr.dst_host);
+        src_host_parser.apply(packet, meta, common.src_addr_type, host_addr_len2, hdr.src_host);
 
-        src_host_parser.apply(packet, common.src_addr_type, hdr.src_host, host_addr_len);
-        meta.pos_in_hdr = meta.pos_in_hdr + host_addr_len;
-
+        pos_in_hdr = pos_in_hdr + 2*SCION_ISDAS_ADDR_H_SIZE + host_addr_len1 + host_addr_len2;
         transition align_to_8_bytes;
     }
 
 #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
     state align_to_8_bytes {
-        bit<3> skip = -meta.pos_in_hdr[2:0]; // unary - of last 3 bits = 8 - thingy
-        meta.pos_in_hdr = meta.pos_in_hdr + (packet_size_t)skip;
+        bit<3> skip = -pos_in_hdr[2:0]; // unary minus of last 3 bits = 8 - thingy
+        pos_in_hdr = pos_in_hdr + (packet_size_t)skip;
         PACKET_SKIP(packet, 8*(bit<32>)skip, hdr.align_bits);
         transition accept;
     }
@@ -191,50 +189,96 @@ parser ScionAddressHeaderParser(packet_in packet,
     // have to make separate states for this because SDNet is horrible
     // TODO this should be a macro because I'll need it in path parsing too
     state align_to_8_bytes {
-        transition select(meta.pos_in_hdr[2:0]) {
+        transition select(pos_in_hdr[2:0]) {
             0: accept;
             2: skip_6;
             4: skip_4;
             6: skip_2;
-            // odd values are currently impossible
-            // default: something_somewhere_went_terribly_wrong; // TODO handle errors
+            default: panic; // odd values are currently impossible
         }
     }
 
     // TODO kill it!!!! (with a higher-level macro)
     state skip_2 {
         packet.advance(8*2);
-        meta.pos_in_hdr = meta.pos_in_hdr + 8*2;
+        pos_in_hdr = pos_in_hdr + 8*2;
         transition accept;
     }
     state skip_4 {
         packet.advance(8*4);
-        meta.pos_in_hdr = meta.pos_in_hdr + 8*4;
+        pos_in_hdr = pos_in_hdr + 8*4;
         transition accept;
     }
     state skip_6 {
         packet.advance(8*6);
-        meta.pos_in_hdr = meta.pos_in_hdr + 8*6;
+        pos_in_hdr = pos_in_hdr + 8*6;
         transition accept;
     }
-#endif
+    #endif
+
+    state panic {
+        ERROR(InternalError);
+    }
 }
 
-// TODO
+// Skips bytes in multiples of skip_size.
+// If not TARGET_SUPPORTS_VAR_LEN_PARSING, can skip at most 31 blocks and uses
+// more FPGA area.
+// TODO we could make a PacketSkipper for above if we could change the loop size
+// TODO move to compat/macros
+@Xilinx_MaxPacketRegion(MTU)
+parser PacketSkipper(packet_in packet, inout scion_metadata_t meta, in bit<8> skip) (bit<32> skip_size) {
+
+#ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
+// TODO do the same as in SCIONAddrParser
+#error Not implemented yet
+#else // assume TARGET_SUPPORTS_PACKET_MOD
+    // ♪♫ we do what we must because we can ♫
+    state start {
+        transition select(skip) {
+#define LOOPBODY(i) i: skip_##i;
+#include <compat/loop32.itm>
+#undef LOOPBODY
+            default: panic; // somebody asked us to skip more than 32 things
+        }
+    }
+
+#define LOOPBODY(i) state skip_##i { packet.advance(8*skip_size*i); transition accept; }
+#include <compat/loop32.itm>
+#undef LOOPBODY
+
+#endif
+
+    state panic {
+        ERROR(InternalError);
+    }
+}
+
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionPathParser(packet_in packet, 
-                       in  scion_common_h common,
-                       out scion_path_header_t hdr,
-                       inout scion_metadata_t meta) {
+                       inout scion_metadata_t meta,
+                       in    packet_size_t pos_in_hdr,
+                       in    scion_common_h common,
+                       out   scion_path_header_t path) {
+    PacketSkipper(8) skipper1; // TODO can we re-use the same one?
+    PacketSkipper(8) skipper2;
+    bit<8> skips1 = common.curr_INF - (bit<8>)(pos_in_hdr/8);
+    bit<8> skips2 = common.curr_HF  - (bit<8>)(pos_in_hdr/8) - skips1 - 1; // -1 because we extract current_inf, which is 1 8-byte block
+
     state start {
+        meta.debug2 = 48w0 ++ skips1 ++ skips2;
         transition skip_to_inf;
     }
 
     state skip_to_inf {
+        skipper1.apply(packet, meta, skips1);
+        packet.extract(path.current_inf);
         transition skip_to_hf;
     }
 
     state skip_to_hf {
+        skipper2.apply(packet, meta, skips2);
+        packet.extract(path.current_hf);
         transition accept;
     }
 
@@ -253,19 +297,20 @@ parser ScionExtensionsParser(packet_in packet,
 // Parses the SCION header (NOT including encapsulation).
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionHeaderParser(packet_in packet, 
-                         out scion_header_t hdr,
-                         out scion_metadata_t meta) {
-
+                         inout scion_metadata_t meta,
+                         out   scion_header_t   hdr) {
+    packet_size_t pos_in_hdr = 0; // current absolute position in bytes
     ScionCommonHeaderParser()  common_header_parser;
     ScionAddressHeaderParser() address_header_parser;
-    // ScionPathParser()          path_parser;
+    ScionPathParser()          path_parser;
     // ScionExtensionsParser()    extensions_parser;
 
     state start {
-        common_header_parser.apply(packet, hdr.common, meta);
-        address_header_parser.apply(packet, hdr.common, hdr.addr, meta);
+        // parameters:              packet  meta  state       input data  parsed header
+        common_header_parser.apply( packet, meta, pos_in_hdr,             hdr.common);
+        address_header_parser.apply(packet, meta, pos_in_hdr, hdr.common, hdr.addr);
+        path_parser.apply(          packet, meta, pos_in_hdr, hdr.common, hdr.path);
         // TODO:
-        // path_parser.apply(packet, hdr.path, meta);
         // extensions_parser.apply(packet, hdr, meta);
 
         transition accept;
@@ -275,16 +320,16 @@ parser ScionHeaderParser(packet_in packet,
 // As stated above, this expects the full packet including Ethernet.
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionParser(packet_in packet, 
-                   out scion_all_headers_t hdr,
-                   out scion_metadata_t meta) {
+                   out scion_metadata_t    meta,
+                   out scion_all_headers_t hdr) {
 
     ScionEncapsulationParser() encaps_parser;
     ScionHeaderParser()        scion_header_parser;
 
     state start {
         packet.extract(hdr.ethernet);
-        encaps_parser.apply(packet, hdr.ethernet.ethertype, hdr.encaps);
-        scion_header_parser.apply(packet, hdr.scion, meta);
+        encaps_parser.apply(packet, meta, hdr.ethernet.ethertype, hdr.encaps);
+        scion_header_parser.apply(packet, meta, hdr.scion);
         transition accept;
     }
 }

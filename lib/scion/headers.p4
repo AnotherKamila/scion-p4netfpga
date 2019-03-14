@@ -74,8 +74,27 @@ struct scion_addr_header_t {
 #endif
 }
 
+
+/// Path header
+
+header scion_inf_h {
+    bit<8>    flags;
+    bit<32>   timestamp;
+    scion_isd isd;
+    bit<8>    nhops;
+}
+
+header scion_hf_h {
+    bit<8>    flags;
+    bit<8>    expiry;
+    bit<12>   ingress_if;
+    bit<12>   egress_if;
+    bit<24>   mac;
+}
+
 struct scion_path_header_t {
-    bit<8> unused; // TODO
+    scion_inf_h current_inf;
+    scion_hf_h  current_hf;
 }
 
 /// Top-level SCION header
@@ -83,21 +102,13 @@ struct scion_path_header_t {
 struct scion_header_t {
     scion_common_h      common;
     scion_addr_header_t addr;
-    // scion_path_header_t path;
+    scion_path_header_t path;
 }
 
 struct scion_all_headers_t {
     ethernet_h     ethernet; 
     scion_encaps_t encaps;
     scion_header_t scion;
-}
-
-
-/// SCION metadata
-struct scion_metadata_t {
-    packet_size_t          pos_in_hdr; // current absolute position in the SCION header, in bytes
-    // packet_size_t 
-    bit<32> debug; // used as a debug signal
 }
 
 

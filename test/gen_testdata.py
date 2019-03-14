@@ -108,7 +108,7 @@ def padded(pkt, pad_to):
     if pad_len <= 0: return pkt
     return pkt/Padding(b'\x00'*pad_len)
 
-for i in range(10):
+for i in range(3):
     sender = '00:60:dd:44:c2:c4' # enp3s0
     recver = '00:60:dd:44:c2:c5' # enp5s0
     scion = SCION(
@@ -118,14 +118,19 @@ for i in range(10):
         ),
         path=[
             PathSegment(timestamp=147, isd=42, hops=[
-                HopField(ingress_if=0, egress_if=1),
-                HopField(ingress_if=1, egress_if=0),
+                HopField(ingress_if=1, egress_if=2),
+                HopField(ingress_if=3, egress_if=4),
             ]),
             PathSegment(timestamp=147, isd=43, hops=[
-                HopField(ingress_if=0, egress_if=1),
+                HopField(ingress_if=5, egress_if=6),
+                HopField(ingress_if=1, egress_if=2),
+                HopField(ingress_if=3, egress_if=4),
             ]),
             PathSegment(timestamp=147, isd=47, hops=[
-                HopField(ingress_if=1, egress_if=0),
+                HopField(ingress_if=7, egress_if=8),
+                HopField(ingress_if=5, egress_if=6),
+                HopField(ingress_if=1, egress_if=2),
+                HopField(ingress_if=3, egress_if=4),
             ]),
         ]
     )
@@ -135,8 +140,8 @@ for i in range(10):
               UDP(dport=50000, sport=50000, chksum=0))  # checksum not used
     payload = UDP(dport=1047, sport=1042) / "hello {}\n".format(i)
 
-    applyPkt(encaps/set_current_inf_hf(0,0, scion)/payload, 'nf0', i)
-    expPkt(  encaps/set_current_inf_hf(0,1, scion)/payload, 'nf1')
+    applyPkt(encaps/set_current_inf_hf(i,i, scion)/payload, 'nf0', i)
+    expPkt(  encaps/set_current_inf_hf(i,i+1, scion)/payload, 'nf1')
 
 write_pcap_files()
 

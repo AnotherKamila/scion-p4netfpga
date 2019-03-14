@@ -13,10 +13,12 @@
 
 // Reason: SDNet does not support errors; see P4-SDNet p.8
 #ifdef TARGET_SUPPORTS_VERIFY
-#define ERROR(err)  verify(false, err)
+#define ERROR(err)              verify(false, error.err); transition reject
+#define ERROR2(err, save_dest)  verify(false, error.err); transition reject
 #else
-// TODO this should actually set a metadata flag and accept, so that we can react to the error
-#define ERROR(err)  transition reject
+// assumes that "meta" is in current scope
+#define ERROR(err)              meta.error_flag = UserError.err; transition reject
+#define ERROR2(err, save_dest)  save_dest       = UserError.err; transition reject
 #endif
 
 // If we have packet_mod, we can actually skip parts of headers without losing
