@@ -72,14 +72,18 @@ control TopPipe(inout local_t d,
     table egress_ifid_to_port {
         key = {
             // d.hdr.scion.path.egress_if: direct;
-            d.hdr.scion.common.curr_HF: exact; // TESTING, TODO put back the right thing
             // ha ha, netfpga scripts don't support direct match type
+            d.hdr.ethernet.dst_addr: exact; // TESTING; TODO put back the right thing
         }
         actions = {
             set_dst_port;
             NoAction;
         }
         size=64; // smallest possible for exact match
+    }
+
+    action update_checksums() {
+        d.hdr.encaps.udp.checksum = 0; // checksum not used -- TODO one day :D
     }
 
     apply {
@@ -89,16 +93,37 @@ control TopPipe(inout local_t d,
         // TODO move current pointer properly
         d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
         egress_ifid_to_port.apply();
+
+        update_checksums();
+
+        s.digest.debug = d.meta.scion.debug;
     }
 }
 
+// It does not make much sense to modularise the deparser, because we only want
+// to update the parts we want to update, which depends on what we changed.
+// However: TODO this could be split into a "fwd-only deparser" with the
+// contract of changing L2, encaps and INF+HF offsets and nothing else.
 @Xilinx_MaxPacketRegion(MTU)
 parser TopDeparser(in local_t d,
                    packet_mod pkt) {
 
-    ScionModDeparser() scion_deparser;
+    ScionEncapsulationModDeparser() encaps_deparser;
+
     state start{
-        scion_deparser.apply(pkt, d.hdr);
+        // we changed L2
+        pkt.update(d.hdr.ethernet);
+
+        // encapsulate; beware that this does not consume the encapsulation
+        // if we want to remove it!
+        // This would need to be thought about if we supported both encapsulated
+        // and non-encapsulated SCION.
+        encaps_deparser.apply(pkt, d.hdr.ethernet.ethertype, d.hdr.encaps);
+
+        // update only INF and HF in SCION common header
+        pkt.update(d.hdr.scion.common, SCION_COMMON_HDR_MASK_INF_HF);
+
+        // done: we didn't change anything else
         transition accept;
     }
 }

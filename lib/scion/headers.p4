@@ -29,6 +29,9 @@ header scion_common_h {
 }
 const packet_size_t SCION_COMMON_H_SIZE = 8; // I want sizeof :'(
 
+// header field masks to be used with packet_mod to only change some fields
+const bit<32> SCION_COMMON_HDR_MASK_INF_HF = 32w0b00000110;
+
 
 /// Address header
 
@@ -93,6 +96,8 @@ struct scion_all_headers_t {
 /// SCION metadata
 struct scion_metadata_t {
     packet_size_t          pos_in_hdr; // current absolute position in the SCION header, in bytes
+    // packet_size_t 
+    bit<32> debug; // used as a debug signal
 }
 
 

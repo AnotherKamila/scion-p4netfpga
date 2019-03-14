@@ -9,7 +9,8 @@ struct user_metadata_t {
 
 // MUST be 256 bits for NetFPGA
 struct digest_data_t {
-    bit<256>  unused;
+    bit<32>   debug; // 32 bits of debug signal should be enough for everyone
+    bit<224>  unused;
 }
 
 

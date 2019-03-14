@@ -42,28 +42,43 @@ parser ScionEncapsulationModDeparser(packet_mod packet,
 
     state deparse_udp {
         packet.update(encaps.udp);
-        // TODO don't forget UDP checksum!
-        //  1. find out if it's possible to put it into the parser
-        //  2. find out what's faster
-        // transition select(encaps.udp.dst_port) {
-        //     SCION_PORT: accept;
-        // }
         transition accept;
     }
 }
 
-@Xilinx_MaxPacketRegion(MTU)
-parser ScionModDeparser(packet_mod pkt, in scion_all_headers_t hdr) {
+// @Xilinx_MaxPacketRegion(MTU)
+// parser ScionHeaderModDeparser(packet_mod packet,
+//                               in scion_header_t hdr) {
 
-    ScionEncapsulationModDeparser() encaps_deparser;
+//     ScionCommonHeaderModDeparser()  common_header_deparser;
+//     ScionAddressHeaderModDeparser() address_header_deparser;
+//     // ScionPathParser()          path_parser;
+//     // ScionExtensionsParser()    extensions_parser;
 
-    state start{
-        pkt.update(hdr.ethernet);
-        encaps_deparser.apply(pkt, hdr.ethernet.ethertype, hdr.encaps);
-        //     scion_header_parser.apply(packet, hdr.scion, meta);
-        transition accept;
-    }
-}
+//     state start {
+//         common_header_parser.apply(packet, hdr.common);
+//         address_header_parser.apply(packet, hdr.common, hdr.addr, meta);
+//         // TODO:
+//         // path_parser.apply(packet, hdr.path, meta);
+//         // extensions_parser.apply(packet, hdr, meta);
+
+//         transition accept;
+//     }
+// }
+
+// @Xilinx_MaxPacketRegion(MTU)
+// parser ScionModDeparser(packet_mod pkt, in scion_all_headers_t hdr, in scion_metadata_t meta) {
+
+//     ScionEncapsulationModDeparser() encaps_deparser;
+//     // ScionHeaderModDeparser()        scion_header_deparser;
+
+//     state start {
+//         pkt.update(hdr.ethernet);
+//         encaps_deparser.apply(pkt, hdr.ethernet.ethertype, hdr.encaps);
+//         // scion_header_deparser.apply(packet, hdr.scion, meta);
+//         transition accept;
+//     }
+// }
 
 
 #endif

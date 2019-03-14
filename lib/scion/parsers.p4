@@ -176,46 +176,48 @@ parser ScionAddressHeaderParser(packet_in packet,
         src_host_parser.apply(packet, common.src_addr_type, hdr.src_host, host_addr_len);
         meta.pos_in_hdr = meta.pos_in_hdr + host_addr_len;
 
-        // align to 8 bytes
-        bit<4> skip = 4w8 - (bit<4>)meta.pos_in_hdr[2:0]; // last 3 bits => mod 8
-        meta.pos_in_hdr = meta.pos_in_hdr + (packet_size_t)skip;
-
-#ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
-
-        PACKET_SKIP(packet, 8*(bit<32>)skip, hdr.align_bits);
-        transition accept;
-
-#else
-        // buaaaaaaaaaaaaaaah T-T
-        // have to make separate states for this because SDNet is horrible
-        // TODO this should be a macro because I'll need it in path parsing too
-        transition select(skip) {
-            0: accept;
-            2: skip_2;
-            4: skip_4;
-            6: skip_6;
-            // odd values are currently impossible
-        }
-#endif
-
+        transition align_to_8_bytes;
     }
 
-#ifndef TARGET_SUPPORTS_VAR_LEN_PARSING
+#ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
+    state align_to_8_bytes {
+        bit<3> skip = -meta.pos_in_hdr[2:0]; // unary - of last 3 bits = 8 - thingy
+        meta.pos_in_hdr = meta.pos_in_hdr + (packet_size_t)skip;
+        PACKET_SKIP(packet, 8*(bit<32>)skip, hdr.align_bits);
+        transition accept;
+    }
+#else
+    // buaaaaaaaaaaaaaaah T-T
+    // have to make separate states for this because SDNet is horrible
+    // TODO this should be a macro because I'll need it in path parsing too
+    state align_to_8_bytes {
+        transition select(meta.pos_in_hdr[2:0]) {
+            0: accept;
+            2: skip_6;
+            4: skip_4;
+            6: skip_2;
+            // odd values are currently impossible
+            // default: something_somewhere_went_terribly_wrong; // TODO handle errors
+        }
+    }
+
     // TODO kill it!!!! (with a higher-level macro)
     state skip_2 {
         packet.advance(8*2);
+        meta.pos_in_hdr = meta.pos_in_hdr + 8*2;
         transition accept;
     }
     state skip_4 {
         packet.advance(8*4);
+        meta.pos_in_hdr = meta.pos_in_hdr + 8*4;
         transition accept;
     }
     state skip_6 {
         packet.advance(8*6);
+        meta.pos_in_hdr = meta.pos_in_hdr + 8*6;
         transition accept;
     }
 #endif
-
 }
 
 // TODO

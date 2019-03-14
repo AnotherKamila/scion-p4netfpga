@@ -108,7 +108,7 @@ def padded(pkt, pad_to):
     if pad_len <= 0: return pkt
     return pkt/Padding(b'\x00'*pad_len)
 
-for i in range(100):
+for i in range(10):
     sender = '00:60:dd:44:c2:c4' # enp3s0
     recver = '00:60:dd:44:c2:c5' # enp5s0
     scion = SCION(
@@ -132,8 +132,9 @@ for i in range(100):
     # scion.show2()
     encaps = (Ether(dst=recver, src=sender) /
               IP(dst='2.2.2.2', src='1.1.1.1') /
-              UDP(dport=50000, sport=50000))
+              UDP(dport=50000, sport=50000, chksum=0))  # checksum not used
     payload = UDP(dport=1047, sport=1042) / "hello {}\n".format(i)
+
     applyPkt(encaps/set_current_inf_hf(0,0, scion)/payload, 'nf0', i)
     expPkt(  encaps/set_current_inf_hf(0,1, scion)/payload, 'nf1')
 
