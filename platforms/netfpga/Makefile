@@ -23,7 +23,7 @@ SDNET_FLAGS=-busType axi -busWidth 256 -singlecontrolport -altVivadoScripts -ski
 ARCHS=xilinx_stream_switch
 # TODO if I make it a habit to define ARCHS, I can move the listarchs target into $(TOP)/Makefile.inc
 
-.PHONY: help all listarchs ls build sdnet clean find-all-target-supports
+.PHONY: help all listarchs ls build sdnet spacetime bigbang clean find-all-target-supports
 
 all: build test ## TODO: Prepare and verify everything needed for programming the NetFPGA
 
@@ -34,6 +34,8 @@ ls: listarchs ## Shorthand for listarchs
 
 build: ## TODO: Build everything needed for using the design
 	make -C $(HW) build
+	@echo $(MARK) "Utilisation and timing summary:" $(ENDMARK)
+	@$(MAKE) --no-print-directory spacetime
 
 compiler-test: compiler-test-$(ARCH).sdnet ## Compile a test program to check support for P4 features
 
@@ -45,6 +47,12 @@ test: sim ## Alias for sim
 
 hwtest: ## Test the real hardware (TODO maybe shouldn't be here?)
 	$(MAKE) -C $(TOP)/test test
+
+spacetime: ## Check the space usage and timing of the built design.
+	@$(MAKE) --no-print-directory _spacetime | column -t -s'|'
+	@echo 'Run `make -C $(HW) spacetime` to see the full report.'
+
+bigbang: spacetime # O:-)
 
 ### Targets that actually do stuff #############
 
@@ -90,3 +98,23 @@ $(WORKDIR)/config_writes.sh: $(GENERATED_HDL)/config_writes.txt
 clean: clean-gitignore ## Remove generated files
 	$(MAKE) -C $(HW) clean
 #	$(MAKE) -C $(SW) clean
+
+SPACE_GET_UTIL_PERCENT=cut -d'|' -f2,6 | sed 's/  */ /g' | sed 's/| /|/' | sed 's/ $$/%/'
+_space:
+	@$(MAKE) -C $(HW) --no-print-directory spacetime | grep '^| Slice LUTs'      | $(SPACE_GET_UTIL_PERCENT)
+	@$(MAKE) -C $(HW) --no-print-directory spacetime | grep '^| Slice Registers' | $(SPACE_GET_UTIL_PERCENT)
+	@$(MAKE) -C $(HW) --no-print-directory spacetime | grep '^| Block RAM Tile'  | $(SPACE_GET_UTIL_PERCENT)
+
+TIME_GET_COLUMN=$(MAKE) -C $(HW) --no-print-directory spacetime | grep -A10 '^| Design Timing Summary' | \
+		grep -v '^$$' | grep -A2 'Failing Endpoints' | sed 's/   */|/g' | cut -d'|' -f  
+_time:
+	@for i in 4 8 12; do \
+		$(TIME_GET_COLUMN) $$i | grep -v -- '---' | tr '\n' '|' ; \
+		echo ; \
+	done
+
+_spacetime:
+	@echo 'Area utilisation summary:'
+	@$(MAKE) --no-print-directory _space
+	@echo 'Timing summary:'
+	@$(MAKE) --no-print-directory _time | sed 's/^/ /'

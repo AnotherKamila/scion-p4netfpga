@@ -41,6 +41,11 @@ design: scion_ip ## TODO Create the design for the NetFPGA board
 	# make -C nf_sume export_to_sdk
 	# make -C nf_sume load_elf
 
+spacetime:
+	@echo "--- Utilisation report ---"
+	@cat nf_sume/project/nf_sume.runs/impl_1/top_utilization_placed.rpt
+	@echo "--- Timing report ---"
+	@cat nf_sume/project/nf_sume.runs/impl_1/top_timing_summary_postroute_physopted.rpt
 
 # TODO split the actual target that checks whether it's built
 scion_ip: $(GENERATED_HDL_TOP) ## Create and package the SCION IP core

@@ -172,5 +172,3 @@ clean:	simclean
 		rm -rfv create_ip/id_rom16x32.coe;\
 		rm -rfv create_ip/rom_data.txt;\
 
-                
-
