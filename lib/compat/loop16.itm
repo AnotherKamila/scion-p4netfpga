@@ -1,0 +1,19 @@
+// Reason: SDNet does not support parsing with things that aren't compile-time constants.
+// Solution: Unroll all the things / make all possibilities compile-time :-/
+// Usage example lives in /lib/scion/parsers.p4, search for PacketSkipper
+LOOPBODY(0)
+LOOPBODY(1)
+LOOPBODY(2)
+LOOPBODY(3)
+LOOPBODY(4)
+LOOPBODY(5)
+LOOPBODY(6)
+LOOPBODY(7)
+LOOPBODY(8)
+LOOPBODY(9)
+LOOPBODY(10)
+LOOPBODY(11)
+LOOPBODY(12)
+LOOPBODY(13)
+LOOPBODY(14)
+LOOPBODY(15)

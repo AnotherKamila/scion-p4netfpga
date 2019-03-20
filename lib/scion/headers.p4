@@ -27,7 +27,8 @@ header scion_common_h {
     bit<8>                 curr_HF;
     protocol_t             next_hdr;
 }
-const packet_size_t SCION_COMMON_H_SIZE = 8; // I want sizeof :'(
+// there will be a sizeof in the next P4...
+const packet_size_t SCION_COMMON_H_SIZE = 8;
 
 // header field masks to be used with packet_mod to only change some fields
 const bit<32> SCION_COMMON_HDR_MASK_INF_HF = 32w0b00000110;
@@ -91,6 +92,9 @@ header scion_hf_h {
     bit<12>   egress_if;
     bit<24>   mac;
 }
+const bit<8> SCION_HF_FLAG_UP = 0; // TODO
+const bit<8> SCION_HF_FLAG_XOVER = 0; // TODO
+const bit<8> SCION_HF_IMMUTABLE_FLAGS = 0x0; // SCION book, p. 162
 
 struct scion_path_header_t {
     scion_inf_h current_inf;

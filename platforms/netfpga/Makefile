@@ -63,7 +63,7 @@ $(SDNET_TOP): $(basename $(MAIN)).sdnet
 	p4c-sdnet --toplevel_name $(HDL_MODULE_NAME) -o $@ --sdnet_info $(SWITCHINFO) $(TARGET_DEFINES) -I$(TOP)/$(INCDIR) $<
 	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
-$(GENERATED_HDL_TOP): $(SDNET_TOP)
+$(GENERATED_HDL_TOP): $(SDNET_TOP) $(EXTERNS)/.built
 	sdnet $< $(SDNET_FLAGS) -workDir $(SCION_IP_DIR)
 	# SDNet is apparently incompatible with its own output :D
 	sed -i 's/xsim\.dir\/xsc\/dpi\.so/dpi\.so/g' $(GENERATED_HDL)/vivado_sim*.bash
@@ -71,8 +71,19 @@ $(GENERATED_HDL_TOP): $(SDNET_TOP)
 	sed -i 's/$(HDL_MODULE_NAME)_tb_sim#work.glbl/$(HDL_MODULE_NAME)_tb/g' $(GENERATED_HDL)/vivado_sim_waveform.bash
 	# fix for ubuntu
 	# sed -i 's/vsim/vsim \-ldflags \"\-B\/usr\/lib\/x86\_64\-linux-gnu\"/g' $(GENERATED_HDL)/questa.bash
-	# $(SUME_SDNET)/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(GENERATED_HDL) $(SUME_SDNET)/templates/ $(TOP)/test/ $(ARCH)/sw/ --base_address $(P4_SWITCH_BASE_ADDR)
+	$(SUME_SDNET)/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(GENERATED_HDL) $(SUME_SDNET)/templates $(TOP)/test/ $(ARCH)/sw/ --base_address $(P4_SWITCH_BASE_ADDR)
 	@echo $(MARK) "Generated HDL in $(GENERATED_HDL)" $(ENDMARK)
+
+$(EXTERNS)/.built: $(shell find $(EXTERN_TEMPLATES))
+	mkdir -p $(EXTERNS)
+	# TODO this is really terrible, but I'd need to fix their gen_P4_externs.py
+	# script to not use hard-coded paths to make it less terrible.
+	# Also: note that I still need to define the externs in their script, too.
+	for e in `ls -1 $(EXTERN_TEMPLATES)`; do                             \
+		rm -rf $(SUME_SDNET)/templates/externs/$$e;                        \
+		cp -r $(EXTERN_TEMPLATES)/$$e $(SUME_SDNET)/templates/externs/$$e; \
+  done
+	touch $@
 
 sim: hdl _env ## Run a behavioural simulation for the SCION module
 	make -C $(TOP)/test gen
