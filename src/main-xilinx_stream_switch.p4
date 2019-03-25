@@ -155,8 +155,9 @@ control TopPipe(inout local_t d,
         // TODO remove
         bit<128> res;
         mac_aes128(128w0x48, 128w0x1, res);
-        // s.digest.debug1 = res[63:0];
-        d.hdr.encaps.udp.checksum = res[15:0] - 0x47; // test :D
+        s.digest.debug1 = res[63:0];
+        s.digest.debug2 = res[127:64];
+        // d.hdr.encaps.udp.checksum = res[15:0] - 0x47; // test :D
     }
 }
 

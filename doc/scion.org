@@ -1,4 +1,6 @@
 #+SEQ_TODO: NEXT TODO INPR WAIT | DONE NOPE
+#+PROPERTY: Effort_ALL 0 0:15 1:00 2:00 4:00 8:00
+#+COLUMNS: %40ITEM(Task) %17Effort(Estimated Effort){:} %CLOCKSUM
 
 * Timeline/Snippets
   everything will take 2x as long ==> 6 months :D
@@ -113,17 +115,187 @@
 ***** TODO see [[*Custom architecture]]
 *** [/] week 13: deploy in production
 * Project breakdown
-*** Project structure
+*** Data plane
+***** Progress overview:
+      |-----------+----------------------+--------------------+---------------------------------------|
+      |           |       Parsing        |     Validation     |              Forwarding               |
+      |-----------+----------------------+--------------------+---------------------------------------|
+      | [[base case]] |         DONE         | [[Crypto]]; [[Timestamps]] |                 DONE                  |
+      | [[XOVER]]     | [[Read the XOVER flag]]  |      as above      |      [[Move the pointers correctly]]      |
+      | [[UP]]        |   [[Read the UP flag]]   |      as above      | [[Swap the interfaces before forwarding]] |
+      | [[VRFY_ONLY]] | [[Parse out the 2nd HF]] | [[Verify the 2nd HF]]  |                   -                   |
+      |-----------+----------------------+--------------------+---------------------------------------|
+      |           |         <c>          |        <c>         |                  <c>                  |
+***** [1/5] base case
+******* TODO parsing                                                :parsing:
+********* [1/1] Meta
+*********** DONE get some SCION packets
+            CLOSED: [2019-01-23 Wed 19:35]
+            captured stuff from my SCION VM, lives in testdata/*.pcap
+********* [3/3] ~packet_mod~
+*********** DONE Figure out how to create custom architectures
+            CLOSED: [2019-02-05 Tue 18:43]
+            Currently there's no way to do that: the architectures are built into the
+            compiler, and I don't have the Xilinx compiler's source code.
+
+            I can hopefully use XilinxStreamSwitch with a bit of poking at the Verilog
+            wrapper module.
+*********** NOPE Create a ~packet_mod~-enabled architecture
+            Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.
+            Rejected because not possible; will use ~XilinxStreamSwitch~.
+*********** DONE [5/5] Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
+            CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-14 Thu>
+            No longer stuck on license. Should try this ASAP.
+            See also [[*Turning source code into bits in the FPGA]] (and fill it in)
+************* DONE switch the P4 source code and make it compile
+              CLOSED: [2019-02-14 Thu 15:34] SCHEDULED: <2019-02-14 Thu>
+************* DONE Turn SDNet into HDL: make the =sdnet= compiler happy
+              CLOSED: [2019-02-14 Thu 22:40] SCHEDULED: <2019-02-14 Thu>
+************* DONE make Vivado sim pass
+              CLOSED: [2019-02-16 Sat 10:44] SCHEDULED: <2019-02-15 Fri>
+************* DONE wrap the SDNet module
+              CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-17 Sun>
+************* DONE make it synth
+              CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-14 Thu>
+********* [4/5] Write the parser
+          With the fancy idea for using ~packet_mod~ if possible and variable-length
+          fields in a "skip" struct otherwise
+************* DONE Parse SCION Common Header
+              CLOSED: [2019-02-02 Sat]
+************* DONE Parse SCION Address Header
+              CLOSED: [2019-02-05 Tue 18:44]
+              The 8-byte alignment was super annoying because SDNet.
+************* DONE Parse current Info Field
+              CLOSED: [2019-03-17 Sun 17:46] SCHEDULED: <2019-03-14 Thu>
+************* DONE Parse current Hop Field
+              CLOSED: [2019-03-17 Sun 17:46] SCHEDULED: <2019-03-14 Thu>
+************* TODO implement sqrt(area) idea
+********* [2/2] Write the deparser
+          with + without packet_mod
+*********** DONE deparse encaps+common+address
+            CLOSED: [2019-03-17 Sun 17:55] SCHEDULED: <2019-03-14 Thu>
+            with + without packet_mod;
+            make it compile
+*********** DONE deparse info+HF
+            CLOSED: [2019-03-17 Sun 17:55] SCHEDULED: <2019-03-14 Thu>
+******* DONE forwarding                                          :forwarding:
+        CLOSED: [2019-03-17 Sun 18:23]
+********* DONE do something reasonable about interface numbering
+          CLOSED: [2019-03-17 Sun 17:57] SCHEDULED: <2019-03-15 Fri>
+********* DONE forward base case
+          CLOSED: [2019-03-17 Sun 18:15] SCHEDULED: <2019-03-18 Mon>
+******* INPR [7/9] Crypto                                        :validation:
+********* DONE Figure out how the crypto works                          :aes:
+          CLOSED: [2019-03-18 Mon 12:48] SCHEDULED: <2019-03-18 Mon>
+          sig = MAC_K(timestamp || flags' || exptime || in_if || eg_if || HF')
+          where flags' = flags & immutable_flags_mask,
+                HF'    is the previous hop field without flags,
+                K      is an AS-local symmetric key => comes from the control plane
+                MAC    is AES-CMAC, RFC4493 pages 353 and 385 <= ref 226 from SCION book
+********* NEXT Write P4 code (with blanks) that does it                 :aes:
+          rewrite https://github.com/SecureAuthCorp/impacket/blob/master/impacket/crypto.py#L93
+          into P4
+          SCHEDULED: <2019-03-19 Tue>
+********* DONE Define the AES extern's interface                        :aes:
+          CLOSED: [2019-03-18 Mon 17:17] SCHEDULED: <2019-03-18 Mon>
+********* DONE Generate the extern stubs                            :externs:
+          CLOSED: [2019-03-20 Wed 19:28] SCHEDULED: <2019-03-18 Mon>
+********* DONE *Placeholder verilog for AES*                        :externs:
+          CLOSED: [2019-03-22 Fri 14:44]
+          something that always returns a fixed value so I can compile it
+          => "minor milestone" when it runs
+********* DONE find 3rd party AES module                                :aes:
+          CLOSED: [2019-03-17 Sun 18:48] SCHEDULED: <2019-03-28 Thu>
+          make it easily replaceable with commercial solutions
+          ==> don't worry about side channels (not my problem) :D
+          thanks to the Leuven people :D
+********* DONE give stubs + info to Leuven people                       :aes:
+          CLOSED: [2019-03-22 Fri 14:44]
+********* DONE Integrate actual AES                                     :aes:
+          CLOSED: [2019-03-25 Mon 13:26] SCHEDULED: <2019-03-28 Thu>
+********* TODO *test path verification*                :milestone:validation:
+          SCHEDULED: <2019-03-29 Fri>
+******* TODO [0/4] Timestamps                                    :validation:
+********* TODO write code with placeholders
+********* TODO get time into the switch                             :externs:
+          This should be an extern not dissimilar to the ~reg_rw~ one, but
+          additionally counting clock cycles.
+          => It makes sense to not do it before [[*Generate the extern stubs]].
+          
+          It might be useful to email p4-dev that we might want a standard way
+          to get time.
+
+          --------------------------------------------
+          
+          Actually, there is [[https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Timestamp-Extern-Function][a timestamp extern]]. Might be simpler to just use
+          that + offset register (written by control plane).
+********* TODO generate control-plane API
+********* TODO *validate the timestamps*
+******* TODO Anything else that needs validation? Figure out :D  :validation:
+***** [0/2] XOVER
+******* NEXT Read the XOVER flag                                    :parsing:
+        :PROPERTIES:
+        :Effort:   0:15
+        :END:
+******* NEXT Move the pointers correctly                         :forwarding:
+***** [0/2] UP
+******* TODO Read the UP flag                                       :parsing:
+        :PROPERTIES:
+        :Effort:   0
+        :END:
+******* TODO Swap the interfaces before forwarding               :forwarding:
+        :PROPERTIES:
+        :Effort:   0:15
+        :END:
+***** [0/2] VRFY_ONLY
+******* TODO Read the VRFY_ONLY flag                                :parsing:
+        :PROPERTIES:
+        :Effort:   0
+        :END:
+******* TODO Parse out the 2nd HF                                   :parsing:
+        :PROPERTIES:
+        :Effort:   2:00
+        :END:
+      ------------------------------------------------
+      
+***** [1/5] IP and below
+******* DONE find the router
+        CLOSED: [2019-01-22 Tue 11:46]
+        https://github.com/p4lang/switch
+******* TODO figure out which parts we want and split them out
+        SCHEDULED: <2019-03-27 Wed>
+        probably only L2 learning
+******* TODO stuff in IP and below
+        SCHEDULED: <2019-04-03 Wed>
+******* TODO test it
+        SCHEDULED: <2019-03-29 Fri>
+***** [0/3] Code hygiene
+******* TODO Write =@brief("blah")= and =@description("blah blah")= annotations
+******* TODO put the parts that should be easy to switch into separate files:
+        SCHEDULED: <2019-04-22 Mon>
+        Right now I separate by function (parsers, headers, etc). I should be
+        separating by concern (intra-AS, inter-AS, ...).
+         - SCION encapsulation
+         - IP stack
+         - SCION core
+******* TODO document =TARGET_SUPPORTS_*= stuff
+        SCHEDULED: <2019-04-23 Tue>
+*** Control plane
+***** TODO think about forwarding :D
+      SCHEDULED: <2019-03-27 Wed>
+*** Directory + make structure
 ***** [2/3] Directory structure
 ******* DONE set up repo skeleton
         CLOSED: [2019-01-23 Wed 16:39]
 ******* DONE Figure out the high-level repo structure
         CLOSED: [2019-01-29 Tue 18:43]
+******* TODO Rename nf_sume_sdnet_ip to nf_sume_scion_ip
+        to prevent the "other stuff on the machine is breaking my build" failure mode
 ***** [1/1] Change to non-project mode
       build it yourself!
 ******* DONE read [[UG892]], [[UG896]]
         CLOSED: [2019-03-06 Wed 15:12] SCHEDULED: <2019-03-04 Mon>
-***** [5/8] Makefiles cleanup
+***** [8/8] Makefiles cleanup
 ******* DONE Make things compile with the new repo structure
         CLOSED: [2019-02-04 Mon 15:28]
 ******* DONE make it sim
@@ -135,121 +307,24 @@
 ******* DONE Change =make clean= to just rm things listed in .gitignore
         SCHEDULED: <2019-03-04 Mon>
         because having two sources of truth is annoying and Bad
-******* TODO Clean up horrible mess in platforms/netfpga
-        SCHEDULED: <2019-03-12 Tue>
-******* TODO Add a test for real HW (check what they have, or use scapy)
-        SCHEDULED: <2019-03-14 Thu>
-******* TODO Add a "check timing" target
-        SCHEDULED: <2019-03-11 Mon>
+******* DONE Clean up horrible mess in platforms/netfpga
+        CLOSED: [2019-03-18 Mon 11:38] SCHEDULED: <2019-03-12 Tue>
+******* DONE Add a test for real HW (check what they have, or use scapy)
+        CLOSED: [2019-03-18 Mon 10:25] SCHEDULED: <2019-03-14 Thu>
+******* DONE Add a "check timing" target
+        CLOSED: [2019-03-18 Mon 10:25] SCHEDULED: <2019-03-11 Mon>
         something like:
         ~set pass [expr {[get_property SLACK [get_timing_paths]] >= 0}]~
-***** [0/2] Code structure + Modularity + Portability
-******* TODO put the parts that should be easy to switch into separate files:
-        SCHEDULED: <2019-04-22 Mon>
-        Right now I separate by function (parsers, headers, etc). I should be
-        separating by concern (intra-AS, inter-AS, ...).
-         - SCION encapsulation
-         - IP stack
-         - SCION core
-******* TODO document =TARGET_SUPPORTS_*= stuff
-        SCHEDULED: <2019-04-23 Tue>
-*** Parsing SCION packets
-***** [1/1] Meta
-******* DONE get some SCION packets
-        CLOSED: [2019-01-23 Wed 19:35]
-        captured stuff from my SCION VM, lives in testdata/*.pcap
-***** [3/3] ~packet_mod~
-******* DONE Figure out how to create custom architectures
-        CLOSED: [2019-02-05 Tue 18:43]
-        Currently there's no way to do that: the architectures are built into the
-        compiler, and I don't have the Xilinx compiler's source code.
-
-        I can hopefully use XilinxStreamSwitch with a bit of poking at the Verilog
-        wrapper module.
-******* NOPE Create a ~packet_mod~-enabled architecture
-        Equivalent to SimpleSumeSwitch but with packet_mod for the deparser.
-        Rejected because not possible; will use ~XilinxStreamSwitch~.
-******* DONE [5/5] Make it possible to use ~XilinxStreamSwitch~ on the NetFPGA
-        CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-14 Thu>
-        No longer stuck on license. Should try this ASAP.
-        See also [[*Turning source code into bits in the FPGA]] (and fill it in)
-********* DONE switch the P4 source code and make it compile
-          CLOSED: [2019-02-14 Thu 15:34] SCHEDULED: <2019-02-14 Thu>
-********* DONE Turn SDNet into HDL: make the =sdnet= compiler happy
-          CLOSED: [2019-02-14 Thu 22:40] SCHEDULED: <2019-02-14 Thu>
-********* DONE make Vivado sim pass
-          CLOSED: [2019-02-16 Sat 10:44] SCHEDULED: <2019-02-15 Fri>
-********* DONE wrap the SDNet module
-          CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-17 Sun>
-********* DONE make it synth
-          CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-14 Thu>
-***** [2/4] Write the parser
-      With the fancy idea for using ~packet_mod~ if possible and variable-length
-      fields in a "skip" struct otherwise.
-******* DONE Parse SCION Common Header
-        CLOSED: [2019-02-02 Sat]
-******* DONE Parse SCION Address Header
-        CLOSED: [2019-02-05 Tue 18:44]
-        The 8-byte alignment was super annoying because SDNet.
-******* TODO Parse current Info Field
-        SCHEDULED: <2019-03-14 Thu>
-******* TODO Parse current Hop Field + next HF if VRFY_ONLY
-        SCHEDULED: <2019-03-14 Thu>
-***** [0/2] Write the deparser
-      with + without packet_mod
-******* TODO deparse encaps+common+address
-        SCHEDULED: <2019-03-14 Thu>
-        with + without packet_mod;
-        make it compile
-******* TODO deparse info+HF
-        SCHEDULED: <2019-03-14 Thu>
-***** [0/4] Test it
-      check how to easily generate SCION packets -- there is something in the
-      scion repo
-******* TODO test encaps+common+address w/ emit
-        SCHEDULED: <2019-03-15 Fri>
-******* TODO test encaps+common+address w/ packet_mod
-        SCHEDULED: <2019-03-15 Fri>
-******* TODO test complete parser w/ emit
-        SCHEDULED: <2019-03-15 Fri>
-******* TODO test complete parser w/ packet_mod
-        SCHEDULED: <2019-03-15 Fri>
-*** Forwarding SCION packets
-***** [0/4] blind forwarding
-******* TODO think about forwarding :D
-        SCHEDULED: <2019-03-18 Mon>
-******* TODO talk with the control plane about interface numbering
-        SCHEDULED: <2019-03-20 Wed>
-******* TODO forward
-        SCHEDULED: <2019-03-22 Fri>
-******* TODO test it
-        SCHEDULED: <2019-03-22 Fri>
-***** [0/4] implement SCION path verification
-******* TODO find 3rd party AES module
-        SCHEDULED: <2019-03-28 Thu>
-        make it easily replaceable with commercial solutions
-        ==> don't worry about side channels (not my problem) :D
-******* TODO add AES as an extern to P4
-        SCHEDULED: <2019-03-28 Thu>
-******* TODO test that AES works
-        SCHEDULED: <2019-03-28 Thu>
-******* TODO wire it together: implement and test path verification
-        SCHEDULED: <2019-03-29 Fri>
-***** [1/4] IP and below
-******* DONE find the router
-        CLOSED: [2019-01-22 Tue 11:46]
-        https://github.com/p4lang/switch
-******* TODO figure out which parts we want and split them out
-        SCHEDULED: <2019-03-27 Wed>
-        probably only L2 learning
-******* TODO stuff in IP and below
-        SCHEDULED: <2019-03-14 Thu>
-******* TODO test it
-        SCHEDULED: <2019-03-29 Fri>
-***** TODO evaluate it: does it work?
-      SCHEDULED: <2019-03-29 Fri>
+*** [0/3] Performance
+***** TODO Measure performance
+      SCHEDULED: <2019-03-28 Thu>
       how?
-*** [3/6] Real HW
+***** TODO Find bottlenecks
+      SCHEDULED: <2019-04-10 Wed>
+***** TODO Can we make it faster?
+      SCHEDULED: <2019-04-10 Wed>
+      if needed
+*** [6/6] Real HW
 ***** DONE read Seyedali's documentation
       CLOSED: [2019-01-20 Sun 12:07]
       ==> background brain
@@ -274,25 +349,14 @@
         Afterwards, it flashed successfully.
 
         Test fails, unsure why. Don't care enough.
-***** TODO add testdata
-      SCHEDULED: <2019-03-15 Fri>
-***** TODO make it pass the simulation
-      SCHEDULED: <2019-03-22 Fri>
-***** TODO synth and test IRL
-      SCHEDULED: <2019-03-22 Fri>
-*** [0/3] Performance
-***** TODO Measure performance
-      SCHEDULED: <2019-03-28 Thu>
-      how?
-***** TODO Find bottlenecks
-      SCHEDULED: <2019-03-22 Fri>
-***** TODO Can we make it faster?
-      SCHEDULED: <2019-03-22 Fri>
-      if needed
+***** DONE add testdata
+      CLOSED: [2019-03-17 Sun 17:41] SCHEDULED: <2019-03-15 Fri>
+***** DONE make it pass the simulation
+      CLOSED: [2019-03-17 Sun 17:41] SCHEDULED: <2019-03-18 Mon>
+***** DONE synth and test IRL
+      CLOSED: [2019-03-17 Sun 17:41] SCHEDULED: <2019-03-22 Fri>
 *** [/] Production deployment
     SCHEDULED: <2019-03-28 Thu>
-********* TODO test it IRL
-          SCHEDULED: <2019-03-20 Wed>
 * Timeline summaries
 *** DONE beginning - <2019-02-06 Wed>
     CLOSED: [2019-02-07 Thu 10:18]
@@ -376,21 +440,28 @@ hardware.
  * Improved project structure to make this repo easy to work with (unlike the
    upstream P4-NetFPGA repository).
  * Added basic testing infrastructure: behavioural simulation + real HW.
-*** NEXT progress report<2019-03-06 Wed> 
+*** DONE progress report <2019-03-06 Wed>
+    CLOSED: [2019-03-07 Thu 10:51]
 This is a summary of what happened since my last progress report.
 
 I was travelling, so this time it is somewhat shorter, but the tasks I completed
-were important.
+are important for the future users of this project (including me).
 
  1. Learned a lot about the Xilinx Vivado toolchain
  2. Completely rewrote the build process: Now it is simplified and fully automated, instead of being a weird combination of Makefiles and clicking in Vivado IDE
  3. Fixed a major "stale state is tainting the build" problem (inherited from the NetFPGA template)
- 5. Learned some more Verilog basics and fixed bugs in NetFPGA Verilog wrappers
- 6. Probably really made XilinxStreamSwitch/packet_mod work (point 3's problem had been hiding an issue with it)
+ 4. Learned some more Verilog basics and fixed a bug in NetFPGA Verilog wrappers
+ 5. Probably really made XilinxStreamSwitch/packet_mod work (point 3's problem had been hiding an issue with it)
+*** NEXT progress report <2019-03-20 Wed>
+ - Minor milestone: completed and tested parsing and forwarding for the base case
+   - parser can deal with SCION path by using the "generate separate parser blocks for every offset" trick
+ - Created a fully controllable SCION packet generator with scapy and used it to test and debug the P4 code
+   (will add it to SCION repo after cleanup)
+ - Dealt with two bugs in NetFPGA wrappers
 
 * Questions for Benjamin
-*** NEXT gimme 4 cables
-    SCHEDULED: <2019-03-13 Wed>
+*** NOPE gimme 4 cables
+    CLOSED: [2019-03-18 Mon 11:41] SCHEDULED: <2019-03-13 Wed>
 *** TODO Should we also add an "L2 learning switch"?
     ARP + remembering MAC addresses
 *** Archive:
@@ -525,6 +596,10 @@ were important.
        5. Synth. Target: ~synth~
        6. Create bitfile. Target: ~bitfile~
        7. Flash! Target: ~flash~
+***** Interfaces numbering:
+bit     0       1       2       3       4       5       6       7
+value   01      02      04      08      16      32      64      128
+if      eth0    nf0     eth1    nf1             nf2             nf3
 *** documentation
 ***** TODO SCION Parser
 ***** TODO portability
@@ -644,7 +719,21 @@ fixed at compile time).
 However, this would make actually using the fields very difficult, as I would
 need more preprocessor magic to index into such a struct; and additionally it
 would drastically increase my FPGA area usage.
-* Bibliography
+*** HW is silly
+***** sometimes DMA may need an extra reboot?
+* *Thesis*
+  This outline is approximate! TODO fix
+*** Introduction
+*** Related work
+*** Overview
+***** Overview of the SCION architecture 
+***** What we are trying to solve
+*** Data plane: Packet forwarding
+***** Design/Overview
+***** Implementation
+***** Challenges <-- this is the interesting part => maybe should be swapped with Implementation?
+*** Control plane: Integration with SCION infrastructure
+*** Bibliography
 
 
-  [[./references.bib][references]]
+    [[./references.bib][references]]

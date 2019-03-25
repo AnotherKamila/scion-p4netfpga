@@ -34,36 +34,42 @@ module @MODULE_NAME@
         [KEY_WIDTH-1               : 0                        ] : key
 */
 
-    // convert the input data to readable wires
+    // convert the input data
     wire                          valid_in = tuple_in_@EXTERN_NAME@_input_VALID;
     wire                          statefulValid_in = tuple_in_@EXTERN_NAME@_input_DATA[INPUT_WIDTH-1];
     wire [DATA_WIDTH-1:0]         data     = tuple_in_@EXTERN_NAME@_input_DATA[KEY_WIDTH+DATA_WIDTH-1:KEY_WIDTH];
     wire [KEY_WIDTH-1:0]          key      = tuple_in_@EXTERN_NAME@_input_DATA[KEY_WIDTH-1:0];
 
-    // registers to hold statefulness
-    reg                           valid_r;
-    reg  [DATA_WIDTH-1:0]         result_r;
+    // instantiate Seyedali's implementation
+    wire                          aes_busy;
+    wire [DATA_WIDTH-1:0]         result;
+    reg                           aes_busy_prev;
+    reg                           valid_out;
 
-    // TODO replace the following with AES instantiation
+    aes_encrypt @MODULE_NAME@_aes_inst (
+       .datain   (data),
+       .key      (key),
+       .clk      (clk_lookup),
+       .reset    (rst),
+       .in_valid (valid_in),
+       .dataout  (result),
+       .aes_busy (aes_busy)
+    );
 
-    // drive the registers
-    always @(posedge clk_lookup)
-    begin
+    always @(posedge clk_lookup) begin
         if (rst) begin
-            valid_r  <= 1'd0;
-            result_r <= 'd0;
-
-        end else begin
-            valid_r  <= valid_in;
-            result_r <= data - key; // for testing
+            aes_busy_prev <= 0;
+            valid_out     <= 0;
+        end
+        else begin
+            // we're done when we were busy in the previous cycle but are not busy now
+            if (aes_busy_prev && !aes_busy) begin
+                valid_out <= 1;
+            end
+            aes_busy_prev <= aes_busy;
         end
     end
-
-    // Read the result from the register
-    wire [DATA_WIDTH-1:0] result_out = result_r;
-
-    // Truncate the output
-    assign tuple_out_@EXTERN_NAME@_output_VALID = valid_r;
-    assign tuple_out_@EXTERN_NAME@_output_DATA  = {result_out[RESULT_WIDTH-1:0]};
+    assign tuple_out_@EXTERN_NAME@_output_VALID = valid_out;
+    assign tuple_out_@EXTERN_NAME@_output_DATA  = result;
 
 endmodule

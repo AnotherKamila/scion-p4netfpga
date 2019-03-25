@@ -36,3 +36,35 @@ Archived entries from file /scp:scion-netfpga:/home/scion/scion-p4netfpga/doc/sc
   :ARCHIVE_CATEGORY: scion
   :ARCHIVE_TODO: TODO
   :END:
+
+* iperf
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2019-03-17 Sun 17:33
+  :ARCHIVE_FILE: /scp:scion-netfpga:/home/scion/scion-p4netfpga/doc/scion.org
+  :ARCHIVE_OLPATH: Notes to self
+  :ARCHIVE_CATEGORY: scion
+  :END:
+scion@netfpga-target:~$ iperf -s -u -p 50000
+scion@netfpga-target:~$ iperf -c -u -p 50000
+(make sure there is no route through localhost)
+
+
+TODO bidirectional test
+
+* [2/4] Test it
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2019-03-17 Sun 18:14
+  :ARCHIVE_FILE: /scp:scion-netfpga:/home/scion/scion-p4netfpga/doc/scion.org
+  :ARCHIVE_OLPATH: Project breakdown/Data plane/Packet parsing
+  :ARCHIVE_CATEGORY: scion
+  :END:
+  check how to easily generate SCION packets -- there is something in the
+  scion repo
+*** TODO test encaps+common+address w/ emit
+    SCHEDULED: <2019-03-15 Fri>
+*** DONE test encaps+common+address w/ packet_mod
+    CLOSED: [2019-03-17 Sun 17:56] SCHEDULED: <2019-03-15 Fri>
+*** TODO test complete parser w/ emit
+    SCHEDULED: <2019-03-15 Fri>
+*** DONE test complete parser w/ packet_mod
+    CLOSED: [2019-03-17 Sun 17:56] SCHEDULED: <2019-03-15 Fri>
