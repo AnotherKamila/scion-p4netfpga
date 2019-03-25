@@ -30,15 +30,15 @@ module @MODULE_NAME@
 
 /* Tuple format for input:
         [INPUT_WIDTH-1             : INPUT_WIDTH-1            ] : statefulValid_in
-        [DATA_WIDTH+KEY_WIDTH-1    : KEY_WIDTH                ] : data
-        [KEY_WIDTH-1               : 0                        ] : key
+        [DATA_WIDTH+KEY_WIDTH-1    : DATA_WIDTH               ] : key
+        [DATA_WIDTH-1              : 0                        ] : data
 */
 
     // convert the input data
     wire                          valid_in = tuple_in_@EXTERN_NAME@_input_VALID;
     wire                          statefulValid_in = tuple_in_@EXTERN_NAME@_input_DATA[INPUT_WIDTH-1];
-    wire [DATA_WIDTH-1:0]         data     = tuple_in_@EXTERN_NAME@_input_DATA[KEY_WIDTH+DATA_WIDTH-1:KEY_WIDTH];
-    wire [KEY_WIDTH-1:0]          key      = tuple_in_@EXTERN_NAME@_input_DATA[KEY_WIDTH-1:0];
+    wire [KEY_WIDTH-1:0]          key      = tuple_in_@EXTERN_NAME@_input_DATA[KEY_WIDTH+DATA_WIDTH-1:DATA_WIDTH];
+    wire [DATA_WIDTH-1:0]         data     = tuple_in_@EXTERN_NAME@_input_DATA[KEY_WIDTH-1:0];
 
     // instantiate Seyedali's implementation
     wire                          aes_busy;

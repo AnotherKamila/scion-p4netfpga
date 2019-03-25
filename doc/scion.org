@@ -127,7 +127,7 @@
       |-----------+----------------------+--------------------+---------------------------------------|
       |           |         <c>          |        <c>         |                  <c>                  |
 ***** [1/5] base case
-******* TODO parsing                                                :parsing:
+******* INPR parsing                                                :parsing:
 ********* [1/1] Meta
 *********** DONE get some SCION packets
             CLOSED: [2019-01-23 Wed 19:35]
@@ -170,6 +170,7 @@
 ************* DONE Parse current Hop Field
               CLOSED: [2019-03-17 Sun 17:46] SCHEDULED: <2019-03-14 Thu>
 ************* TODO implement sqrt(area) idea
+              SCHEDULED: <2019-03-26 Tue>
 ********* [2/2] Write the deparser
           with + without packet_mod
 *********** DONE deparse encaps+common+address
@@ -184,7 +185,7 @@
           CLOSED: [2019-03-17 Sun 17:57] SCHEDULED: <2019-03-15 Fri>
 ********* DONE forward base case
           CLOSED: [2019-03-17 Sun 18:15] SCHEDULED: <2019-03-18 Mon>
-******* INPR [7/9] Crypto                                        :validation:
+******* INPR [8/9] Crypto                                        :validation:
 ********* DONE Figure out how the crypto works                          :aes:
           CLOSED: [2019-03-18 Mon 12:48] SCHEDULED: <2019-03-18 Mon>
           sig = MAC_K(timestamp || flags' || exptime || in_if || eg_if || HF')
@@ -192,7 +193,8 @@
                 HF'    is the previous hop field without flags,
                 K      is an AS-local symmetric key => comes from the control plane
                 MAC    is AES-CMAC, RFC4493 pages 353 and 385 <= ref 226 from SCION book
-********* NEXT Write P4 code (with blanks) that does it                 :aes:
+********* DONE Write P4 code (with blanks) that does it                 :aes:
+          CLOSED: [2019-03-25 Mon 18:34]
           rewrite https://github.com/SecureAuthCorp/impacket/blob/master/impacket/crypto.py#L93
           into P4
           SCHEDULED: <2019-03-19 Tue>
@@ -205,19 +207,21 @@
           something that always returns a fixed value so I can compile it
           => "minor milestone" when it runs
 ********* DONE find 3rd party AES module                                :aes:
-          CLOSED: [2019-03-17 Sun 18:48] SCHEDULED: <2019-03-28 Thu>
+          CLOSED: [2019-03-17 Sun 18:48] SCHEDULED: <2019-03-22 Fri>
           make it easily replaceable with commercial solutions
           ==> don't worry about side channels (not my problem) :D
           thanks to the Leuven people :D
 ********* DONE give stubs + info to Leuven people                       :aes:
           CLOSED: [2019-03-22 Fri 14:44]
 ********* DONE Integrate actual AES                                     :aes:
-          CLOSED: [2019-03-25 Mon 13:26] SCHEDULED: <2019-03-28 Thu>
+          CLOSED: [2019-03-25 Mon 13:26] SCHEDULED: <2019-03-25 Mon>
 ********* TODO *test path verification*                :milestone:validation:
-          SCHEDULED: <2019-03-29 Fri>
+          SCHEDULED: <2019-03-26 Tue>
 ******* TODO [0/4] Timestamps                                    :validation:
 ********* TODO write code with placeholders
+          SCHEDULED: <2019-03-27 Wed>
 ********* TODO get time into the switch                             :externs:
+          SCHEDULED: <2019-03-28 Thu>
           This should be an extern not dissimilar to the ~reg_rw~ one, but
           additionally counting clock cycles.
           => It makes sense to not do it before [[*Generate the extern stubs]].
@@ -230,7 +234,9 @@
           Actually, there is [[https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Timestamp-Extern-Function][a timestamp extern]]. Might be simpler to just use
           that + offset register (written by control plane).
 ********* TODO generate control-plane API
+          SCHEDULED: <2019-03-28 Thu>
 ********* TODO *validate the timestamps*
+          SCHEDULED: <2019-04-01 Mon>
 ******* TODO Anything else that needs validation? Figure out :D  :validation:
 ***** [0/2] XOVER
 ******* NEXT Read the XOVER flag                                    :parsing:
@@ -263,12 +269,12 @@
         CLOSED: [2019-01-22 Tue 11:46]
         https://github.com/p4lang/switch
 ******* TODO figure out which parts we want and split them out
-        SCHEDULED: <2019-03-27 Wed>
+        SCHEDULED: <2019-04-22 Mon>
         probably only L2 learning
 ******* TODO stuff in IP and below
         SCHEDULED: <2019-04-03 Wed>
 ******* TODO test it
-        SCHEDULED: <2019-03-29 Fri>
+        SCHEDULED: <2019-04-25 Thu>
 ***** [0/3] Code hygiene
 ******* TODO Write =@brief("blah")= and =@description("blah blah")= annotations
 ******* TODO put the parts that should be easy to switch into separate files:
@@ -282,7 +288,7 @@
         SCHEDULED: <2019-04-23 Tue>
 *** Control plane
 ***** TODO think about forwarding :D
-      SCHEDULED: <2019-03-27 Wed>
+      SCHEDULED: <2019-04-11 Thu>
 *** Directory + make structure
 ***** [2/3] Directory structure
 ******* DONE set up repo skeleton
@@ -317,7 +323,7 @@
         ~set pass [expr {[get_property SLACK [get_timing_paths]] >= 0}]~
 *** [0/3] Performance
 ***** TODO Measure performance
-      SCHEDULED: <2019-03-28 Thu>
+      SCHEDULED: <2019-04-11 Thu>
       how?
 ***** TODO Find bottlenecks
       SCHEDULED: <2019-04-10 Wed>
@@ -356,7 +362,7 @@
 ***** DONE synth and test IRL
       CLOSED: [2019-03-17 Sun 17:41] SCHEDULED: <2019-03-22 Fri>
 *** [/] Production deployment
-    SCHEDULED: <2019-03-28 Thu>
+    SCHEDULED: <2019-05-01 Wed>
 * Timeline summaries
 *** DONE beginning - <2019-02-06 Wed>
     CLOSED: [2019-02-07 Thu 10:18]
@@ -452,12 +458,21 @@ are important for the future users of this project (including me).
  3. Fixed a major "stale state is tainting the build" problem (inherited from the NetFPGA template)
  4. Learned some more Verilog basics and fixed a bug in NetFPGA Verilog wrappers
  5. Probably really made XilinxStreamSwitch/packet_mod work (point 3's problem had been hiding an issue with it)
-*** NEXT progress report <2019-03-20 Wed>
- - Minor milestone: completed and tested parsing and forwarding for the base case
+*** DONE progress report <2019-03-25 Mon>
+    CLOSED: [2019-03-25 Mon 14:05]
+ - Completed and tested parsing and forwarding for the base case
    - parser can deal with SCION path by using the "generate separate parser blocks for every offset" trick
- - Created a fully controllable SCION packet generator with scapy and used it to test and debug the P4 code
+   - currently uses O(N) FPGA area where N is the max path length we support, but I have an idea to make it O(sqrt(N))
+ - Integrated Seyedali's AES implementation
+   - this is ECB => I will implement CMAC in P4 on top of it
+ - Created a fully controllable SCION packet generator with Scapy and used it to test and debug the P4 code
    (will add it to SCION repo after cleanup)
  - Dealt with two bugs in NetFPGA wrappers
+
+Next steps:
+ - implement CMAC and test HF verification (for the base case)
+ - implement the other forwarding cases
+ - add control plane API that tells the switch the current time and implement timestamp validation
 
 * Questions for Benjamin
 *** NOPE gimme 4 cables
