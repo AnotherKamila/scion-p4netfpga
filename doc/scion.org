@@ -275,7 +275,7 @@
         SCHEDULED: <2019-04-03 Wed>
 ******* TODO test it
         SCHEDULED: <2019-04-25 Thu>
-***** [0/3] Code hygiene
+***** [0/5] Code hygiene
 ******* TODO Write =@brief("blah")= and =@description("blah blah")= annotations
 ******* TODO put the parts that should be easy to switch into separate files:
         SCHEDULED: <2019-04-22 Mon>
@@ -286,6 +286,8 @@
          - SCION core
 ******* TODO document =TARGET_SUPPORTS_*= stuff
         SCHEDULED: <2019-04-23 Tue>
+******* TODO Do not generate error packets on SCMP packets
+        => must check whether this is SCMP before sending error
 *** Control plane
 ***** TODO think about forwarding :D
       SCHEDULED: <2019-04-11 Thu>

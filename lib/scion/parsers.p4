@@ -78,7 +78,7 @@ parser ScionEncapsulationParser(packet_in packet,
     }
 
     state not_scion {
-        ERROR(NotScion);
+        ERROR(L2Error);
     }
 }
 
@@ -126,7 +126,7 @@ parser ScionHostAddressParser(packet_in packet,
             SCION_HOST_ADDR_IPV4: ipv4;
             SCION_HOST_ADDR_IPV6: ipv6;
             SCION_HOST_ADDR_SVC:  svc;
-            default:              unknown_host_addr_type;
+            default:              bad_host_addr_type;
         }
     }
 
@@ -148,8 +148,8 @@ parser ScionHostAddressParser(packet_in packet,
         transition accept;
     }
 
-    state unknown_host_addr_type {
-        ERROR(UnknownHostAddrType);
+    state bad_host_addr_type {
+        ERROR(BadHostAddrType);
     }
 }
 
