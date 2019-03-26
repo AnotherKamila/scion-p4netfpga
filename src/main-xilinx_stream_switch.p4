@@ -7,11 +7,14 @@
 
 #include "settings.p4" // must be included *before* SCION
 
+#include <scion/datatypes.p4>
 #include <scion/headers.p4>
 #include <scion/parsers.p4>
 #include <scion/mod_deparsers.p4>
 
 #include "datatypes.p4"
+
+const bit<128> HF_MAC_KEY = 128w0x47; // TODO set by control plane instead of compiling in
 
 struct local_t {
     user_metadata_t     meta;
@@ -56,22 +59,28 @@ extern void cmac2_aes128(in bit<128> K, in bit<128> data, out bit<128> result);
 @description("Computes the AES-CMAC of current (plus prev without flags). \
 See SCION book, p. 122 / eq. 7.8. \
 Implements a *simplified* version of https://tools.ietf.org/html/rfc4493.")
-// control VerifyHF(in bit<128> K, in scion_hf_h current, in scion_hf_h prev, out bit<24> T)
-control VerifyHF(in bit<128> K, in bit<128> M, out bit<128> T) {
-    //     bit<56> prev_hf_data = (
-    //         prev.expiry ++           //  8b
-    //         prev.ingress_if ++       // 12b
-    //         prev.egress_if ++        // 12b
-    //         prev.mac                 // 24b
-    //     );
-    //     bit<128> data = (
-    //         timestamp ++                                   // 32b
-    //         (current.flags & SCION_HF_IMMUTABLE_FLAGS) ++  //  8b
-    //         current.expiry ++                              //  8b
-    //         current.ingres_if ++                           // 12b
-    //         current.egress_if ++                           // 12b
-    //         prev_hf_data                                   // 56b
-    //     );
+control VerifyHF(in    bit<128>         K,
+                 inout scion_metadata_t meta,
+                 in    scion_timestamp  timestamp,
+                 in    scion_hf_h       current,
+                 in    scion_hf_h       prev,
+                 out   bit<128>         T) {
+    // TODO just return a bool instead of T
+
+    bit<56> prev_data = (
+        prev.expiry ++           //  8b
+        prev.ingress_if ++       // 12b
+        prev.egress_if ++        // 12b
+        prev.mac                 // 24b
+    );
+    bit<128> M = (
+        timestamp ++                                   // 32b
+        (current.flags & SCION_HF_IMMUTABLE_FLAGS) ++  //  8b
+        current.expiry ++                              //  8b
+        current.ingress_if ++                          // 12b
+        current.egress_if ++                           // 12b
+        prev_data                                      // 56b
+    );
 
     /*******************************************************************
     This is an *incomplete* implementation of AES-CMAC, *simplified*
@@ -158,6 +167,8 @@ control VerifyHF(in bit<128> K, in bit<128> M, out bit<128> T) {
     bit<128> Y; // everything else is not needed
 
     apply {
+        meta.debug1 = 8w0xaa ++ prev_data;
+
         // Not quite Generate_Subkey:
         cmac1_aes128(K, 128w0, L);
         if (L[1:0] == 0) {
@@ -176,6 +187,11 @@ control VerifyHF(in bit<128> K, in bit<128> M, out bit<128> T) {
         // step 6 last block:
         Y = M ^ K1; // ^ X disappeared because xor 0 is identity
         cmac2_aes128(K, Y, T); // that's it :D
+
+        // validation
+        bit<24> mac = T[127:128-3*8]; // SCION uses 3 bytes of the tag
+        meta.error_flag = mac == current.mac ? ERRTYPE(NoError) : ERRTYPE(BadMAC);
+        meta.debug2 = mac ++ 16w0xfeee ++ current.mac;
     }
 
 }
@@ -243,15 +259,18 @@ control TopPipe(inout local_t d,
         egress_ifid_to_port.apply();
         increment_hf();
         update_checksums();
-        copy_error_to_digest();
-        // copy_debug_to_digest();
 
         // TODO remove
         bit<128> res;
-        verify_current_hf.apply(128w0x1, 128w0x48, res);
-        s.digest.debug1 = res[63:0];
-        s.digest.debug2 = res[127:64];
-        // d.hdr.encaps.udp.checksum = res[15:0] - 0x47; // test :D
+        verify_current_hf.apply(HF_MAC_KEY,
+                                d.meta.scion,
+                                d.hdr.scion.path.current_inf.timestamp,
+                                d.hdr.scion.path.current_hf,
+                                d.hdr.scion.path.prev_hf,
+                                res);
+
+        copy_error_to_digest();
+        if (s.digest.error_flag != ERRTYPE(NoError)) copy_debug_to_digest();
     }
 }
 

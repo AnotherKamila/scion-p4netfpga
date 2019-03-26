@@ -140,8 +140,10 @@ for i in range(3):
               UDP(dport=50000, sport=50000, chksum=0))  # checksum not used
     payload = UDP(dport=1047, sport=1042) / "hello {}\n".format(i)
 
-    applyPkt(encaps/set_current_inf_hf(i,i, scion)/payload, 'nf0', i)
+    applyPkt(encaps/set_current_inf_hf(i,i,   scion)/payload, 'nf0', i)
     expPkt(  encaps/set_current_inf_hf(i,i+1, scion)/payload, 'nf1')
+
+    # TODO also test that bad checksums are rejected -- once we have error handling :D
 
 write_pcap_files()
 

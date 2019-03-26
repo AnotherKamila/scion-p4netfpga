@@ -11,15 +11,14 @@ typedef bit<16> scion_isd;
 typedef bit<48> scion_as;
 typedef bit<6>  scion_host_addr_type_t;
 typedef bit<16> scion_svc_addr_t;
+typedef bit<32> scion_timestamp;
 
 typedef bit<16> packet_size_t; // in bytes => max len 64kB
 
 
 /// SCION metadata
 struct scion_metadata_t {
-#ifndef TARGET_SUPPORTS_VERIFY
-    UserError error_flag; // otherwise verify() is used
-#endif
+    ERROR_T error_flag; // otherwise verify() is used
     bit<64> debug1; // used as a debug signal
     bit<64> debug2; // used as a debug signal
 }

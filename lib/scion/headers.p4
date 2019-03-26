@@ -79,10 +79,10 @@ struct scion_addr_header_t {
 /// Path header
 
 header scion_inf_h {
-    bit<8>    flags;
-    bit<32>   timestamp;
-    scion_isd isd;
-    bit<8>    nhops;
+    bit<8>          flags;
+    scion_timestamp timestamp;
+    scion_isd       isd;
+    bit<8>          nhops;
 }
 
 header scion_hf_h {
@@ -98,6 +98,7 @@ const bit<8> SCION_HF_IMMUTABLE_FLAGS = 0x0; // SCION book, p. 162
 
 struct scion_path_header_t {
     scion_inf_h current_inf;
+    scion_hf_h  prev_hf;     // needed for MAC verification
     scion_hf_h  current_hf;
 }
 

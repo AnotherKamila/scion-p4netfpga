@@ -3,12 +3,21 @@ from __future__ import absolute_import, print_function
 import scapy.all as scapy
 import struct
 import time
+
 from scapy.all import Ether, IP, UDP
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import cmac
+from cryptography.hazmat.primitives.ciphers import algorithms
+
+HF_MAC_KEY = b'\0'*15 + b'\x47'  # 128w0x47
 
 SCION_ADDR_TYPE = {1: 'ipv4', 2: 'ipv6', 3: 'svc'}
 
 ISDField = scapy.ShortField
 ASField  = lambda name, default: scapy.XBitField(name, default, 6*8)
+
+def raw(packet):
+    return str(packet)  # would be bytes in python3
 
 class UnixTimeField(scapy.IntField):
     def i2repr(self, pkt, x):
@@ -45,13 +54,18 @@ class SCIONAddr(scapy.Packet):
     #     pass
 
 class HopField(scapy.Packet):
+    IMMUTABLE_FLAGS = 0x0 # TODO
+    FLAGS=0
+    RANGE_SKIP_FLAGS=1
+    RANGE_END=8
+    RANGE_BEFORE_MAC=5
     name = 'SCION Hop field'
     fields_desc = [
-        scapy.BitField('flags', 0x0, 8),
+        scapy.XBitField('flags', 0x0, 8),
         scapy.ByteField('expiry', 63),
         scapy.BitField('ingress_if', None, 12),
         scapy.BitField('egress_if', None, 12),
-        scapy.BitField('mac', 0, 3*8), # TODO
+        scapy.XBitField('mac', None, 3*8), # TODO
     ]
 
     def extract_padding(self, p):
@@ -69,6 +83,49 @@ class PathSegment(scapy.Packet):
 
     def extract_padding(self, p):
         return "", p
+
+    def post_build(self, pkt, pay):
+        # compute MACs on HFs
+        # this is not a thing that should be done by the client normally :D
+        # => only useful for testing
+        # TODO This is *not* verified against a "real" SCION packet yet!
+        # Somebody should do something!
+        def calculate_mac(current, prev):
+            if prev != None:
+                prev_data = prev[HopField.RANGE_SKIP_FLAGS:HopField.RANGE_END]
+            else:
+                prev_data = b'\0'*(HopField.RANGE_END - HopField.RANGE_SKIP_FLAGS)
+            data = (struct.pack('!I', self.timestamp) +
+                    struct.pack('B',
+                                struct.unpack('B', current[HopField.FLAGS])[0] &
+                                HopField.IMMUTABLE_FLAGS) +
+                    current[HopField.RANGE_SKIP_FLAGS:HopField.RANGE_BEFORE_MAC] +
+                    prev_data)
+            # print('prev_data: ', len(prev_data), prev_data.encode('hex'))
+            # print('data: ', len(data), data.encode('hex'))
+            assert len(data) == 128/8
+
+            c = cmac.CMAC(algorithms.AES(HF_MAC_KEY), backend=default_backend())
+            c.update(data)
+            return c.finalize()
+
+        for i in range(len(self.hops)):
+            if not self.hops[i].mac:
+                curr_beg = 8 + 8*i
+                curr_end = 8 + 8*(i+1)
+                prev_beg = curr_beg - 8
+                mac_beg  = curr_end - 3
+                curr = pkt[curr_beg:curr_end]
+                prev = pkt[prev_beg:curr_beg] if i > 0 else None
+                mac = calculate_mac(curr, prev)
+
+                # print('DEBUG: updating MAC: {} -> {}'.format(struct.pack('!I', self.hops[i].mac).encode('hex'), mac.encode('hex')))
+                # print('DEBUG: updating MAC -> {}'.format(mac.encode('hex')))
+
+                mac_bytes = mac[:3]  # take the most significant bits
+                pkt = pkt[:mac_beg] + mac_bytes + pkt[curr_end:]
+
+        return pkt+pay
 
 # def count_segments(path_hdr):
 #     count = 0
@@ -120,9 +177,9 @@ def set_current_inf_hf(seg, hf, pkt):
     total_before = sum((1 + len(pkt.path[prev].hops)) for prev in range(seg))
     pkt.curr_inf = 32/8 + total_before
     pkt.curr_hf  = 32/8 + total_before + 1 + hf
-    print("DEBUG: set_current_inf_hf({}, {}, ...): total_before={}, curr_inf{}, curr_hf={}".format(
-        seg, hf, total_before, pkt.curr_inf, pkt.curr_hf
-    ))
+    # print("DEBUG: set_current_inf_hf({}, {}, ...): total_before={}, curr_inf{}, curr_hf={}".format(
+    #     seg, hf, total_before, pkt.curr_inf, pkt.curr_hf
+    # ))
     return pkt
 
 def some_scion_packet():
@@ -132,7 +189,7 @@ def some_scion_packet():
             dst_host='10.0.0.47', src_host='10.0.0.42',
         ),
         path=[
-            PathSegment(timestamp=147, isd=42, hops=[
+            PathSegment(timestamp=0x147, isd=42, hops=[
                 HopField(ingress_if=1, egress_if=2),
                 HopField(ingress_if=0, egress_if=3),
             ]),
@@ -158,11 +215,15 @@ def gen_packet():
     )
 
 def main():
-    gen_packet().show()
-    print()
-    gen_packet().show2()
+    # gen_packet().show()
+    # print()
+    # gen_packet().show2()
     # wrpcap([gen_packet()])
-    # scapy.rdpcap('./packets.pcap')[0].show()
+    import sys
+    filename = sys.argv[1] if len(sys.argv) >= 2 else './packets.pcap'
+    index    = sys.argv[2] if len(sys.argv) >= 3 else 0
+    p =  scapy.rdpcap(filename)[0]
+    p.show2()
 
 if __name__ == '__main__':
     main()

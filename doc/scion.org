@@ -157,7 +157,7 @@
               CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-17 Sun>
 ************* DONE make it synth
               CLOSED: [2019-02-18 Mon 22:04] SCHEDULED: <2019-02-14 Thu>
-********* [4/5] Write the parser
+********* [5/6] Write the parser
           With the fancy idea for using ~packet_mod~ if possible and variable-length
           fields in a "skip" struct otherwise
 ************* DONE Parse SCION Common Header
@@ -169,6 +169,8 @@
               CLOSED: [2019-03-17 Sun 17:46] SCHEDULED: <2019-03-14 Thu>
 ************* DONE Parse current Hop Field
               CLOSED: [2019-03-17 Sun 17:46] SCHEDULED: <2019-03-14 Thu>
+************* DONE Parse previous Hop Field
+              CLOSED: [2019-03-26 Tue 18:12] SCHEDULED: <2019-03-26 Tue>
 ************* TODO implement sqrt(area) idea
               SCHEDULED: <2019-03-26 Tue>
 ********* [2/2] Write the deparser
@@ -275,7 +277,7 @@
         SCHEDULED: <2019-04-03 Wed>
 ******* TODO test it
         SCHEDULED: <2019-04-25 Thu>
-***** [0/5] Code hygiene
+***** [0/3] Code hygiene
 ******* TODO Write =@brief("blah")= and =@description("blah blah")= annotations
 ******* TODO put the parts that should be easy to switch into separate files:
         SCHEDULED: <2019-04-22 Mon>
@@ -286,6 +288,8 @@
          - SCION core
 ******* TODO document =TARGET_SUPPORTS_*= stuff
         SCHEDULED: <2019-04-23 Tue>
+***** [0/2] Prod ready
+******* TODO Figure out error handling :D
 ******* TODO Do not generate error packets on SCMP packets
         => must check whether this is SCMP before sending error
 *** Control plane
@@ -475,6 +479,12 @@ Next steps:
  - implement CMAC and test HF verification (for the base case)
  - implement the other forwarding cases
  - add control plane API that tells the switch the current time and implement timestamp validation
+*** NEXT progress report <2019-04-10 Wed>
+TODO progress table snapshot
+
+ - implemented a simplified single-block AES-CMAC in P4
+ - extended parser to also parse the previous HF
+ - implemented HF MAC verification
 
 * Questions for Benjamin
 *** NOPE gimme 4 cables

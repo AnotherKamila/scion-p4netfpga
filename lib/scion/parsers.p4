@@ -221,11 +221,11 @@ parser ScionAddressHeaderParser(packet_in packet,
     }
 }
 
-// Skips bytes in multiples of skip_size.
-// If not TARGET_SUPPORTS_VAR_LEN_PARSING, can skip at most 31 blocks and uses
-// more FPGA area.
-// TODO we could make a PacketSkipper for above if we could change the loop size
-// TODO move to compat/macros
+// TODO we could use the PacketSkipper for above too
+// TODO move to compat/
+@brief("Skips bytes in multiples of skip_size.")
+@description("If not TARGET_SUPPORTS_VAR_LEN_PARSING, can skip at most \
+8 blocks and uses more FPGA area, but it works.")
 @Xilinx_MaxPacketRegion(MTU)
 parser PacketSkipper(packet_in packet, inout scion_metadata_t meta, in bit<8> skip) (bit<32> skip_size) {
 
@@ -254,6 +254,9 @@ parser PacketSkipper(packet_in packet, inout scion_metadata_t meta, in bit<8> sk
     }
 }
 
+// TODO make a PacketSkipperSquared
+// or actually rename them to PacketSkipper8 and PacketSkipper64
+
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionPathParser(packet_in packet, 
                        inout scion_metadata_t meta,
@@ -262,22 +265,45 @@ parser ScionPathParser(packet_in packet,
                        out   scion_path_header_t path) {
     PacketSkipper(8) skipper1; // TODO can we re-use the same one?
     PacketSkipper(8) skipper2;
-    bit<8> skips1 = common.curr_INF - (bit<8>)(pos_in_hdr/8);
-    bit<8> skips2 = common.curr_HF  - (bit<8>)(pos_in_hdr/8) - skips1 - 1; // -1 because we extract current_inf, which is 1 8-byte block
+    bit<8> skips_to_inf = common.curr_INF - (bit<8>)(pos_in_hdr/8);
+    bit<8> skips_to_hf  = common.curr_HF  - (bit<8>)(pos_in_hdr/8) - skips_to_inf - 1;
+    // -1 because we extract current_inf, which is 1 8-byte block
 
     state start {
-        meta.debug2 = 48w0 ++ skips1 ++ skips2;
         transition skip_to_inf;
     }
 
     state skip_to_inf {
-        skipper1.apply(packet, meta, skips1);
+        skipper1.apply(packet, meta, skips_to_inf);
         packet.extract(path.current_inf);
         transition skip_to_hf;
     }
 
     state skip_to_hf {
-        skipper2.apply(packet, meta, skips2);
+        // is this the first HF in this segment?
+        transition select(skips_to_hf) {
+            0:       no_prev_hf;
+            default: skip_to_prev_hf;
+        }
+    }
+
+    state no_prev_hf {
+        // TODO is this necessary or are things defined to be 0?
+        path.prev_hf.flags      = 0;
+        path.prev_hf.expiry     = 0;
+        path.prev_hf.ingress_if = 0;
+        path.prev_hf.egress_if  = 0;
+        path.prev_hf.mac        = 0;
+        transition parse_current_hf;
+    }
+
+    state skip_to_prev_hf {
+        skipper2.apply(packet, meta, skips_to_hf - 1); // -1 because we want prev
+        packet.extract(path.prev_hf);
+        transition parse_current_hf;
+    }
+
+    state parse_current_hf {
         packet.extract(path.current_hf);
         transition accept;
     }

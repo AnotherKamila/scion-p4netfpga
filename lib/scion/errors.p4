@@ -7,13 +7,13 @@
 #define SC_LIB_SCION_ERRORS_P4_
 
 #ifdef TARGET_SUPPORTS_ERROR_TYPE
-#define ERRTYPE(x) error.x
+#define ERROR_T error
 error {
 #else
-#define ERRTYPE(x) UserError.x
+#define ERROR_T UserError
 enum UserError {
 #endif
-    UserErrorNoError,
+    NoError,
 
     // GENERAL
     L2Error,
@@ -28,7 +28,7 @@ enum UserError {
     BadHFOffset,
     // PATH
     PathRequired,
-    BadMac,
+    BadMAC,
     ExpiredHF,
     BadIf,
     RevokedIf,
@@ -52,5 +52,7 @@ enum UserError {
 #define ERROR2(err, save_dest)  save_dest       = UserError.err; transition reject
 #endif
 
+// DEPRECATED, TODO remove
+#define ERRTYPE(x) ERROR_T.x
 
 #endif
