@@ -18,7 +18,7 @@ typedef bit<16> packet_size_t; // in bytes => max len 64kB
 
 /// SCION metadata
 struct scion_metadata_t {
-    ERROR_T error_flag; // otherwise verify() is used
+    ERROR_T error_flag; // verify() is used in the parser if supported
     bit<64> debug1; // used as a debug signal
     bit<64> debug2; // used as a debug signal
 }

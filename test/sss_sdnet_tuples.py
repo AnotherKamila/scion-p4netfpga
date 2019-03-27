@@ -43,16 +43,14 @@ from sss_sume_metadata import *
 tuple_in_file = "Tuple_in.txt"
 tuple_expect_file = "Tuple_expect.txt"
 
-# Diget Data MUST be 80 bits
-""" Digest Data:
-   unused         (256 bits)
-"""
-
+# Digest Data MUST be 256 bits
 dig_field_len = collections.OrderedDict()
-dig_field_len['unused'] = 256
+dig_field_len['error']  = 4
+dig_field_len['unused'] = (256/8)-dig_field_len['error']
 
 #initialize tuple_expect
 dig_tuple_expect = collections.OrderedDict()
+dig_tuple_expect['error']  = 0
 dig_tuple_expect['unused'] = 0
 
 """

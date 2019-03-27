@@ -202,14 +202,14 @@ def some_scion_packet():
         ]
     )
 
-def gen_packet():
+def gen_packet(inf=0, hf=0):
     sender = '00:60:dd:44:c2:c4' # enp3s0
     recver = '00:60:dd:44:c2:c5' # enp5s0
     return (
         Ether(dst=recver, src=sender) /
         IP(src='1.1.1.1', dst='2.2.2.2') /
         UDP(dport=50000, sport=50000) /
-        set_current_inf_hf(0, 0, some_scion_packet()) /
+        set_current_inf_hf(inf, hf, some_scion_packet()) /
         UDP(dport=10047, sport=10042) /
         "hello world\n"
     )

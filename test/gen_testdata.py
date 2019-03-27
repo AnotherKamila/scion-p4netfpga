@@ -29,6 +29,9 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 
+from __future__ import absolute_import, print_function
+
+import itertools
 from scapy.all import*
 
 from nf_sim_tools import *
@@ -58,6 +61,8 @@ nf_expected[3] = []
 
 nf_port_map = {"nf0":0b00000001, "nf1":0b00000100, "nf2":0b00010000, "nf3":0b01000000, "dma0":0b00000010}
 nf_id_map = {"nf0":0, "nf1":1, "nf2":2, "nf3":3}
+scion_if_map = {1: "nf0", 2: "nf1", 3: "nf2", 4: "nf3"}
+ERR_BADSUM = 0x0b  # TODO don't hardcode here
 
 sss_sdnet_tuples.clear_tuple_files()
 
@@ -70,9 +75,10 @@ def applyPkt(pkt, ingress, time):
     pkt.time = time
     nf_applied[nf_id_map[ingress]].append(pkt)
 
-def expPkt(pkt, egress):
+def expPkt(pkt, egress, error=None):
     pktsExpected.append(pkt)
     sss_sdnet_tuples.sume_tuple_expect['dst_port'] = nf_port_map[egress]
+    sss_sdnet_tuples.dig_tuple_expect['error'] = error if error else 0
     sss_sdnet_tuples.write_tuples()
     if egress in ["nf0","nf1","nf2","nf3"]:
         nf_expected[nf_id_map[egress]].append(pkt)
@@ -95,7 +101,7 @@ def write_pcap_files():
             wrpcap('nf{0}_expected.pcap'.format(i), nf_expected[i])
 
     for i in nf_applied.keys():
-        print "nf{0}_applied times: ".format(i), [p.time for p in nf_applied[i]]
+        print("nf{0}_applied times: ".format(i), [p.time for p in nf_applied[i]])
 
 #####################
 # generate testdata #
@@ -108,42 +114,54 @@ def padded(pkt, pad_to):
     if pad_len <= 0: return pkt
     return pkt/Padding(b'\x00'*pad_len)
 
-for i in range(3):
+def gen(t=1, badmacs=False):
     sender = '00:60:dd:44:c2:c4' # enp3s0
     recver = '00:60:dd:44:c2:c5' # enp5s0
-    scion = SCION(
-        addr=SCIONAddr(
-            dst_isdas=ISD_AS(ISD=47, AS=0x4747), src_isdas=ISD_AS(ISD=42, AS=0x4242),
-            dst_host='10.0.0.47', src_host='10.0.0.42',
-        ),
-        path=[
-            PathSegment(timestamp=147, isd=42, hops=[
-                HopField(ingress_if=1, egress_if=2),
-                HopField(ingress_if=3, egress_if=4),
-            ]),
-            PathSegment(timestamp=147, isd=43, hops=[
-                HopField(ingress_if=5, egress_if=6),
-                HopField(ingress_if=1, egress_if=2),
-                HopField(ingress_if=3, egress_if=4),
-            ]),
-            PathSegment(timestamp=147, isd=47, hops=[
-                HopField(ingress_if=7, egress_if=8),
-                HopField(ingress_if=5, egress_if=6),
-                HopField(ingress_if=1, egress_if=2),
-                HopField(ingress_if=3, egress_if=4),
-            ]),
-        ]
-    )
-    # scion.show2()
-    encaps = (Ether(dst=recver, src=sender) /
-              IP(dst='2.2.2.2', src='1.1.1.1') /
-              UDP(dport=50000, sport=50000, chksum=0))  # checksum not used
-    payload = UDP(dport=1047, sport=1042) / "hello {}\n".format(i)
 
-    applyPkt(encaps/set_current_inf_hf(i,i,   scion)/payload, 'nf0', i)
-    expPkt(  encaps/set_current_inf_hf(i,i+1, scion)/payload, 'nf1')
+    for s in range(3):
+        for h in range(3):
+            ifs     = (2,1) if t == 1 else (1,2)
+            seg     = [(3,4), (5,6), (7,8)]
+            currseg = seg[:]
+            currseg.insert(h, ifs)
+            segs    = [seg[:], seg[:]]
+            segs.insert(s, currseg)
+            # print(h, s, segs)
 
-    # TODO also test that bad checksums are rejected -- once we have error handling :D
+            scion = SCION(
+                addr=SCIONAddr(
+                    dst_isdas=ISD_AS(ISD=47, AS=0x4747), src_isdas=ISD_AS(ISD=42, AS=0x4242),
+                    dst_host='10.0.0.47', src_host='10.0.0.42',
+                ),
+                path=[
+                    PathSegment(timestamp=147, isd=42, hops=[
+                        HopField(ingress_if=in_if, egress_if=eg_if, mac=(0x47 if badmacs else None))
+                        for (in_if, eg_if) in seg
+                    ])
+                    for seg in segs
+                ]
+            )
+            # scion.show2()
+            encaps = (Ether(dst=recver, src=sender) /
+                    IP(dst='2.2.2.2', src='1.1.1.1') /
+                    UDP(dport=50000, sport=50000, chksum=0))  # checksum not used
+            payload = UDP(dport=1047, sport=1042) / "hello seg {} hop {}\n".format(s, h)
 
-write_pcap_files()
+            yield ((encaps/set_current_inf_hf(s,h,   scion)/payload, scion_if_map[ifs[0]], t),
+                   (encaps/set_current_inf_hf(s,h+1, scion)/payload, scion_if_map[ifs[1]], ERR_BADSUM if badmacs else None))
+            t += 1
 
+def mkpackets(only_times=None):
+    for applied, expected in itertools.chain(gen(), gen(t=10, badmacs=True)):
+        if only_times:
+            if applied[2] not in only_times: continue
+        print('================ packet {} ================'.format(applied[2]))
+        applied[0].show2()
+        print('================ end packet {} ================'.format(applied[2]))
+        applyPkt(*applied)
+        expPkt(*expected)
+    write_pcap_files()
+
+if __name__ == '__main__':
+    times = [int(x) for x in sys.argv[1:]] if len(sys.argv) > 1 else None
+    mkpackets(times)

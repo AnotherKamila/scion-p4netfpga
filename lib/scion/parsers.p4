@@ -237,14 +237,14 @@ parser PacketSkipper(packet_in packet, inout scion_metadata_t meta, in bit<8> sk
     state start {
         transition select(skip) {
 #define LOOPBODY(i) i: skip_##i;
-#include <compat/loop8.itm>
+#include <compat/loop32.itm>
 #undef LOOPBODY
             default: panic; // somebody asked us to skip more than 32 things
         }
     }
 
 #define LOOPBODY(i) state skip_##i { packet.advance(8*skip_size*i); transition accept; }
-#include <compat/loop8.itm>
+#include <compat/loop32.itm>
 #undef LOOPBODY
 
 #endif

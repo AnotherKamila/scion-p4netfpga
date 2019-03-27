@@ -51,7 +51,7 @@ module @MODULE_NAME@
        .key      (key),
        .clk      (clk_lookup),
        .reset    (rst),
-       .in_valid (valid_in),
+       .in_valid (statefulValid_in),
        .dataout  (result),
        .aes_busy (aes_busy)
     );
@@ -65,6 +65,10 @@ module @MODULE_NAME@
             // we're done when we were busy in the previous cycle but are not busy now
             if (aes_busy_prev && !aes_busy) begin
                 valid_out <= 1;
+            end
+            // needed... not sure why, but needed...
+            if (aes_busy) begin
+                valid_out <= 0;
             end
             aes_busy_prev <= aes_busy;
         end

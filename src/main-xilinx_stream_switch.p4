@@ -63,25 +63,7 @@ control VerifyHF(in    bit<128>         K,
                  inout scion_metadata_t meta,
                  in    scion_timestamp  timestamp,
                  in    scion_hf_h       current,
-                 in    scion_hf_h       prev,
-                 out   bit<128>         T) {
-    // TODO just return a bool instead of T
-
-    bit<56> prev_data = (
-        prev.expiry ++           //  8b
-        prev.ingress_if ++       // 12b
-        prev.egress_if ++        // 12b
-        prev.mac                 // 24b
-    );
-    bit<128> M = (
-        timestamp ++                                   // 32b
-        (current.flags & SCION_HF_IMMUTABLE_FLAGS) ++  //  8b
-        current.expiry ++                              //  8b
-        current.ingress_if ++                          // 12b
-        current.egress_if ++                           // 12b
-        prev_data                                      // 56b
-    );
-
+                 in    scion_hf_h       prev) {
     /*******************************************************************
     This is an *incomplete* implementation of AES-CMAC, *simplified*
     because we have exactly one exactly 128-bit block of data.
@@ -158,6 +140,21 @@ control VerifyHF(in    bit<128>         K,
     // SDNet doesn't support calling externs from actions,
     // so this all has to be one big apply block :-/
 
+    bit<56> prev_data = (
+        prev.expiry ++           //  8b
+        prev.ingress_if ++       // 12b
+        prev.egress_if ++        // 12b
+        prev.mac                 // 24b
+    );
+    bit<128> M = (
+        timestamp ++                                   // 32b
+        (current.flags & SCION_HF_IMMUTABLE_FLAGS) ++  //  8b
+        current.expiry ++                              //  8b
+        current.ingress_if ++                          // 12b
+        current.egress_if ++                           // 12b
+        prev_data                                      // 56b
+    );
+
     // for Generate_Subkey
     const bit<128> const_Rb = 128w0x87;
     bit<128> L;
@@ -165,10 +162,9 @@ control VerifyHF(in    bit<128>         K,
 
     // for AES-CMAC
     bit<128> Y; // everything else is not needed
+    bit<128> T;
 
     apply {
-        meta.debug1 = 8w0xaa ++ prev_data;
-
         // Not quite Generate_Subkey:
         cmac1_aes128(K, 128w0, L);
         if (L[1:0] == 0) {
@@ -188,10 +184,14 @@ control VerifyHF(in    bit<128>         K,
         Y = M ^ K1; // ^ X disappeared because xor 0 is identity
         cmac2_aes128(K, Y, T); // that's it :D
 
-        // validation
+        // Validation:
         bit<24> mac = T[127:128-3*8]; // SCION uses 3 bytes of the tag
         meta.error_flag = mac == current.mac ? ERRTYPE(NoError) : ERRTYPE(BadMAC);
+
+        // Debugging signals:
         meta.debug2 = mac ++ 16w0xfeee ++ current.mac;
+        // meta.debug2 = T[127:64];
+        // meta.debug1 = T[63:0];
     }
 
 }
@@ -266,8 +266,7 @@ control TopPipe(inout local_t d,
                                 d.meta.scion,
                                 d.hdr.scion.path.current_inf.timestamp,
                                 d.hdr.scion.path.current_hf,
-                                d.hdr.scion.path.prev_hf,
-                                res);
+                                d.hdr.scion.path.prev_hf);
 
         copy_error_to_digest();
         if (s.digest.error_flag != ERRTYPE(NoError)) copy_debug_to_digest();
