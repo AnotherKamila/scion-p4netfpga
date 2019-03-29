@@ -96,14 +96,12 @@ class PathSegment(scapy.Packet):
             else:
                 prev_data = b'\0'*(HopField.RANGE_END - HopField.RANGE_SKIP_FLAGS)
             data = (struct.pack('!I', self.timestamp) +
-                    struct.pack('B',
-                                struct.unpack('B', current[HopField.FLAGS])[0] &
-                                HopField.IMMUTABLE_FLAGS) +
+                    struct.pack('B', current[HopField.FLAGS] & HopField.IMMUTABLE_FLAGS) +
                     current[HopField.RANGE_SKIP_FLAGS:HopField.RANGE_BEFORE_MAC] +
                     prev_data)
             # print('prev_data: ', len(prev_data), prev_data.encode('hex'))
             # print('data: ', len(data), data.encode('hex'))
-            assert len(data) == 128/8
+            assert len(data) == 128//8
 
             c = cmac.CMAC(algorithms.AES(HF_MAC_KEY), backend=default_backend())
             c.update(data)
@@ -175,8 +173,8 @@ def set_current_inf_hf(seg, hf, pkt):
     """
     # TODO will break when ipv4 is not hard-coded
     total_before = sum((1 + len(pkt.path[prev].hops)) for prev in range(seg))
-    pkt.curr_inf = 32/8 + total_before
-    pkt.curr_hf  = 32/8 + total_before + 1 + hf
+    pkt.curr_inf = 32//8 + total_before
+    pkt.curr_hf  = 32//8 + total_before + 1 + hf
     # print("DEBUG: set_current_inf_hf({}, {}, ...): total_before={}, curr_inf{}, curr_hf={}".format(
     #     seg, hf, total_before, pkt.curr_inf, pkt.curr_hf
     # ))
@@ -215,15 +213,15 @@ def gen_packet(inf=0, hf=0):
     )
 
 def main():
-    # gen_packet().show()
-    # print()
-    # gen_packet().show2()
+    gen_packet().show()
+    print()
+    gen_packet().show2()
     # wrpcap([gen_packet()])
     import sys
     filename = sys.argv[1] if len(sys.argv) >= 2 else './packets.pcap'
     index    = sys.argv[2] if len(sys.argv) >= 3 else 0
-    p =  scapy.rdpcap(filename)[0]
-    p.show2()
+    # p =  scapy.rdpcap(filename)[0]
+    # p.show2()
 
 if __name__ == '__main__':
     main()
