@@ -1,3 +1,4 @@
+# TODO make this Makefile less implicit and tightly coupled with gendata and other Makefiles and everything
 TOP=..
 include $(TOP)/Makefile.inc
 
@@ -13,7 +14,7 @@ check: ## Check that the actual packets match the expected ones
 
 test: send check ## Send, capture and diff packets
 
-%.pcap: ./gen_testdata.py ./scion_scapy.py
+%.pcap: $(shell find . -name '*.py')
 	./gen_testdata.py
 
 Packet_%.axi: %.pcap

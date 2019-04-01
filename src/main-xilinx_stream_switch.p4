@@ -269,7 +269,7 @@ control TopPipe(inout local_t d,
                                 d.hdr.scion.path.prev_hf);
 
         copy_error_to_digest();
-        if (s.digest.error_flag != ERRTYPE(NoError)) copy_debug_to_digest();
+        // if (s.digest.error_flag != ERRTYPE(NoError)) copy_debug_to_digest();
     }
 }
 

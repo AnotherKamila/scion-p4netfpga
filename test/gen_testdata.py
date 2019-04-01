@@ -1,114 +1,95 @@
-#!/usr/bin/env python
-
-#
-# Copyright (c) 2017 Stephen Ibanez
-# All rights reserved.
-#
-# This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
-# under National Science Foundation under Grant No. CNS-0855268,
-# the University of Cambridge Computer Laboratory under EPSRC INTERNET Project EP/H040536/1 and
-# by the University of Cambridge Computer Laboratory under DARPA/AFRL contract FA8750-11-C-0249 ("MRC2"), 
-# as part of the DARPA MRC research programme.
-#
-# @NETFPGA_LICENSE_HEADER_START@
-#
-# Licensed to NetFPGA C.I.C. (NetFPGA) under one or more contributor
-# license agreements.  See the NOTICE file distributed with this work for
-# additional information regarding copyright ownership.  NetFPGA licenses this
-# file to you under the NetFPGA Hardware-Software License, Version 1.0 (the
-# "License"); you may not use this file except in compliance with the
-# License.  You may obtain a copy of the License at:
-#
-#   http://www.netfpga-cic.org
-#
-# Unless required by applicable law or agreed to in writing, Work distributed
-# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-# CONDITIONS OF ANY KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations under the License.
-#
-# @NETFPGA_LICENSE_HEADER_END@
-#
-
-from __future__ import absolute_import, print_function
+#!/usr/bin/env python3
 
 import itertools
-from scapy.all import*
-
-from nf_sim_tools import *
+import typing
 import random
-from collections import OrderedDict
-import sss_sdnet_tuples
+import sys
+
+assert sys.version_info >= (3,5), "Python 3.5 or newer is needed."
+
+from scapy.all import *
+
+from collections import namedtuple
 from scion_scapy import * # yes, I am terrible too
+from datatypes import *  # TODO remove import * after cleaning up this file
 
-###########
-# pkt generation tools
-###########
+SCION_IF_MAP = {1: "nf0", 2: "nf1", 3: "nf2", 4: "nf3"}
+VERBOSE=False
 
-pktsApplied = []
-pktsExpected = []
+TUPLES_APPLIED_FILE       = "Tuple_in.txt"
+TUPLES_EXPECTED_FILE      = "Tuple_expect.txt"
+ALL_PACKETS_APPLIED_FILE  = "in.pcap"
+ALL_PACKETS_EXPECTED_FILE = "expect.pcap"
+PACKETS_APPLIED_FILE      = "{}_applied.pcap"   # formatted with interface name
+PACKETS_EXPECTED_FILE     = "{}_expected.pcap"
 
-# Pkt lists for SUME simulations
-nf_applied = OrderedDict()
-nf_applied[0] = []
-nf_applied[1] = []
-nf_applied[2] = []
-nf_applied[3] = []
-nf_expected = OrderedDict()
-nf_expected[0] = []
-nf_expected[1] = []
-nf_expected[2] = []
-nf_expected[3] = []
+ALL_PKTS_IF = '_union_'  # used to hold the union of all packets applied/expected on all interfaces
 
-nf_port_map = {"nf0":0b00000001, "nf1":0b00000100, "nf2":0b00010000, "nf3":0b01000000, "dma0":0b00000010}
-nf_id_map = {"nf0":0, "nf1":1, "nf2":2, "nf3":3}
-scion_if_map = {1: "nf0", 2: "nf1", 3: "nf2", 4: "nf3"}
-ERR_BADSUM = 0x0b  # TODO don't hardcode here
+PktTup = namedtuple('PktTup', ['pkt', 'tup'])
 
-sss_sdnet_tuples.clear_tuple_files()
-
-def applyPkt(pkt, ingress, time):
-    pktsApplied.append(pkt)
-    sss_sdnet_tuples.sume_tuple_in['pkt_len'] = len(pkt) 
-    sss_sdnet_tuples.sume_tuple_in['src_port'] = nf_port_map[ingress]
-    sss_sdnet_tuples.sume_tuple_expect['pkt_len'] = len(pkt) 
-    sss_sdnet_tuples.sume_tuple_expect['src_port'] = nf_port_map[ingress]
+applied  = {iface: [] for iface in (SUME_IFACES+[ALL_PKTS_IF])} # if => [PktTup]
+def apply_pkt(pkt:Packet, ingress_if:str, time:int):
     pkt.time = time
-    nf_applied[nf_id_map[ingress]].append(pkt)
+    tup = SwitchMeta(
+        sume=SumeMetadata(
+            pkt_len=len(pkt),
+            src_port=ingress_if,
+        )
+    )
+    applied[ingress_if].append(PktTup(pkt=pkt, tup=tup))
+    applied[ALL_PKTS_IF].append(PktTup(pkt=pkt, tup=tup))
 
-def expPkt(pkt, egress, error=None):
-    pktsExpected.append(pkt)
-    sss_sdnet_tuples.sume_tuple_expect['dst_port'] = nf_port_map[egress]
-    sss_sdnet_tuples.dig_tuple_expect['error'] = error if error else 0
-    sss_sdnet_tuples.write_tuples()
-    if egress in ["nf0","nf1","nf2","nf3"]:
-        nf_expected[nf_id_map[egress]].append(pkt)
-    elif egress == 'bcast':
-        nf_expected[0].append(pkt)
-        nf_expected[1].append(pkt)
-        nf_expected[2].append(pkt)
-        nf_expected[3].append(pkt)
+expected  = {iface: [] for iface in (SUME_IFACES+[ALL_PKTS_IF])} # if => [PktTup]
+def expect_pkt(pkt:Packet, egress_if:str, ingress_if:str=None, error:str="NoError"):
+    tup = SwitchMeta(
+        digest=Digest(error=error),
+        sume=SumeMetadata(
+            pkt_len=len(pkt),
+            src_port=ingress_if if ingress_if else egress_if,
+            dst_port=egress_if,
+        )
+    )
+    if egress_if=="nf1": print(repr(pkt))
+    expected[egress_if].append(PktTup(pkt=pkt, tup=tup))
+    expected[ALL_PKTS_IF].append(PktTup(pkt=pkt, tup=tup))
 
-def write_pcap_files():
-    wrpcap("in.pcap",     pktsApplied)
-    wrpcap("expect.pcap", pktsExpected)
+def apply_and_expect(in_pkt:Packet, ingress_if:str,
+                     exp_pkt:Packet, egress_if:str,
+                     time:int,
+                     error:str="NoError"):
+    apply_pkt(in_pkt, ingress_if, time)
+    expect_pkt(exp_pkt, egress_if, ingress_if=ingress_if, error=error)
 
-    for i in nf_applied.keys():
-        if (len(nf_applied[i]) > 0):
-            wrpcap('nf{0}_applied.pcap'.format(i), nf_applied[i])
+def wrtuple(fname, tuples):
+    print(tuples)
+    with open(fname, 'w') as f:
+        for t in tuples:
+            f.write(bytes(t).hex() + '\n')
 
-    for i in nf_expected.keys():
-        if (len(nf_expected[i]) > 0):
-            wrpcap('nf{0}_expected.pcap'.format(i), nf_expected[i])
+def write_files():
+    def pcap(fname, pkttups):
+        if pkttups:
+            wrpcap(fname, [p for (p, t) in pkttups])
 
-    for i in nf_applied.keys():
-        print("nf{0}_applied times: ".format(i), [p.time for p in nf_applied[i]])
+    def tup(fname, pkttups):
+        wrtuple(fname, [t for (p, t) in pkttups])
+
+    # these are needed for pcap -> axi conversion for vivado sim
+    pcap(ALL_PACKETS_APPLIED_FILE,  applied[ALL_PKTS_IF])
+    pcap(ALL_PACKETS_EXPECTED_FILE, expected[ALL_PKTS_IF])
+
+    tup(TUPLES_APPLIED_FILE,  applied[ALL_PKTS_IF])
+    tup(TUPLES_EXPECTED_FILE, expected[ALL_PKTS_IF])
+
+    for iface in SUME_IFACES:
+        pcap(PACKETS_APPLIED_FILE.format(iface),
+           applied[iface])
+        pcap(PACKETS_EXPECTED_FILE.format(iface), expected[iface])
 
 #####################
 # generate testdata #
 #####################
 
-# Yes, nf_sim_tools has a function like this.
-# It doesn't work.
 def padded(pkt, pad_to):
     pad_len = pad_to - len(pkt)
     if pad_len <= 0: return pkt
@@ -147,20 +128,24 @@ def gen(t=1, badmacs=False):
                     UDP(dport=50000, sport=50000, chksum=0))  # checksum not used
             payload = UDP(dport=1047, sport=1042) / "hello seg {} hop {}\n".format(s, h)
 
-            yield ((encaps/set_current_inf_hf(s,h,   scion)/payload, scion_if_map[ifs[0]], t),
-                   (encaps/set_current_inf_hf(s,h+1, scion)/payload, scion_if_map[ifs[1]], ERR_BADSUM if badmacs else None))
+            nf_ifs = SCION_IF_MAP[ifs[0]], SCION_IF_MAP[ifs[1]]
+            yield (encaps/set_current_inf_hf(s,h,   scion)/payload, nf_ifs[0],
+                   encaps/set_current_inf_hf(s,h+1, scion)/payload, nf_ifs[1],
+                   t,
+                   "BadMAC" if badmacs else "NoError")
             t += 1
 
 def mkpackets(only_times=None):
-    for applied, expected in itertools.chain(gen(), gen(t=10, badmacs=True)):
+    for data in itertools.chain(gen(), gen(t=10, badmacs=True)):
+        in_pkt, exp_pkt, t = data[0], data[2], data[4]
         if only_times:
-            if applied[2] not in only_times: continue
-        print('================ packet {} ================'.format(applied[2]))
-        applied[0].show2()
-        print('================ end packet {} ================'.format(applied[2]))
-        applyPkt(*applied)
-        expPkt(*expected)
-    write_pcap_files()
+            if t not in only_times: continue
+        if VERBOSE:
+            print('================ packet {} ================'.format(t))
+            in_pkt.show2()
+            print('================ end packet {} ================'.format(t))
+        apply_and_expect(*data)
+    write_files()
 
 if __name__ == '__main__':
     times = [int(x) for x in sys.argv[1:]] if len(sys.argv) > 1 else None

@@ -3,6 +3,9 @@ from __future__ import absolute_import, print_function
 import scapy.all as scapy
 import struct
 import time
+import sys
+
+assert sys.version_info >= (3,), "Due to incompatibilities around handling bytes, this only works under Python 3"
 
 from scapy.all import Ether, IP, UDP
 from cryptography.hazmat.backends import default_backend
@@ -135,14 +138,14 @@ class SCION(scapy.Packet):
     name = 'SCION'
     fields_desc = [
         # Common header
-        scapy.BitField(    'version',      0, 4),
-        scapy.BitEnumField('dst_type',     1, 6, SCION_ADDR_TYPE),
-        scapy.BitEnumField('src_type',     1, 6, SCION_ADDR_TYPE),
-        scapy.BitField(    'total_len', None, 16),
-        scapy.BitField(    'hdr_len',   None, 8),
-        scapy.BitField(    'curr_inf',  None, 8),
-        scapy.BitField(    'curr_hf',   None, 8),
-        scapy.BitEnumField('next_hdr',  None, 8, scapy.IP_PROTOS),
+        scapy.BitField(    'version',   0,      4),
+        scapy.BitEnumField('dst_type',  "ipv4", 6, SCION_ADDR_TYPE),
+        scapy.BitEnumField('src_type',  "ipv4", 6, SCION_ADDR_TYPE),
+        scapy.BitField(    'total_len', None,   16),
+        scapy.BitField(    'hdr_len',   None,   8),
+        scapy.BitField(    'curr_inf',  None,   8),
+        scapy.BitField(    'curr_hf',   None,   8),
+        scapy.BitEnumField('next_hdr',  None,   8, scapy.IP_PROTOS),
 
         scapy.PacketField('addr', None, SCIONAddr),
 
