@@ -30,7 +30,11 @@
 #error This parser requires one of TARGET_SUPPORTS_{VAR_LEN_PARSING,PACKET_MOD}.
 #endif
 
-// Parses Ethernet and IP/UDP encapsulation (if present).
+#ifndef MTU
+#error You must #define MTU before including this file.
+#endif
+
+@brief("Parses IP/UDP encapsulation (if present), choosing by ethertype.")
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionEncapsulationParser(packet_in packet,
                                 inout scion_metadata_t meta,
@@ -68,9 +72,7 @@ parser ScionEncapsulationParser(packet_in packet,
 
     state parse_udp {
         packet.extract(encaps.udp);
-        // TODO don't forget UDP checksum!
-        //  1. find out if it's possible to put it into the parser
-        //  2. find out what's faster
+        // TODO UDP checksum
         transition select(encaps.udp.dst_port) {
             SCION_PORT: accept;
             default:    not_scion;
@@ -223,39 +225,66 @@ parser ScionAddressHeaderParser(packet_in packet,
 
 // TODO we could use the PacketSkipper for above too
 // TODO move to compat/
-@brief("Skips bytes in multiples of skip_size.")
+@brief("Skips bytes from packet in multiples of skip_size.")
 @description("If not TARGET_SUPPORTS_VAR_LEN_PARSING, can skip at most \
 8 blocks and uses more FPGA area, but it works.")
 @Xilinx_MaxPacketRegion(MTU)
-parser PacketSkipper(packet_in packet, inout scion_metadata_t meta, in bit<8> skip) (bit<32> skip_size) {
+parser PacketSkipper8(packet_in packet, inout scion_metadata_t meta, in bit<8> skips) (bit<32> skip_size) {
 
-#ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
-// TODO do the same as in SCIONAddrParser
-#error Not implemented yet
-#else // assume TARGET_SUPPORTS_PACKET_MOD
+    #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
+    // TODO do the same as in SCIONAddrParser
+    #error Not implemented yet
+    #else // assume TARGET_SUPPORTS_PACKET_MOD
     // ♪♫ we do what we must because we can ♫
     state start {
-        transition select(skip) {
-#define LOOPBODY(i) i: skip_##i;
-#include <compat/loop32.itm>
-#undef LOOPBODY
+        transition select(skips) {
+            #define LOOPBODY(i) i: skip_##i;
+            #include <compat/loop8.itm>
+            #undef LOOPBODY
             default: panic; // somebody asked us to skip more than 32 things
         }
     }
 
-#define LOOPBODY(i) state skip_##i { packet.advance(8*skip_size*i); transition accept; }
-#include <compat/loop32.itm>
-#undef LOOPBODY
+    #define LOOPBODY(i) state skip_##i { packet.advance(8*skip_size*i); transition accept; }
+    #include <compat/loop8.itm>
+    #undef LOOPBODY
 
-#endif
+    #endif
 
     state panic {
         ERROR(InternalError);
     }
 }
 
-// TODO make a PacketSkipperSquared
-// or actually rename them to PacketSkipper8 and PacketSkipper64
+// TODO move to compat/
+@brief("Skips bytes from packet in multiples of skip_size bytes.")
+@description("If not TARGET_SUPPORTS_VAR_LEN_PARSING, can skip at most \
+64 blocks and uses more FPGA area, but it works.")
+@Xilinx_MaxPacketRegion(MTU)
+parser PacketSkipper64(packet_in packet, inout scion_metadata_t meta, in bit<8> skips) (bit<32> skip_size) {
+
+    #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
+    // TODO do the same as in SCIONAddrParser
+    #error Not implemented yet
+    #else // assume TARGET_SUPPORTS_PACKET_MOD
+    // Square root idea:
+    // 1. let maximum supported skips = k^2
+    // 2. then we can write skips = k*a + b
+    //                      where a = skips / 8, b = skips mod 8
+    // => we skip in two stages, stage 1 with "big" skips sized k*skip_size and stage 2 with "normal-sized" skips
+
+    // in our case k = 8:
+    // SDNet does not consider X*8 a compile time constant, but X<<3 is fine :D
+    PacketSkipper8(skip_size << 3) stage1; // skips to skip_size/8 * floor(skips / 8)
+    PacketSkipper8(skip_size)      stage2; // skips to skips % 8
+    state start {
+        stage1.apply(packet, meta, skips / 8);
+        stage2.apply(packet, meta, skips % 8);
+        transition accept;
+    }
+
+    #endif
+}
 
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionPathParser(packet_in packet, 
@@ -263,8 +292,8 @@ parser ScionPathParser(packet_in packet,
                        in    packet_size_t pos_in_hdr,
                        in    scion_common_h common,
                        out   scion_path_header_t path) {
-    PacketSkipper(8) skipper1; // TODO can we re-use the same one?
-    PacketSkipper(8) skipper2;
+    PacketSkipper64(8) skipper1; // TODO can we re-use the same one?
+    PacketSkipper64(8) skipper2;
     bit<8> skips_to_inf = common.curr_INF - (bit<8>)(pos_in_hdr/8);
     bit<8> skips_to_hf  = common.curr_HF  - (bit<8>)(pos_in_hdr/8) - skips_to_inf - 1;
     // -1 because we extract current_inf, which is 1 8-byte block
@@ -343,7 +372,7 @@ parser ScionHeaderParser(packet_in packet,
     }
 }
 
-// As stated above, this expects the full packet including Ethernet.
+@brief("Parses SCION packets. Expects the full packet including Ethernet.")
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionParser(packet_in packet, 
                    out scion_metadata_t    meta,
