@@ -380,12 +380,30 @@ parser ScionParser(packet_in packet,
 
     ScionEncapsulationParser() encaps_parser;
     ScionHeaderParser()        scion_header_parser;
+    // TODO theory: the newly-added select on error_flag would cause SDNet to
+    // split this into multiple cycles anyway, so the timing error would go away
+    // even if I merged meta back into one thing
+    scion_metadata_t meta_encaps;
+    scion_metadata_t meta_header;
 
     state start {
         packet.extract(hdr.ethernet);
-        encaps_parser.apply(packet, meta, hdr.ethernet.ethertype, hdr.encaps);
-        scion_header_parser.apply(packet, meta, hdr.scion);
+        encaps_parser.apply(packet, meta_encaps, hdr.ethernet.ethertype, hdr.encaps);
+        transition select(meta_encaps.error_flag) {
+            ERRTYPE(NoError): parse_scion;
+            default:          error_from_encaps;
+        }
+    }
+
+    state parse_scion {
+        scion_header_parser.apply(packet, meta_header, hdr.scion);
+        meta = meta_header;
         transition accept;
+    }
+
+    state error_from_encaps {
+        meta = meta_encaps;
+        transition accept; // TODO should we be accepting or rejecting if we want to generate an error message?
     }
 }
 
