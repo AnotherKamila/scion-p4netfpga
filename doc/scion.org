@@ -126,7 +126,7 @@
       | [[VRFY_ONLY]] | [[Parse out the 2nd HF]] | [[Verify the 2nd HF]]  |                   -                   |
       |-----------+----------------------+--------------------+---------------------------------------|
       |           |         <c>          |        <c>         |                  <c>                  |
-***** [1/5] base case
+***** [2/6] base case
 ******* INPR parsing                                                :parsing:
 ********* [1/1] Meta
 *********** DONE get some SCION packets
@@ -171,8 +171,10 @@
               CLOSED: [2019-03-17 Sun 17:46] SCHEDULED: <2019-03-14 Thu>
 ************* DONE Parse previous Hop Field
               CLOSED: [2019-03-26 Tue 18:12] SCHEDULED: <2019-03-26 Tue>
-************* TODO implement sqrt(area) idea
-              SCHEDULED: <2019-03-26 Tue>
+************* DONE implement sqrt(area) idea
+              SCHEDULED: <2019-04-02 Tue>
+************* INPR Fix timing violation
+              SCHEDULED: <2019-04-03 Wed>
 ********* [2/2] Write the deparser
           with + without packet_mod
 *********** DONE deparse encaps+common+address
@@ -187,7 +189,8 @@
           CLOSED: [2019-03-17 Sun 17:57] SCHEDULED: <2019-03-15 Fri>
 ********* DONE forward base case
           CLOSED: [2019-03-17 Sun 18:15] SCHEDULED: <2019-03-18 Mon>
-******* INPR [8/9] Crypto                                        :validation:
+******* INPR [9/10] Crypto                                       :validation:
+        CLOSED: [2019-04-02 Tue 13:09]
 ********* DONE Figure out how the crypto works                          :aes:
           CLOSED: [2019-03-18 Mon 12:48] SCHEDULED: <2019-03-18 Mon>
           sig = MAC_K(timestamp || flags' || exptime || in_if || eg_if || HF')
@@ -217,13 +220,15 @@
           CLOSED: [2019-03-22 Fri 14:44]
 ********* DONE Integrate actual AES                                     :aes:
           CLOSED: [2019-03-25 Mon 13:26] SCHEDULED: <2019-03-25 Mon>
-********* TODO *test path verification*                :milestone:validation:
-          SCHEDULED: <2019-03-26 Tue>
+********* DONE *test path verification*                :milestone:validation:
+          CLOSED: [2019-04-02 Tue 13:04] SCHEDULED: <2019-03-27 Wed>
+********* TODO Fix timing violation
+          SCHEDULED: <2019-04-04 Thu>
 ******* TODO [0/4] Timestamps                                    :validation:
 ********* TODO write code with placeholders
-          SCHEDULED: <2019-03-27 Wed>
+          SCHEDULED: <2019-04-03 Wed>
 ********* TODO get time into the switch                             :externs:
-          SCHEDULED: <2019-03-28 Thu>
+          SCHEDULED: <2019-04-04 Thu>
           This should be an extern not dissimilar to the ~reg_rw~ one, but
           additionally counting clock cycles.
           => It makes sense to not do it before [[*Generate the extern stubs]].
@@ -236,10 +241,14 @@
           Actually, there is [[https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Timestamp-Extern-Function][a timestamp extern]]. Might be simpler to just use
           that + offset register (written by control plane).
 ********* TODO generate control-plane API
-          SCHEDULED: <2019-03-28 Thu>
+          SCHEDULED: <2019-04-04 Thu>
 ********* TODO *validate the timestamps*
-          SCHEDULED: <2019-04-01 Mon>
+          SCHEDULED: <2019-04-10 Wed>
 ******* TODO Anything else that needs validation? Figure out :D  :validation:
+******* TODO Measure performance
+        SCHEDULED: <2019-04-05 Fri>
+        Prepare everything this week so we can just bring things to the traffic
+        generator on Monday.
 ***** [0/2] XOVER
 ******* NEXT Read the XOVER flag                                    :parsing:
         :PROPERTIES:
@@ -274,10 +283,12 @@
         SCHEDULED: <2019-04-22 Mon>
         probably only L2 learning
 ******* TODO stuff in IP and below
-        SCHEDULED: <2019-04-03 Wed>
+        SCHEDULED: <2019-04-17 Wed>
 ******* TODO test it
         SCHEDULED: <2019-04-25 Thu>
-***** [0/3] Code hygiene
+***** [1/4] Code hygiene
+******* DONE Set the tuples thing on fire / fix simulation
+        CLOSED: [2019-04-02 Tue 13:07] SCHEDULED: <2019-04-01 Mon>
 ******* TODO Write =@brief("blah")= and =@description("blah blah")= annotations
 ******* TODO put the parts that should be easy to switch into separate files:
         SCHEDULED: <2019-04-22 Mon>
@@ -328,13 +339,13 @@
         something like:
         ~set pass [expr {[get_property SLACK [get_timing_paths]] >= 0}]~
 *** [0/3] Performance
-***** TODO Measure performance
-      SCHEDULED: <2019-04-11 Thu>
+***** TODO Measure performance of the complete thing
+      SCHEDULED: <2019-04-20 Sat>
       how?
 ***** TODO Find bottlenecks
-      SCHEDULED: <2019-04-10 Wed>
+      SCHEDULED: <2019-04-21 Sun>
 ***** TODO Can we make it faster?
-      SCHEDULED: <2019-04-10 Wed>
+      SCHEDULED: <2019-04-22 Mon>
       if needed
 *** [6/6] Real HW
 ***** DONE read Seyedali's documentation
@@ -484,7 +495,9 @@ TODO progress table snapshot
 
  - implemented a simplified single-block AES-CMAC in P4
  - extended parser to also parse the previous HF
- - implemented HF MAC verification
+ - *implemented HF MAC verification*
+ - fixed a source of multiple bugs in NetFPGA's test data framework by deleting it (I wrote my own instead, because it wasn't worth fixing)
+ - variable length parser: implemented an idea to unroll the loop of two stages with O(sqrt(N)) states instead of the trivial O(N) states
 
 * Questions for Benjamin
 *** NOPE gimme 4 cables
