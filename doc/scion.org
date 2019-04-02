@@ -498,6 +498,7 @@ TODO progress table snapshot
  - *implemented HF MAC verification*
  - fixed a source of multiple bugs in NetFPGA's test data framework by deleting it (I wrote my own instead, because it wasn't worth fixing)
  - variable length parser: implemented an idea to unroll the loop of two stages with O(sqrt(N)) states instead of the trivial O(N) states
+   TODO build commit 263adb9 and compare with thing in commit message
 
 * Questions for Benjamin
 *** NOPE gimme 4 cables
