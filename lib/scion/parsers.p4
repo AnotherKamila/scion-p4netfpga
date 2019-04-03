@@ -34,6 +34,10 @@
 #error You must #define MTU before including this file.
 #endif
 
+#if !(defined TARGET_SUPPORTS_VAR_LEN_PARSING || defined TARGET_SUPPORTS_PACKET_MOD)
+#error This file requires one of TARGET_SUPPORTS_{VAR_LEN_PARSING,PACKET_MOD}.
+#endif
+
 @brief("Parses IP/UDP encapsulation (if present), choosing by ethertype.")
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionEncapsulationParser(packet_in          packet,
@@ -175,6 +179,7 @@ parser ScionAddressHeaderParser(packet_in packet,
     ScionHostAddressParser() src_host_parser;
     packet_size_t host_addr_len1;
     packet_size_t host_addr_len2;
+    PacketSkipper8(1) skipper;
 
     state start {
         packet.extract(hdr.dst_isdas);
@@ -196,40 +201,12 @@ parser ScionAddressHeaderParser(packet_in packet,
         transition accept;
     }
 #else
-    // buaaaaaaaaaaaaaaah T-T
-    // have to make separate states for this because SDNet is horrible
-    // TODO use PacketSkipper8 instead
     state align_to_8_bytes {
-        transition select(pos_in_hdr[2:0]) {
-            0: accept;
-            2: skip_6;
-            4: skip_4;
-            6: skip_2;
-            default: panic; // odd values are currently impossible
-        }
-    }
-
-    // TODO kill it!!!! (with a higher-level macro)
-    state skip_2 {
-        packet.advance(8*2);
-        pos_in_hdr = pos_in_hdr + 8*2;
+        bit<3> skip = -pos_in_hdr[2:0]; // unary minus of last 3 bits = 8 - thingy
+        skipper.apply(packet, skip);
         transition accept;
     }
-    state skip_4 {
-        packet.advance(8*4);
-        pos_in_hdr = pos_in_hdr + 8*4;
-        transition accept;
-    }
-    state skip_6 {
-        packet.advance(8*6);
-        pos_in_hdr = pos_in_hdr + 8*6;
-        transition accept;
-    }
-    #endif
-
-    state panic {
-        PARSE_ERROR(InternalError);
-    }
+#endif
 }
 
 @Xilinx_MaxPacketRegion(MTU)
@@ -244,8 +221,11 @@ parser ScionPathParser(packet_in packet,
     PacketSkipper64(8) skipper2;
     bit<8> skips_to_inf = common.curr_INF - (bit<8>)(pos_in_hdr/8);
     bit<8> skips_to_hf  = common.curr_HF  - (bit<8>)(pos_in_hdr/8) - skips_to_inf - 1;
-    bool skip_too_long; // TODO handle this :D
     // -1 because we extract current_inf, which is 1 8-byte block
+
+    bool skip_too_long = skips_to_hf[7:6] != 0 || skips_to_inf[7:6] != 0; // TODO handle this :D
+    // TODO ... ooor ... just see what it costs to support full-length paths :D
+    // SCION does only up to 256 anyway...
 
     state start {
         err = {ERROR.NoError, 0};
@@ -253,7 +233,7 @@ parser ScionPathParser(packet_in packet,
     }
 
     state skip_to_inf {
-        skipper1.apply(packet, skips_to_inf, skip_too_long);
+        skipper1.apply(packet, skips_to_inf[5:0]);
         packet.extract(path.current_inf);
         transition skip_to_hf;
     }
@@ -277,7 +257,7 @@ parser ScionPathParser(packet_in packet,
     }
 
     state skip_to_prev_hf {
-        skipper2.apply(packet, skips_to_hf - 1, skip_too_long); // -1 because we want prev
+        skipper2.apply(packet, skips_to_hf[5:0] - 1); // -1 because we want prev
         packet.extract(path.prev_hf);
         transition parse_current_hf;
     }
