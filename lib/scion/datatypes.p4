@@ -5,8 +5,7 @@
 
 #include <scion/errors.p4>
 
-/// Type aliases
-
+// Type aliases
 typedef bit<16> scion_isd;
 typedef bit<48> scion_as;
 typedef bit<6>  scion_host_addr_type_t;
@@ -15,12 +14,12 @@ typedef bit<32> scion_timestamp;
 
 typedef bit<16> packet_size_t; // in bytes => max len 64kB
 
-
-/// SCION metadata
+// Used in various parsers/controls to signal error and debugging information
+// struct error_data_t {
 struct scion_metadata_t {
-    ERROR_T error_flag; // verify() is used in the parser if supported
-    bit<64> debug1; // used as a debug signal
-    bit<64> debug2; // used as a debug signal
+    ERROR_T error_flag; // in parsers, if verify() is supported, it is used instead of this
+    bit<64> debug1;     // used as a debug signal => no fixed meaning, can change without notice
+    bit<64> debug2;     // used as a debug signal => no fixed meaning, can change without notice
 }
 
 
