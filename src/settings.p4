@@ -2,9 +2,14 @@
 #ifndef SC__SRC__SETTINGS_P4
 #define SC__SRC__SETTINGS_P4
 
-// Max *Ethernet* frame size (L2!), in bits
-// Jumbo frames needed to get line rate => using 9218 bytes = 73744 bits
-#define MTU 73744
+// Max *Ethernet* frame size (L2), in bits
+#define MTU 16384
 
+// compile with -DEBUG to turn on debugging ;-)
+#ifdef EBUG
+#define DEBUG true
+#else
+#define DEBUG false
+#endif
 
 #endif

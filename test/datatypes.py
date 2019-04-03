@@ -37,12 +37,9 @@ class Digest(scapy.Packet):
     name = 'Digest'
     fields_desc = [
         scapy.IntEnumField('error',  0, ERROR_TYPES),
-        scapy.XBitField('marker1',   0, 32),
         scapy.XBitField('debug1',    0, 64),
-        scapy.XBitField('marker2',   0, 32),
         scapy.XBitField('debug2',    0, 64),
-        scapy.XBitField('marker3',   0, 32),
-        scapy.XBitField('unused',    0, 32),
+        scapy.XBitField('unused',    0, 96),
     ]
 
 class SumeMetadata(scapy.Packet):

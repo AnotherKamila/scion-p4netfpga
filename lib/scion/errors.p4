@@ -7,10 +7,10 @@
 #define SC_LIB_SCION_ERRORS_P4_
 
 #ifdef TARGET_SUPPORTS_ERROR_TYPE
-#define ERROR_T error
+#define ERROR error
 error {
 #else
-#define ERROR_T UserError
+#define ERROR UserError
 enum UserError {
 #endif
     NoError,
@@ -43,16 +43,14 @@ enum UserError {
 
 // Reason: SDNet does not support errors; see P4-SDNet p.8
 #ifdef TARGET_SUPPORTS_VERIFY
-#define ERROR(err)              verify(false, error.err); transition reject
-#define ERROR2(err, save_dest)  verify(false, error.err); transition reject
+#define PARSE_ERROR(e)              verify(false, ERROR.e); transition reject
+#define PARSE_ERROR2(e, save_dest)  verify(false, ERROR.e); transition reject
 #else
-// assumes that "meta" is in current scope
-#define ERROR(err)              meta.error_flag = UserError.err; transition reject
+// assumes that "err" is in current scope
+#define PARSE_ERROR(e)              err.error_flag = ERROR.e; transition reject
 // this one doesn't
-#define ERROR2(err, save_dest)  save_dest       = UserError.err; transition reject
+#define PARSE_ERROR2(e, save_dest)  save_dest      = ERROR.e; transition reject
 #endif
 
-// DEPRECATED, TODO remove
-#define ERRTYPE(x) ERROR_T.x
 
 #endif

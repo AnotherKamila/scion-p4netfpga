@@ -60,7 +60,7 @@ $(SDNET_TOP): $(basename $(MAIN)).sdnet
 	cp $< $@
 
 %.sdnet: $(TOP)/$(SRCDIR)/%.p4 $(shell find $(TOP)/$(INCDIR) -name '*.p4')
-	p4c-sdnet --toplevel_name $(HDL_MODULE_NAME) -o $@ --sdnet_info $(SWITCHINFO) $(TARGET_DEFINES) -I$(TOP)/$(INCDIR) $<
+	p4c-sdnet --toplevel_name $(HDL_MODULE_NAME) -o $@ --sdnet_info $(SWITCHINFO) $(TARGET_DEFINES) $(EXTRA_DEFINES) -I$(TOP)/$(INCDIR) $<
 	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
 $(GENERATED_HDL_TOP): $(SDNET_TOP) $(EXTERNS)/.built

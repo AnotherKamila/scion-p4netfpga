@@ -18,7 +18,9 @@
 #define SC__LIB__SCION__PARSERS_P4_
 
 
-// TODO clean up parameter order
+// TODO actually, I desperately want verify... figure out how we can implement
+// it for SDNet
+// TODO ...and then handle parser errors properly :D
 
 #include <compat/macros.p4>
 #include <common/constants.p4>
@@ -36,11 +38,13 @@
 
 @brief("Parses IP/UDP encapsulation (if present), choosing by ethertype.")
 @Xilinx_MaxPacketRegion(MTU)
-parser ScionEncapsulationParser(packet_in packet,
-                                inout scion_metadata_t meta,
-                                in    ethertype_t      ethertype,
-                                out   scion_encaps_t   encaps) {
+parser ScionEncapsulationParser(packet_in          packet,
+                                in  ethertype_t    ethertype,
+                                out scion_encaps_t encaps,
+                                out error_data_t   err) {
     state start {
+        err = {ERROR.NoError, 0};
+
         transition select(ethertype) {
             ETHERTYPE_IPV4: parse_ipv4;
             ETHERTYPE_IPV6: parse_ipv6;
@@ -80,17 +84,21 @@ parser ScionEncapsulationParser(packet_in packet,
     }
 
     state not_scion {
-        ERROR(L2Error);
+        PARSE_ERROR(L2Error);
     }
 }
 
-// Parses the SCION Common Header
+// Note: if I happen to want to increase clock frequency, I should make
+// pos_in_hdr not inout if I run into timing problems
+@brief("Parses the SCION Common Header.")
 @Xilinx_MaxPacketRegion(MTU)
-parser ScionCommonHeaderParser(packet_in packet, 
-                               inout scion_metadata_t meta,
-                               inout packet_size_t    pos_in_hdr,
-                               out   scion_common_h   hdr) {
+parser ScionCommonHeaderParser(packet_in            packet, 
+                               inout packet_size_t  pos_in_hdr,
+                               out   scion_common_h hdr,
+                               out   error_data_t   err) {
     state start {
+        err = {ERROR.NoError, 0};
+
         packet.extract(hdr);
         pos_in_hdr = pos_in_hdr + SCION_COMMON_H_SIZE;
         transition check_offsets;
@@ -110,7 +118,7 @@ parser ScionCommonHeaderParser(packet_in packet,
     }
 
     state invalid_offset {
-        ERROR(InvalidOffset);
+        PARSE_ERROR(InvalidOffset);
     }
 
 }
@@ -118,12 +126,14 @@ parser ScionCommonHeaderParser(packet_in packet,
 // Parses the given type of SCION host address (IPv4, IPv6 or Service).
 // Used inside ScionAddressHeaderParser.
 @Xilinx_MaxPacketRegion(MTU)
-parser ScionHostAddressParser(packet_in packet,
-                              inout scion_metadata_t       meta,
-                              in    scion_host_addr_type_t type,
-                              out   packet_size_t          addr_len,
-                              out   scion_host_addr_h      hdr) {
+parser ScionHostAddressParser(packet_in                  packet,
+                              in  scion_host_addr_type_t type,
+                              out packet_size_t          addr_len,
+                              out scion_host_addr_h      hdr,
+                              out error_data_t           err) {
     state start {
+        err = {ERROR.NoError, 0};
+
         transition select(type) {
             SCION_HOST_ADDR_IPV4: ipv4;
             SCION_HOST_ADDR_IPV6: ipv6;
@@ -151,17 +161,17 @@ parser ScionHostAddressParser(packet_in packet,
     }
 
     state bad_host_addr_type {
-        ERROR(BadHostAddrType);
+        PARSE_ERROR(BadHostAddrType);
     }
 }
 
 // Parses the SCION Address Header
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionAddressHeaderParser(packet_in packet, 
-                                inout scion_metadata_t    meta,
                                 inout packet_size_t       pos_in_hdr,
                                 in    scion_common_h      common,
-                                out   scion_addr_header_t hdr) {
+                                out   scion_addr_header_t hdr,
+                                out   error_data_t        err) {
 
     ScionHostAddressParser() dst_host_parser;
     ScionHostAddressParser() src_host_parser;
@@ -172,8 +182,9 @@ parser ScionAddressHeaderParser(packet_in packet,
         packet.extract(hdr.dst_isdas);
         packet.extract(hdr.src_isdas);
 
-        dst_host_parser.apply(packet, meta, common.dst_addr_type, host_addr_len1, hdr.dst_host);
-        src_host_parser.apply(packet, meta, common.src_addr_type, host_addr_len2, hdr.src_host);
+        dst_host_parser.apply(packet, common.dst_addr_type, host_addr_len1, hdr.dst_host, err);
+        src_host_parser.apply(packet, common.src_addr_type, host_addr_len2, hdr.src_host, err);
+        // if both had an error, some error will fall out at the end :D
 
         pos_in_hdr = pos_in_hdr + 2*SCION_ISDAS_ADDR_H_SIZE + host_addr_len1 + host_addr_len2;
         transition align_to_8_bytes;
@@ -189,7 +200,7 @@ parser ScionAddressHeaderParser(packet_in packet,
 #else
     // buaaaaaaaaaaaaaaah T-T
     // have to make separate states for this because SDNet is horrible
-    // TODO this should be a macro because I'll need it in path parsing too
+    // TODO use PacketSkipper8 instead
     state align_to_8_bytes {
         transition select(pos_in_hdr[2:0]) {
             0: accept;
@@ -219,7 +230,7 @@ parser ScionAddressHeaderParser(packet_in packet,
     #endif
 
     state panic {
-        ERROR(InternalError);
+        PARSE_ERROR(InternalError);
     }
 }
 
@@ -229,7 +240,7 @@ parser ScionAddressHeaderParser(packet_in packet,
 @description("If not TARGET_SUPPORTS_VAR_LEN_PARSING, can skip at most \
 8 blocks and uses more FPGA area, but it works.")
 @Xilinx_MaxPacketRegion(MTU)
-parser PacketSkipper8(packet_in packet, inout scion_metadata_t meta, in bit<8> skips) (bit<32> skip_size) {
+parser PacketSkipper8(packet_in packet, in bit<8> skips, out error_data_t err) (bit<32> skip_size) {
 
     #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
     // TODO do the same as in SCIONAddrParser
@@ -237,6 +248,8 @@ parser PacketSkipper8(packet_in packet, inout scion_metadata_t meta, in bit<8> s
     #else // assume TARGET_SUPPORTS_PACKET_MOD
     // ♪♫ we do what we must because we can ♫
     state start {
+        err = {ERROR.NoError, 0};
+
         transition select(skips) {
             #define LOOPBODY(i) i: skip_##i;
             #include <compat/loop8.itm>
@@ -252,7 +265,7 @@ parser PacketSkipper8(packet_in packet, inout scion_metadata_t meta, in bit<8> s
     #endif
 
     state panic {
-        ERROR(InternalError);
+        PARSE_ERROR(InternalError);
     }
 }
 
@@ -261,7 +274,7 @@ parser PacketSkipper8(packet_in packet, inout scion_metadata_t meta, in bit<8> s
 @description("If not TARGET_SUPPORTS_VAR_LEN_PARSING, can skip at most \
 64 blocks and uses more FPGA area, but it works.")
 @Xilinx_MaxPacketRegion(MTU)
-parser PacketSkipper64(packet_in packet, inout scion_metadata_t meta, in bit<8> skips) (bit<32> skip_size) {
+parser PacketSkipper64(packet_in packet, in bit<8> skips, out error_data_t err) (bit<32> skip_size) {
 
     #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
     // TODO do the same as in SCIONAddrParser
@@ -278,8 +291,8 @@ parser PacketSkipper64(packet_in packet, inout scion_metadata_t meta, in bit<8> 
     PacketSkipper8(skip_size << 3) stage1; // skips to skip_size/8 * floor(skips / 8)
     PacketSkipper8(skip_size)      stage2; // skips to skips % 8
     state start {
-        stage1.apply(packet, meta, skips / 8);
-        stage2.apply(packet, meta, skips % 8);
+        stage1.apply(packet, skips / 8, err);
+        stage2.apply(packet, skips % 8, err);
         transition accept;
     }
 
@@ -288,10 +301,12 @@ parser PacketSkipper64(packet_in packet, inout scion_metadata_t meta, in bit<8> 
 
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionPathParser(packet_in packet, 
-                       inout scion_metadata_t meta,
-                       in    packet_size_t pos_in_hdr,
-                       in    scion_common_h common,
-                       out   scion_path_header_t path) {
+                       in  packet_size_t pos_in_hdr,
+                       in  scion_common_h common,
+                       out scion_path_header_t path,
+                       out error_data_t err) {
+    // note: offsets validation happens in CommonHeaderParser, so we don't have
+    // to worry about that here
     PacketSkipper64(8) skipper1; // TODO can we re-use the same one?
     PacketSkipper64(8) skipper2;
     bit<8> skips_to_inf = common.curr_INF - (bit<8>)(pos_in_hdr/8);
@@ -303,7 +318,7 @@ parser ScionPathParser(packet_in packet,
     }
 
     state skip_to_inf {
-        skipper1.apply(packet, meta, skips_to_inf);
+        skipper1.apply(packet, skips_to_inf, err);
         packet.extract(path.current_inf);
         transition skip_to_hf;
     }
@@ -327,7 +342,7 @@ parser ScionPathParser(packet_in packet,
     }
 
     state skip_to_prev_hf {
-        skipper2.apply(packet, meta, skips_to_hf - 1); // -1 because we want prev
+        skipper2.apply(packet, skips_to_hf - 1, err); // -1 because we want prev
         packet.extract(path.prev_hf);
         transition parse_current_hf;
     }
@@ -351,9 +366,9 @@ parser ScionExtensionsParser(packet_in packet,
 
 // Parses the SCION header (NOT including encapsulation).
 @Xilinx_MaxPacketRegion(MTU)
-parser ScionHeaderParser(packet_in packet, 
-                         inout scion_metadata_t meta,
-                         out   scion_header_t   hdr) {
+parser ScionHeaderParser(packet_in          packet, 
+                         out scion_header_t hdr,
+                         out error_data_t   err) {
     packet_size_t pos_in_hdr = 0; // current absolute position in bytes
     ScionCommonHeaderParser()  common_header_parser;
     ScionAddressHeaderParser() address_header_parser;
@@ -361,10 +376,11 @@ parser ScionHeaderParser(packet_in packet,
     // ScionExtensionsParser()    extensions_parser;
 
     state start {
-        // parameters:              packet  meta  state       input data  parsed header
-        common_header_parser.apply( packet, meta, pos_in_hdr,             hdr.common);
-        address_header_parser.apply(packet, meta, pos_in_hdr, hdr.common, hdr.addr);
-        path_parser.apply(          packet, meta, pos_in_hdr, hdr.common, hdr.path);
+        // TODO check errors!
+        // parameters:              packet  state       input data  parsed header err
+        common_header_parser.apply( packet, pos_in_hdr,             hdr.common,   err);
+        address_header_parser.apply(packet, pos_in_hdr, hdr.common, hdr.addr,     err);
+        path_parser.apply(          packet, pos_in_hdr, hdr.common, hdr.path,     err);
         // TODO:
         // extensions_parser.apply(packet, hdr, meta);
 
@@ -374,36 +390,34 @@ parser ScionHeaderParser(packet_in packet,
 
 @brief("Parses SCION packets. Expects the full packet including Ethernet.")
 @Xilinx_MaxPacketRegion(MTU)
-parser ScionParser(packet_in packet, 
-                   out scion_metadata_t    meta,
-                   out scion_all_headers_t hdr) {
+parser ScionParser(packet_in               packet, 
+                   out scion_all_headers_t hdr,
+                   out error_data_t        err) {
 
     ScionEncapsulationParser() encaps_parser;
     ScionHeaderParser()        scion_header_parser;
-    // TODO theory: the newly-added select on error_flag would cause SDNet to
-    // split this into multiple cycles anyway, so the timing error would go away
-    // even if I merged meta back into one thing
-    scion_metadata_t meta_encaps;
-    scion_metadata_t meta_header;
 
     state start {
         packet.extract(hdr.ethernet);
-        encaps_parser.apply(packet, meta_encaps, hdr.ethernet.ethertype, hdr.encaps);
-        transition select(meta_encaps.error_flag) {
-            ERRTYPE(NoError): parse_scion;
-            default:          error_from_encaps;
+        encaps_parser.apply(packet, hdr.ethernet.ethertype, hdr.encaps, err);
+        transition select(err.error_flag) {
+            ERROR.NoError: parse_scion;
+            default:         handle_err;
         }
     }
 
     state parse_scion {
-        scion_header_parser.apply(packet, meta_header, hdr.scion);
-        meta = meta_header;
+        scion_header_parser.apply(packet, hdr.scion, err);
         transition accept;
     }
 
-    state error_from_encaps {
-        meta = meta_encaps;
-        transition accept; // TODO should we be accepting or rejecting if we want to generate an error message?
+    state handle_err {
+        // TODO should we be accepting or rejecting if we want to generate an
+        // error message?
+        // TODO check what reject does; if it can be used, then we could apply
+        // an ErrorChecker parser that just rejects in NetFPGA case or calls
+        // verify(false, err) for bmv2
+        transition accept;
     }
 }
 

@@ -24,11 +24,10 @@ extern void cmac2_aes128(in bit<128> K, in bit<128> data, out bit<128> result);
 See SCION book, p. 122 / eq. 7.8. \
 Implements a *simplified* version of RFC 4493.")
 control VerifyHF(in  bit<128>        K,
-    inout scion_metadata_t meta, // TODO remove
                  in  scion_timestamp timestamp,
                  in  scion_hf_h      current,
-                 in  scion_hf_h      prev) {
-                 // out error_data_t    err) {
+                 in  scion_hf_h      prev,
+                 out error_data_t    err) {
     /*******************************************************************
     This is an *incomplete* implementation of AES-CMAC, *simplified*
     because we have exactly one exactly 128-bit block of data.
@@ -151,12 +150,11 @@ control VerifyHF(in  bit<128>        K,
 
         // Validation:
         bit<24> mac = T[127:128-3*8]; // SCION uses 3 bytes of the tag
-        meta.error_flag = mac == current.mac ? ERRTYPE(NoError) : ERRTYPE(BadMAC);
+        err.error_flag = mac == current.mac ? ERROR.NoError : ERROR.BadMAC;
 
         // Debugging signals:
-        meta.debug2 = mac ++ 16w0xfeee ++ current.mac;
-        // meta.debug2 = T[127:64];
-        // meta.debug1 = T[63:0];
+        err.debug = mac ++ 16w0xfeee ++ current.mac;
+        // err.debug = T[127:64];
     }
 
 }

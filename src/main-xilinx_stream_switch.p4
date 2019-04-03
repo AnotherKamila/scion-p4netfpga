@@ -34,7 +34,7 @@ struct switch_meta_t {
 @description("Application-specific; may be changed by the programmer as \
 needed.")
 struct local_t {
-    user_metadata_t     meta;
+    error_data_t err;
     scion_all_headers_t hdr;
 }
 
@@ -47,7 +47,7 @@ parser TopParser(packet_in packet, out local_t d) {
 
     ScionParser() scion_parser;
     state start {
-        scion_parser.apply(packet, d.meta.scion, d.hdr);
+        scion_parser.apply(packet, d.hdr, d.err);
         transition accept;
     }
 }
@@ -99,34 +99,39 @@ control TopPipe(inout local_t d,
         d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
     }
 
-    action copy_error_to_digest() {
-        s.digest.error_flag = d.meta.scion.error_flag;
+    // from here on this should stay in main :D
+
+    action copy_error_to_digest(in error_data_t err) {
+        s.digest.error_flag = err.error_flag;
     }
 
-    action copy_debug_to_digest() {
-        s.digest.debug1     = d.meta.scion.debug1;
-        s.digest.debug2     = d.meta.scion.debug2;
-        s.digest.marker1    = 32w0xfeeefeee;
-        s.digest.marker2    = 32w0xfeeefeee;
-        s.digest.marker3    = 32w0xfeeefeee;
+    action copy_debug_to_digest(in error_data_t err) {
+        s.digest.debug1  = err.debug;   // local
+        s.digest.debug2  = d.err.debug; // parser
     }
 
+    // this cannot be an action because SDNet does not support
+    // calling exit() from an action
+    #define CHECK(err)                                              \
+        if (err.error_flag != ERROR.NoError) {                      \
+            copy_error_to_digest(err);                              \
+            copy_debug_to_digest(DEBUG ? err : {ERROR.NoError,0});  \
+            exit;                                                   \
+        }                                                           \
+
+    error_data_t err;
     VerifyHF() verify_current_hf;
     apply {
         egress_ifid_to_port.apply();
         increment_hf();
         update_checksums();
 
-        // TODO remove
-        bit<128> res;
         verify_current_hf.apply(HF_MAC_KEY,
-                                d.meta.scion,
                                 d.hdr.scion.path.current_inf.timestamp,
                                 d.hdr.scion.path.current_hf,
-                                d.hdr.scion.path.prev_hf);
-
-        copy_error_to_digest();
-        // if (s.digest.error_flag != ERRTYPE(NoError)) copy_debug_to_digest();
+                                d.hdr.scion.path.prev_hf,
+                                err);
+        CHECK(err);
     }
 }
 

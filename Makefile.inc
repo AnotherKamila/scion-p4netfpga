@@ -2,10 +2,12 @@
 
 ### User settings ############################################################
 PLATFORM=netfpga          ## Select the platform. Try make -C platforms ls
+DEBUG=0                   ## Compile with debugging enabled
 
 # Clean up whitespace (grr)
 PLATFORM := $(strip $(PLATFORM))
 ARCH     := $(strip $(ARCH))
+DEBUG    := $(strip $(DEBUG))
 
 ### Project settings #########################################################
 SRCDIR=src
@@ -14,6 +16,11 @@ INCDIR=lib
 MAIN=main-$(ARCH).p4
 
 TARGET_DEFINES=$(foreach F,$(TARGET_SUPPORTS),-DTARGET_SUPPORTS_$(F))
+EXTRA_DEFINES=
+
+ifneq ($(DEBUG),0)
+EXTRA_DEFINES += -DEBUG
+endif
 
 ### Environment -- shouldn't need to be changed ##############################
 
