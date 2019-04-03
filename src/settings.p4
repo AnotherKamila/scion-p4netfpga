@@ -8,8 +8,11 @@
 // compile with -DEBUG to turn on debugging ;-)
 #ifdef EBUG
 #define DEBUG true
+// needed because if sometimes does weird things with SDNet
+#define IFDBG(x) x
 #else
 #define DEBUG false
+#define IFDBG(x)
 #endif
 
 #endif

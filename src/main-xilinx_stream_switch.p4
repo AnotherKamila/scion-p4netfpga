@@ -115,7 +115,7 @@ control TopPipe(inout local_t d,
     #define CHECK(err)                                              \
         if (err.error_flag != ERROR.NoError) {                      \
             copy_error_to_digest(err);                              \
-            copy_debug_to_digest(DEBUG ? err : {ERROR.NoError,0});  \
+            IFDBG(copy_debug_to_digest(err));  \
             exit;                                                   \
         }                                                           \
 

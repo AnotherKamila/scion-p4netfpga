@@ -23,14 +23,12 @@
 // TODO ...and then handle parser errors properly :D
 
 #include <compat/macros.p4>
+#include <compat/parser_utils.p4>
 #include <common/constants.p4>
 #include <scion/constants.p4>
 #include <scion/datatypes.p4>
 #include <scion/headers.p4>
 
-#if !(defined TARGET_SUPPORTS_VAR_LEN_PARSING || defined TARGET_SUPPORTS_PACKET_MOD)
-#error This parser requires one of TARGET_SUPPORTS_{VAR_LEN_PARSING,PACKET_MOD}.
-#endif
 
 #ifndef MTU
 #error You must #define MTU before including this file.
@@ -234,71 +232,6 @@ parser ScionAddressHeaderParser(packet_in packet,
     }
 }
 
-// TODO we could use the PacketSkipper for above too
-// TODO move to compat/
-@brief("Skips bytes from packet in multiples of skip_size.")
-@description("If not TARGET_SUPPORTS_VAR_LEN_PARSING, can skip at most \
-8 blocks and uses more FPGA area, but it works.")
-@Xilinx_MaxPacketRegion(MTU)
-parser PacketSkipper8(packet_in packet, in bit<8> skips, out error_data_t err) (bit<32> skip_size) {
-
-    #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
-    // TODO do the same as in SCIONAddrParser
-    #error Not implemented yet
-    #else // assume TARGET_SUPPORTS_PACKET_MOD
-    // ♪♫ we do what we must because we can ♫
-    state start {
-        err = {ERROR.NoError, 0};
-
-        transition select(skips) {
-            #define LOOPBODY(i) i: skip_##i;
-            #include <compat/loop8.itm>
-            #undef LOOPBODY
-            default: panic; // somebody asked us to skip more than 32 things
-        }
-    }
-
-    #define LOOPBODY(i) state skip_##i { packet.advance(8*skip_size*i); transition accept; }
-    #include <compat/loop8.itm>
-    #undef LOOPBODY
-
-    #endif
-
-    state panic {
-        PARSE_ERROR(InternalError);
-    }
-}
-
-// TODO move to compat/
-@brief("Skips bytes from packet in multiples of skip_size bytes.")
-@description("If not TARGET_SUPPORTS_VAR_LEN_PARSING, can skip at most \
-64 blocks and uses more FPGA area, but it works.")
-@Xilinx_MaxPacketRegion(MTU)
-parser PacketSkipper64(packet_in packet, in bit<8> skips, out error_data_t err) (bit<32> skip_size) {
-
-    #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
-    // TODO do the same as in SCIONAddrParser
-    #error Not implemented yet
-    #else // assume TARGET_SUPPORTS_PACKET_MOD
-    // Square root idea:
-    // 1. let maximum supported skips = k^2
-    // 2. then we can write skips = k*a + b
-    //                      where a = skips / 8, b = skips mod 8
-    // => we skip in two stages, stage 1 with "big" skips sized k*skip_size and stage 2 with "normal-sized" skips
-
-    // in our case k = 8:
-    // SDNet does not consider X*8 a compile time constant, but X<<3 is fine :D
-    PacketSkipper8(skip_size << 3) stage1; // skips to skip_size/8 * floor(skips / 8)
-    PacketSkipper8(skip_size)      stage2; // skips to skips % 8
-    state start {
-        stage1.apply(packet, skips / 8, err);
-        stage2.apply(packet, skips % 8, err);
-        transition accept;
-    }
-
-    #endif
-}
-
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionPathParser(packet_in packet, 
                        in  packet_size_t pos_in_hdr,
@@ -311,14 +244,16 @@ parser ScionPathParser(packet_in packet,
     PacketSkipper64(8) skipper2;
     bit<8> skips_to_inf = common.curr_INF - (bit<8>)(pos_in_hdr/8);
     bit<8> skips_to_hf  = common.curr_HF  - (bit<8>)(pos_in_hdr/8) - skips_to_inf - 1;
+    bool skip_too_long; // TODO handle this :D
     // -1 because we extract current_inf, which is 1 8-byte block
 
     state start {
+        err = {ERROR.NoError, 0};
         transition skip_to_inf;
     }
 
     state skip_to_inf {
-        skipper1.apply(packet, skips_to_inf, err);
+        skipper1.apply(packet, skips_to_inf, skip_too_long);
         packet.extract(path.current_inf);
         transition skip_to_hf;
     }
@@ -342,7 +277,7 @@ parser ScionPathParser(packet_in packet,
     }
 
     state skip_to_prev_hf {
-        skipper2.apply(packet, skips_to_hf - 1, err); // -1 because we want prev
+        skipper2.apply(packet, skips_to_hf - 1, skip_too_long); // -1 because we want prev
         packet.extract(path.prev_hf);
         transition parse_current_hf;
     }
