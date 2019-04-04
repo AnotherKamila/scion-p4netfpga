@@ -40,13 +40,15 @@ def apply_pkt(pkt:Packet, ingress_if:str, time:int):
     applied[ALL_PKTS_IF].append(PktTup(pkt=pkt, tup=tup))
 
 expected  = {iface: [] for iface in (SUME_IFACES+[ALL_PKTS_IF])} # if => [PktTup]
-def expect_pkt(pkt:Packet, egress_if:str, ingress_if:str=None, error:str="NoError"):
+def expect_pkt(pkt:Packet, egress_if:str, ingress_if:str=None, digest:Digest=None, error:str="NoError"):
+    if not digest: digest = Digest(error=error)
     tup = SwitchMeta(
-        digest=Digest(error=error),
+        digest=digest,
         sume=SumeMetadata(
             pkt_len=len(pkt),
             src_port=ingress_if if ingress_if else egress_if,
             dst_port=egress_if,
+            send_dig_to_cpu=1 if digest.sent else 0,
         )
     )
     if egress_if=="nf1": print(repr(pkt))
@@ -56,9 +58,10 @@ def expect_pkt(pkt:Packet, egress_if:str, ingress_if:str=None, error:str="NoErro
 def apply_and_expect(in_pkt:Packet, ingress_if:str,
                      exp_pkt:Packet, egress_if:str,
                      time:int,
+                     digest:Digest=None,
                      error:str="NoError"):
     apply_pkt(in_pkt, ingress_if, time)
-    expect_pkt(exp_pkt, egress_if, ingress_if=ingress_if, error=error)
+    expect_pkt(exp_pkt, egress_if, ingress_if=ingress_if, digest=digest, error=error)
 
 def wrtuple(fname, tuples):
     print(tuples)
@@ -89,6 +92,9 @@ def write_files():
 #####################
 # generate testdata #
 #####################
+
+PACKET_COUNTER_WIDTH = 17  # TODO read from settings.p4
+PACKET_COUNTER_WRAPAROUND = 2**PACKET_COUNTER_WIDTH
 
 def padded(pkt, pad_to):
     pad_len = pad_to - len(pkt)
@@ -129,10 +135,15 @@ def gen(t=1, badmacs=False):
             payload = UDP(dport=1047, sport=1042) / "hello seg {} hop {}\n".format(s, h)
 
             nf_ifs = SCION_IF_MAP[ifs[0]], SCION_IF_MAP[ifs[1]]
+            digest = Digest(
+                error=("BadMAC" if badmacs else "NoError"),
+                unused=(0x47 if t % PACKET_COUNTER_WRAPAROUND == 1 else 0),
+            )
+            digest.sent = t % PACKET_COUNTER_WRAPAROUND == 1
             yield (encaps/set_current_inf_hf(s,h,   scion)/payload, nf_ifs[0],
                    encaps/set_current_inf_hf(s,h+1, scion)/payload, nf_ifs[1],
                    t,
-                   "BadMAC" if badmacs else "NoError")
+                   digest)
             t += 1
 
 def mkpackets(only_times=None):

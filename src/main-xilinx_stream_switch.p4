@@ -52,6 +52,47 @@ parser TopParser(packet_in packet, out local_t d) {
     }
 }
 
+// TODO move this somewhere appropriate
+
+const bit<8> REG_READ  = 8w0;
+const bit<8> REG_WRITE = 8w1;
+const bit<8> REG_ADD   = 8w2;
+
+// const bit<8> EQ_RELOP  = 8w0
+// const bit<8> NEQ_RELOP = 8w1
+// const bit<8> GT_RELOP  = 8w2
+// const bit<8> LT_RELOP  = 8w3
+
+// const int SIGNAL_REG_INDEX_WIDTH = 2;
+// typedef bit<SIGNAL_REG_INDEX_WIDTH> signal_idx;
+// const signal_idx STATS_REQUESTED = 1;
+
+// @brief("Signal bits used to get 'kicked' by the control plane.")
+// @Xilinx_MaxLatency(1)
+// @Xilinx_ControlWidth(width(T))
+// extern void signal_reg_praw<T, D>(in T index,
+//                                   in D newVal,
+//                                   in D incVal,
+//                                   in bit<8> opCode,
+//                                   in D compVal,
+//                                   in bit<8> relOp,
+//                                   out D result,
+//                                   out bit<1> boolean);
+
+// Actually, the above seems very complicated. I'll just use a counter every couple of packets.
+// But TODO once I have a solid control plane, use the above.
+
+@brief("Counter used to send out stats every 2^PACKET_COUNTER_WIDTH packets.")
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(1)
+extern void packet_counter_reg_raw(in bit<1> index,
+                                   in bit<PACKET_COUNTER_WIDTH> newVal,
+                                   in bit<PACKET_COUNTER_WIDTH> incVal,
+                                   in bit<8> opCode,
+                                   out bit<PACKET_COUNTER_WIDTH> result);
+
+// end of the part that should be moved somewhere appropriate
+
 @brief("The 'main' of the switch.")
 @description("Processes the parsed data and modifies and forwards the packet.")
 // DO NOT RENAME the 's' parameter: the generated Verilog derives wire names
@@ -73,6 +114,10 @@ control TopPipe(inout local_t d,
 
     action set_dst_port(port_t port) {
         s.sume.dst_port = port;
+    }
+
+    action send_digest() {
+        s.sume.send_dig_to_cpu = 1;
     }
 
     // SCION egress interface ID to physical port
@@ -110,6 +155,24 @@ control TopPipe(inout local_t d,
         s.digest.debug2  = d.err.debug; // parser
     }
 
+    action send_stats_digest() {
+        s.digest.dma_q_size = s.sume.dma_q_size;
+        s.digest.nf3_q_size = s.sume.nf3_q_size;
+        s.digest.nf2_q_size = s.sume.nf2_q_size;
+        s.digest.nf1_q_size = s.sume.nf1_q_size;
+        s.digest.nf0_q_size = s.sume.nf0_q_size;
+        // TODO remove:
+        s.digest.unused = 0x47;
+
+        send_digest();
+    }
+
+    // // TODO this could be a generic function, but then it gets confusing how to
+    // // tell it which register I mean :D
+    // action read_and_clear_signal(in signal_idx idx, out bit<1> res) {
+    //     signal_reg_praw(idx, 0, 0, REG_WRITE, true, EQ_RELOP, _, res);
+    // }
+
     // this cannot be an action because SDNet does not support
     // calling exit() from an action
     #define CHECK(err)                                              \
@@ -119,8 +182,12 @@ control TopPipe(inout local_t d,
             exit;                                                   \
         }                                                           \
 
+    // TODO the parts related to forwarding should be moved into something like
+    // a ScionForwarder control or so
     error_data_t err;
     VerifyHF() verify_current_hf;
+
+    bit<PACKET_COUNTER_WIDTH> curcnt;
     apply {
         egress_ifid_to_port.apply();
         increment_hf();
@@ -131,6 +198,18 @@ control TopPipe(inout local_t d,
                                 d.hdr.scion.path.current_hf,
                                 d.hdr.scion.path.prev_hf,
                                 err);
+
+        // TODO remove: this is me figuring out how the timestamp thing works
+        // bit<24> stats_time;
+        // stats_timestamp(1, stats_time);
+        // s.digest.debug1 = 40w0 ++ stats_time;
+
+        // Increment the packet counter
+        // this has to be directly in here because SDNet does not support
+        // calling externs from actions
+        packet_counter_reg_raw(1w0, 0, 1, REG_ADD, curcnt);
+        if (curcnt == 1) send_stats_digest(); // 1 so that it's visible in tests
+
         CHECK(err);
     }
 }

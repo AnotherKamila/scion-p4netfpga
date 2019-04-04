@@ -317,7 +317,7 @@ parser ScionParser(packet_in               packet,
         encaps_parser.apply(packet, hdr.ethernet.ethertype, hdr.encaps, err);
         transition select(err.error_flag) {
             ERROR.NoError: parse_scion;
-            default:         handle_err;
+            default:       handle_err;
         }
     }
 

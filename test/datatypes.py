@@ -32,33 +32,34 @@ ERROR_TYPES = { i: t for (i,t) in enumerate([
    "InternalError",
 ])}
 
-class Digest(scapy.Packet):
-    """Digest data structure. Corresponds to src/datatypes.p4#digest_data_t."""
-    name = 'Digest'
-    fields_desc = [
-        scapy.IntEnumField('error',  0, ERROR_TYPES),
-        scapy.XBitField('debug1',    0, 64),
-        scapy.XBitField('debug2',    0, 64),
-        scapy.XBitField('unused',    0, 96),
-    ]
+QUEUE_SIZES_FIELDS = [
+    scapy.XBitField('dma_q_size', 0, 16),
+    scapy.XBitField('nf3_q_size', 0, 16),
+    scapy.XBitField('nf2_q_size', 0, 16),
+    scapy.XBitField('nf1_q_size', 0, 16),
+    scapy.XBitField('nf0_q_size', 0, 16),
+]
 
 class SumeMetadata(scapy.Packet):
     """SUME tuple structure. Corresponds to p4include/sume_switch.p4/#sume_metadata_t."""
     name = 'SumeMetadata'
-    fields_desc = [
-    # port_t dst_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
-    # port_t src_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
-
-        scapy.XBitField('dma_q_size',      0, 16),
-        scapy.XBitField('nf3_q_size',      0, 16),
-        scapy.XBitField('nf2_q_size',      0, 16),
-        scapy.XBitField('nf1_q_size',      0, 16),
-        scapy.XBitField('nf0_q_size',      0, 16),
+    fields_desc = QUEUE_SIZES_FIELDS + [
         scapy.XBitField('send_dig_to_cpu', 0, 8),
         scapy.XBitField('drop',            0, 8),
         scapy.BitEnumField('dst_port',     None, 8, SUME_IFACE_MAP),
         scapy.BitEnumField('src_port',     None, 8, SUME_IFACE_MAP),
         scapy.XBitField('pkt_len',         None, 16),
+    ]
+
+class Digest(scapy.Packet):
+    """Digest data structure. Corresponds to src/datatypes.p4#digest_data_t."""
+    name = 'Digest'
+    fields_desc = [
+        scapy.IntEnumField('error', 0, ERROR_TYPES),
+        scapy.XBitField('debug1',   0, 64),
+        scapy.XBitField('debug2',   0, 64),
+    ] + QUEUE_SIZES_FIELDS + [
+        scapy.XBitField('unused',   0, 16),
     ]
 
 class SwitchMeta(scapy.Packet):
