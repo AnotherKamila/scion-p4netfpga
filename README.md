@@ -6,7 +6,7 @@ Master's thesis project of Kamila Součková
 
 A P4-based border router for SCION, runnable in software or on the NetFPGA SUME.
 
-Main results (TODO actually deliver them):
+Main results (TODO actually deliver them, plus TODO correlate this list with the section in thesis):
 
 * Modular, portable P4 code implementing SCION parsing and forwarding.  
   => You can quickly make improvements to this, or base other SCION-related P4 projects on this.

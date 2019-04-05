@@ -117,15 +117,17 @@
 * Project breakdown
 *** Data plane
 ***** Progress overview:
-      |-----------+----------------------+--------------------+---------------------------------------|
-      |           |       Parsing        |     Validation     |              Forwarding               |
-      |-----------+----------------------+--------------------+---------------------------------------|
-      | [[base case]] |         DONE         | [[Crypto]]; [[Timestamps]] |                 DONE                  |
-      | [[XOVER]]     | [[Read the XOVER flag]]  |      as above      |      [[Move the pointers correctly]]      |
-      | [[UP]]        |   [[Read the UP flag]]   |      as above      | [[Swap the interfaces before forwarding]] |
-      | [[VRFY_ONLY]] | [[Parse out the 2nd HF]] | [[Verify the 2nd HF]]  |                   -                   |
-      |-----------+----------------------+--------------------+---------------------------------------|
-      |           |         <c>          |        <c>         |                  <c>                  |
+      |-------------+----------------------+-------------------------+---------------------------------------|
+      |             |       Parsing        |       Validation        |              Forwarding               |
+      |-------------+----------------------+-------------------------+---------------------------------------|
+      | [[base case]]   |         DONE         | [[Crypto]] DONE; [[Timestamps]] |                 DONE                  |
+      | [[XOVER]]       | [[Read the XOVER flag]]  |        as above         |      [[Move the pointers correctly]]      |
+      | [[UP]]          |   [[Read the UP flag]]   |        as above         | [[Swap the interfaces before forwarding]] |
+      | [[VRFY_ONLY]]   | [[Parse out the 2nd HF]] |    [[Verify the 2nd HF]]    |                   -                   |
+      |-------------+----------------------+-------------------------+---------------------------------------|
+      | Performance |    timing issues     |       probably OK       |        OK; sending stats DONE         |
+      |-------------+----------------------+-------------------------+---------------------------------------|
+      |             |         <c>          |           <c>           |                  <c>                  |
 ***** [2/6] base case
 ******* INPR parsing                                                :parsing:
 ********* [1/1] Meta
@@ -491,14 +493,18 @@ Next steps:
  - implement the other forwarding cases
  - add control plane API that tells the switch the current time and implement timestamp validation
 *** NEXT progress report <2019-04-10 Wed>
-TODO progress table snapshot
 
  - implemented a simplified single-block AES-CMAC in P4
  - extended parser to also parse the previous HF
  - *implemented HF MAC verification*
  - fixed a source of multiple bugs in NetFPGA's test data framework by deleting it (I wrote my own instead, because it wasn't worth fixing)
- - variable length parser: implemented an idea to unroll the loop of two stages with O(sqrt(N)) states instead of the trivial O(N) states
-   TODO build commit 263adb9 and compare with thing in commit message
+ - variable length parser: implemented the idea to unroll the parser into two stages sized O(sqrt(N)) instead of the trivial O(N)
+   TODO build with O(N) and O(sqrt(N)) for long path and show difference in spacetime
+ - Queue sizes are now reported to the control plane, and that in turn exports it to Prometheus for easy aggregation.
+ - *Timing is difficult*, but I'm being awesome. <= TODO reformulate :D
+
+Current status:
+TODO progress table snapshot
 
 * Questions for Benjamin
 *** NOPE gimme 4 cables
@@ -615,6 +621,14 @@ TODO progress table snapshot
       replayed from memory. Therefore...
 ***** Performace testing
       Just make a big pcap file :D ^^
+*** documentation
+***** TODO SCION Parser ~> thesis
+***** TODO portability ~> thesis
+***** NEXT Enabling ~XilinxStreamSwitch~
+       1. change the includes and ~main~ :D
+       2. different signature (tuples); therefore:
+          * testdata: your digest is now not separate from switch_meta => no space
+          * verilog module: digest and rest is now together on one bus
 ***** DONE Turning source code into bits in the FPGA
       CLOSED: [2019-02-18 Mon 22:05] SCHEDULED: <2019-02-14 Thu>: complete this
        1. ~p4c-sdnet~ converts P4 into the SDNet language, which is a Xilinx
@@ -641,14 +655,6 @@ TODO progress table snapshot
 bit     0       1       2       3       4       5       6       7
 value   01      02      04      08      16      32      64      128
 if      eth0    nf0     eth1    nf1             nf2             nf3
-*** documentation
-***** TODO SCION Parser
-***** TODO portability
-***** NEXT Enabling ~XilinxStreamSwitch~
-       1. change the includes and ~main~ :D
-       2. different signature (tuples); therefore:
-          * testdata: your digest is now not separate from switch_meta => no space
-          * verilog module: digest and rest is now together on one bus
 * Things to write about
 *** Aim: SCION BR
     => only SCION
@@ -763,7 +769,7 @@ would drastically increase my FPGA area usage.
 *** HW is silly
 ***** sometimes DMA may need an extra reboot?
 * *Thesis*
-  This outline is approximate! TODO fix
+  *moved to gingko* for now => will re-import once I am more or less sure of the outline
 *** Introduction
 *** Related work
 *** Overview
