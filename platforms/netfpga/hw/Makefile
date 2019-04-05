@@ -8,6 +8,7 @@ include ../$(ARCH)/Makefile.inc
 # path overrides
 # this is a bit ugly, but... ¯\_(ツ)_/¯
 HW           = .
+SW           = ../sw
 ARCH_HW      = ../$(ARCH)/hw
 WORKDIR      = ../$(ARCH)/work
 
@@ -37,6 +38,7 @@ test: sim ## Alias for sim
 # 	cp $(HW)/nf_sume/project/nf_sume.runs/impl_1/top.bit $(BITFILE)
 
 design: scion_ip ## TODO Create the design for the NetFPGA board
+	mkdir -p $(SW)/embedded/src/
 	make -C nf_sume project SDNET_IP_DIR=../$(SCION_IP_DIR)
 	# make -C nf_sume export_to_sdk
 	# make -C nf_sume load_elf

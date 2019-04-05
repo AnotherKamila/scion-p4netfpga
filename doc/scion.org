@@ -659,7 +659,7 @@ if      eth0    nf0     eth1    nf1             nf2             nf3
 
 | commit  | WS / ns | Slice LUTs | Registers | Block RAM | TNS Failing | THS Failing | TPWS Failing | notes                                                            |
 |---------+---------+------------+-----------+-----------+-------------+-------------+--------------+------------------------------------------------------------------|
-| CURRENT |         |            |           |           |             |             |              | smaller table; with fancy build options                          |
+| 65ed5ed |         |            |           |           |             |             |              | smaller table; with fancy build options                          |
 | 097c7f0 |         |            |           |           |             |             |              | -- no code change --                                             |
 | b4e83a3 |   0.002 |            |           |           |           0 |           0 |            0 | with fancy build options                                         |
 | ae716fe |  -0.054 |     29.00% |    30.35% |    40.71% |         117 |           0 |            0 | moved AddrParser to PacketSkipper and suddenly it's terrible :'( |

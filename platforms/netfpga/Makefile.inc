@@ -13,6 +13,7 @@ HDL_MODULE_NAME=Scion
 SCION_IP_NAME=nf_sume_sdnet_ip
 
 HW=hw
+SW=sw
 ARCH_HW=$(ARCH)/hw
 WORKDIR=$(ARCH)/work
 EXTERNS=$(WORKDIR)/externs
