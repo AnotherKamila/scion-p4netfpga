@@ -13,7 +13,7 @@ from collections import namedtuple
 from scion_scapy import * # yes, I am terrible too
 from datatypes import *  # TODO remove import * after cleaning up this file
 
-SCION_IF_MAP = {1: "nf0", 2: "nf1", 3: "nf2", 4: "nf3"}
+SCION_IFID_MAP = {iface: i for i, iface in enumerate(SUME_IFACES)}
 VERBOSE=False
 
 TUPLES_APPLIED_FILE       = "Tuple_in.txt"
@@ -107,10 +107,11 @@ def gen(t=1, badmacs=False):
 
     for s in range(3):
         for h in range(3):
-            ifs     = (2,1) if t == 1 else (1,2)
-            seg     = [(3,4), (5,6), (7,8)]
+            ifs     = ('nf1','nf0') if t%2 == 1 else ('nf0','nf1')
+            ifids = SCION_IFID_MAP[ifs[0]], SCION_IFID_MAP[ifs[1]]
+            seg     = [(SCION_IFID_MAP['nf2'], SCION_IFID_MAP['nf3'])]*3
             currseg = seg[:]
-            currseg.insert(h, ifs)
+            currseg.insert(h, ifids)
             segs    = [seg[:], seg[:]]
             segs.insert(s, currseg)
             # print(h, s, segs)
@@ -134,14 +135,13 @@ def gen(t=1, badmacs=False):
                     UDP(dport=50000, sport=50000, chksum=0))  # checksum not used
             payload = UDP(dport=1047, sport=1042) / "hello seg {} hop {}\n".format(s, h)
 
-            nf_ifs = SCION_IF_MAP[ifs[0]], SCION_IF_MAP[ifs[1]]
             digest = Digest(
                 error=("BadMAC" if badmacs else "NoError"),
                 unused=(0x47 if t % PACKET_COUNTER_WRAPAROUND == 1 else 0),
             )
             digest.sent = t % PACKET_COUNTER_WRAPAROUND == 1
-            yield (encaps/set_current_inf_hf(s,h,   scion)/payload, nf_ifs[0],
-                   encaps/set_current_inf_hf(s,h+1, scion)/payload, nf_ifs[1],
+            yield (encaps/set_current_inf_hf(s,h,   scion)/payload, ifs[0],
+                   encaps/set_current_inf_hf(s,h+1, scion)/payload, ifs[1],
                    t,
                    digest)
             t += 1

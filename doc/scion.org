@@ -655,6 +655,18 @@ TODO progress table snapshot
 bit     0       1       2       3       4       5       6       7
 value   01      02      04      08      16      32      64      128
 if      eth0    nf0     eth1    nf1             nf2             nf3
+*** Commit => utilisation
+
+| commit  | WS / ns | Slice LUTs | Registers | Block RAM | TNS Failing | THS Failing | TPWS Failing | notes                                                            |
+|---------+---------+------------+-----------+-----------+-------------+-------------+--------------+------------------------------------------------------------------|
+| CURRENT |         |            |           |           |             |             |              | smaller table; with fancy build options                          |
+| 097c7f0 |         |            |           |           |             |             |              | -- no code change --                                             |
+| b4e83a3 |   0.002 |            |           |           |           0 |           0 |            0 | with fancy build options                                         |
+| ae716fe |  -0.054 |     29.00% |    30.35% |    40.71% |         117 |           0 |            0 | moved AddrParser to PacketSkipper and suddenly it's terrible :'( |
+| 7035aa7 |         |            |           |           |             |             |              |                                                                  |
+
+
+
 * Things to write about
 *** Aim: SCION BR
     => only SCION

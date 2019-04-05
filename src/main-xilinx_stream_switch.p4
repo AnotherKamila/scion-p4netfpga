@@ -116,23 +116,25 @@ control TopPipe(inout local_t d,
         s.sume.dst_port = port;
     }
 
-    action send_digest() {
-        s.sume.send_dig_to_cpu = 1;
+    @brief("Sets port to 1 << current_hf.egress_if.")
+    @description("Meant to be used as a default action if there is no mapping in the IFID => port table.")
+    action set_default_dst_port_from_ifid() {
+        set_dst_port(8w1 << d.hdr.scion.path.current_hf.egress_if[2:0]);
     }
 
-    // SCION egress interface ID to physical port
-    // 1:1 mapping for now
+    @brief("Maps SCION egress interface ID to physical port.")
     table egress_ifid_to_port {
         key = {
-            d.hdr.scion.path.current_hf.egress_if: exact;
+            d.hdr.scion.path.current_hf.egress_if[2:0]: direct;
             // ha ha, netfpga scripts don't support direct match type
-            // but TODO use direct one of these days, maybe
+            // TODO fix them
         }
         actions = {
             set_dst_port;
-            NoAction;
+            set_default_dst_port_from_ifid;
         }
-        size=64; // smallest possible for exact match
+        default_action = set_default_dst_port_from_ifid();
+        // note that size is 2^key width
     }
 
     action update_checksums() {
@@ -145,6 +147,10 @@ control TopPipe(inout local_t d,
     }
 
     // from here on this should stay in main :D
+
+    action send_digest() {
+        s.sume.send_dig_to_cpu = 1;
+    }
 
     action copy_error_to_digest(in error_data_t err) {
         s.digest.error_flag = err.error_flag;
@@ -190,6 +196,7 @@ control TopPipe(inout local_t d,
     bit<PACKET_COUNTER_WIDTH> curcnt;
     apply {
         egress_ifid_to_port.apply();
+
         increment_hf();
         update_checksums();
 

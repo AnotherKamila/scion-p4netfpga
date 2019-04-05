@@ -89,11 +89,19 @@ sim: hdl _env ## Run a behavioural simulation for the SCION module
 	make -C $(TOP)/test gen
 	cp $(TOP)/test/*.txt $(GENERATED_HDL)
 	cp $(TOP)/test/*.axi $(GENERATED_HDL)
+
+	[ -f $(TOP)/test/commands.txt ] && $(MAKE) commandstxt || $(MAKE) notblfiles
+
+	cd $(GENERATED_HDL) && ./vivado_sim.bash
+
+commandstxt: hdl
 	$(SUME_SDNET)/bin/p4_px_tables.py $(TOP)/test/commands.txt $(SWITCHINFO)
-	cp *.tbl $(GENERATED_HDL)
+	cp *.tbl $(GENERATED_HDL) || true
 	# modify the P4_SWITCH_tb so that it writes the table config writes to a file
 	$(SUME_SDNET)/bin/modify_P4_SWITCH_tb.py $(GENERATED_HDL)/Testbench/$(HDL_MODULE_NAME)_tb.sv
-	cd $(GENERATED_HDL) && ./vivado_sim.bash
+
+notblfiles: hdl
+	sed -i 's,\(update_[^(]*("[^.]*.tbl");\),// \1,g' $(GENERATED_HDL)/Testbench/$(HDL_MODULE_NAME)_tb.sv
 
 # TODO figure out how to handle this withour remaking
 # $(GENERATED_HDL)/config_writes.txt: vivado_sim
