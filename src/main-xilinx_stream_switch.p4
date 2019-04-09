@@ -58,38 +58,19 @@ const bit<8> REG_READ  = 8w0;
 const bit<8> REG_WRITE = 8w1;
 const bit<8> REG_ADD   = 8w2;
 
-// const bit<8> EQ_RELOP  = 8w0
-// const bit<8> NEQ_RELOP = 8w1
-// const bit<8> GT_RELOP  = 8w2
-// const bit<8> LT_RELOP  = 8w3
+#define STATS_REG_DEPTH 3
+#define STATS_REG_WIDTH 32
+const bit<STATS_REG_DEPTH> STAT_TOTAL_PACKET_COUNT = 0;
 
-// const int SIGNAL_REG_INDEX_WIDTH = 2;
-// typedef bit<SIGNAL_REG_INDEX_WIDTH> signal_idx;
-// const signal_idx STATS_REQUESTED = 1;
-
-// @brief("Signal bits used to get 'kicked' by the control plane.")
-// @Xilinx_MaxLatency(1)
-// @Xilinx_ControlWidth(width(T))
-// extern void signal_reg_praw<T, D>(in T index,
-//                                   in D newVal,
-//                                   in D incVal,
-//                                   in bit<8> opCode,
-//                                   in D compVal,
-//                                   in bit<8> relOp,
-//                                   out D result,
-//                                   out bit<1> boolean);
-
-// Actually, the above seems very complicated. I'll just use a counter every couple of packets.
-// But TODO once I have a solid control plane, use the above.
-
-@brief("Counter used to send out stats every 2^PACKET_COUNTER_WIDTH packets.")
+@brief("Counters used for reporting stats.")
+@description("The control plane is expected to read this register over DMA.")
 @Xilinx_MaxLatency(1)
-@Xilinx_ControlWidth(1)
-extern void packet_counter_reg_raw(in bit<1> index,
-                                   in bit<PACKET_COUNTER_WIDTH> newVal,
-                                   in bit<PACKET_COUNTER_WIDTH> incVal,
-                                   in bit<8> opCode,
-                                   out bit<PACKET_COUNTER_WIDTH> result);
+@Xilinx_ControlWidth(STATS_REG_DEPTH)
+extern void stats_reg_raw(in bit<STATS_REG_DEPTH> index,
+                          in bit<STATS_REG_WIDTH> newVal,
+                          in bit<STATS_REG_WIDTH> incVal,
+                          in bit<8> opCode,
+                          out bit<STATS_REG_WIDTH> result);
 
 // end of the part that should be moved somewhere appropriate
 
@@ -122,6 +103,9 @@ control TopPipe(inout local_t d,
         set_dst_port(8w1 << d.hdr.scion.path.current_hf.egress_if[2:0]);
     }
 
+    // TODO so... we don't actually need any tables, and if I could get rid of
+    // them, I think I should get rid of them. But it doesn't work without them
+    // by default :-/
     @brief("Maps SCION egress interface ID to physical port.")
     table egress_ifid_to_port {
         key = {
@@ -193,8 +177,10 @@ control TopPipe(inout local_t d,
     error_data_t err;
     VerifyHF() verify_current_hf;
 
-    bit<PACKET_COUNTER_WIDTH> curcnt;
+    bit<STATS_REG_WIDTH> curcnt;
     apply {
+        // TODO this should be reordered and we should verify and drop first if
+        // it is bad
         egress_ifid_to_port.apply();
 
         increment_hf();
@@ -214,8 +200,10 @@ control TopPipe(inout local_t d,
         // Increment the packet counter
         // this has to be directly in here because SDNet does not support
         // calling externs from actions
-        packet_counter_reg_raw(1w0, 0, 1, REG_ADD, curcnt);
-        if (curcnt == 1) send_stats_digest(); // 1 so that it's visible in tests
+        stats_reg_raw(STAT_TOTAL_PACKET_COUNT, 0, 1, REG_ADD, curcnt);
+        // TODO remove:
+        s.digest.unused = curcnt[15:0];
+        // if (curcnt == 1) send_stats_digest(); // 1 so that it's visible in tests
 
         CHECK(err);
     }

@@ -48,7 +48,7 @@ def expect_pkt(pkt:Packet, egress_if:str, ingress_if:str=None, digest:Digest=Non
             pkt_len=len(pkt),
             src_port=ingress_if if ingress_if else egress_if,
             dst_port=egress_if,
-            send_dig_to_cpu=1 if digest.sent else 0,
+            send_dig_to_cpu=1 if hasattr(digest, 'sent') and digest.sent else 0,
         )
     )
     if egress_if=="nf1": print(repr(pkt))
@@ -137,9 +137,9 @@ def gen(t=1, badmacs=False):
 
             digest = Digest(
                 error=("BadMAC" if badmacs else "NoError"),
-                unused=(0x47 if t % PACKET_COUNTER_WRAPAROUND == 1 else 0),
+                unused=t  # TODO remove
             )
-            digest.sent = t % PACKET_COUNTER_WRAPAROUND == 1
+            # digest.sent = t % PACKET_COUNTER_WRAPAROUND == 1
             yield (encaps/set_current_inf_hf(s,h,   scion)/payload, ifs[0],
                    encaps/set_current_inf_hf(s,h+1, scion)/payload, ifs[1],
                    t,
