@@ -51,7 +51,6 @@ def expect_pkt(pkt:Packet, egress_if:str, ingress_if:str=None, digest:Digest=Non
             send_dig_to_cpu=1 if hasattr(digest, 'sent') and digest.sent else 0,
         )
     )
-    if egress_if=="nf1": print(repr(pkt))
     expected[egress_if].append(PktTup(pkt=pkt, tup=tup))
     expected[ALL_PKTS_IF].append(PktTup(pkt=pkt, tup=tup))
 
@@ -101,15 +100,17 @@ def padded(pkt, pad_to):
     if pad_len <= 0: return pkt
     return pkt/Padding(b'\x00'*pad_len)
 
-def gen(t=1, badmacs=False):
+def gen(t=1, badmacs=False, num_hfs_per_seg=3):
+    """It's not really num hfs per seg :D TODO!"""
     sender = '00:60:dd:44:c2:c4' # enp3s0
     recver = '00:60:dd:44:c2:c5' # enp5s0
 
     for s in range(3):
-        for h in range(3):
+        for h in range(num_hfs_per_seg):
             ifs     = ('nf1','nf0') if t%2 == 1 else ('nf0','nf1')
+            # ifs = ('nf0', 'nf1')
             ifids = SCION_IFID_MAP[ifs[0]], SCION_IFID_MAP[ifs[1]]
-            seg     = [(SCION_IFID_MAP['nf2'], SCION_IFID_MAP['nf3'])]*3
+            seg     = [(SCION_IFID_MAP['nf2'], SCION_IFID_MAP['nf3'])]*(num_hfs_per_seg)
             currseg = seg[:]
             currseg.insert(h, ifids)
             segs    = [seg[:], seg[:]]
@@ -147,7 +148,8 @@ def gen(t=1, badmacs=False):
             t += 1
 
 def mkpackets(only_times=None):
-    for data in itertools.chain(gen(), gen(t=10, badmacs=True)):
+    # for data in itertools.chain(gen(), gen(t=10, badmacs=False)):
+    for data in gen(badmacs=False, num_hfs_per_seg=7):
         in_pkt, exp_pkt, t = data[0], data[2], data[4]
         if only_times:
             if t not in only_times: continue

@@ -41,38 +41,58 @@ module @MODULE_NAME@
     wire [DATA_WIDTH-1:0]         data     = tuple_in_@EXTERN_NAME@_input_DATA[KEY_WIDTH-1:0];
 
     // instantiate Seyedali's implementation
-    wire                          aes_busy;
+    // wire                          aes_busy;
     wire [DATA_WIDTH-1:0]         result;
-    reg                           aes_busy_prev;
-    reg                           valid_out;
+    // reg                           aes_busy_prev;
+    // reg                           valid_out;
+    wire                          valid_out;
+
+
+
+
+
+
+   // localparam NUM_CYCLES = 5;
+   // reg [NUM_CYCLES-1:0]           valid_r;
+
+   // always @(posedge clk_lookup) begin
+   //    if (rst) begin
+   //       valid_r <= 0;
+   //    end
+   //    else begin
+   //       valid_r[0] <= valid_in;
+   //       valid_r[NUM_CYCLES-1:1] <= valid_r[NUM_CYCLES-2:0];
+   //       end
+   // end
+   // assign valid_out = valid_r[NUM_CYCLES-1];
 
     aes_encrypt @MODULE_NAME@_aes_inst (
-       .datain   (data),
-       .key      (key),
-       .clk      (clk_lookup),
-       .reset    (rst),
-       .in_valid (statefulValid_in),
-       .dataout  (result),
-       .aes_busy (aes_busy)
+       .datain    (data),
+       .key       (key),
+       .clk       (clk_lookup),
+       .reset     (rst),
+       .in_valid  (valid_in),
+       .dataout   (result),
+       .valid_out (valid_out)
     );
 
-    always @(posedge clk_lookup) begin
-        if (rst) begin
-            aes_busy_prev <= 0;
-            valid_out     <= 0;
-        end
-        else begin
-            // we're done when we were busy in the previous cycle but are not busy now
-            if (aes_busy_prev && !aes_busy) begin
-                valid_out <= 1;
-            end
-            // needed... not sure why, but needed...
-            if (aes_busy) begin
-                valid_out <= 0;
-            end
-            aes_busy_prev <= aes_busy;
-        end
-    end
+    // always @(posedge clk_lookup) begin
+    //     if (rst) begin
+    //         aes_busy_prev <= 0;
+    //         valid_out     <= 0;
+    //     end
+    //     else begin
+    //         // we're done when we were busy in the previous cycle but are not busy now
+    //         if (aes_busy_prev && !aes_busy) begin
+    //             valid_out <= 1;
+    //         end
+    //         // needed... not sure why, but needed...
+    //         if (aes_busy) begin
+    //             valid_out <= 0;
+    //         end
+    //         aes_busy_prev <= aes_busy;
+    //     end
+    // end
     assign tuple_out_@EXTERN_NAME@_output_VALID = valid_out;
     assign tuple_out_@EXTERN_NAME@_output_DATA  = result;
 

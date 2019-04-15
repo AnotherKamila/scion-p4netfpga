@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company: ETH Zurich
-// Engineer: Seyedali Tabaeiaghdaei
+// Engineer: Seyedali Tabaeiaghdaei, modified by Kamila Souckova
 // 
 // Create Date: 08/06/2018 04:37:57 PM
 // Design Name: 
@@ -20,12 +20,13 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module aes_encrypt(datain, key, clk, in_valid, reset, dataout, aes_busy);
+module aes_encrypt(datain, key, clk, in_valid, reset, dataout, aes_busy, valid_out);
 
     input [127:0] datain;
     input [127:0] key;
     input clk, reset, in_valid; 
     output reg [127:0] dataout;
+    output reg valid_out;
     output reg aes_busy;
     
     wire [127:0] r0_out;
@@ -54,7 +55,18 @@ module aes_encrypt(datain, key, clk, in_valid, reset, dataout, aes_busy);
     //reg
     rounds r9(.rc(4'b1000),.data(r_stage4),.keyin(key_stage4),.keyout(keyout9),.rndout(r9_out));
     rounndlast r10(.rc(4'b1001),.rin(r9_out),.keylastin(keyout9),.fout(r10_out));
-    //reg
+
+    always @(posedge clk) begin
+           if (reset) begin
+              valid_out <= 1'b0;
+           end
+           else begin
+                valid_out <= 1'b0;
+                if (aes_busy && enable5) begin
+                   valid_out <= 1'b1;
+                end
+           end
+    end
    
     always @(posedge clk) begin
         if (reset || (aes_busy && enable5)) begin

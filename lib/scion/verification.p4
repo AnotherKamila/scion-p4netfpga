@@ -11,11 +11,11 @@
 @brief("AES-128-ECB encryption for a single block of data")
 @description("Deterministic single-block AES encryption. Should not be used \
 as is: this is intended as a building block for various modes.")
-@Xilinx_MaxLatency(5)
+@Xilinx_MaxLatency(6)
 @Xilinx_ControlWidth(0)
 extern void cmac1_aes128(in bit<128> K, in bit<128> data, out bit<128> result);
 
-@Xilinx_MaxLatency(5)
+@Xilinx_MaxLatency(6)
 @Xilinx_ControlWidth(0)
 extern void cmac2_aes128(in bit<128> K, in bit<128> data, out bit<128> result);
 

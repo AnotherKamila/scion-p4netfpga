@@ -58,19 +58,34 @@ const bit<8> REG_READ  = 8w0;
 const bit<8> REG_WRITE = 8w1;
 const bit<8> REG_ADD   = 8w2;
 
-#define STATS_REG_DEPTH 3
-#define STATS_REG_WIDTH 32
-const bit<STATS_REG_DEPTH> STAT_TOTAL_PACKET_COUNT = 0;
+// NetFPGA only supports 1 write into the same register, so I just concatenate
+// all the queue sizes into one huge field and split the two registers that need
+// to be handled separately
 
-@brief("Counters used for reporting stats.")
+#define GAUGES_REG_DEPTH 1
+#define GAUGES_REG_WIDTH 80
+
+@brief("Register used for reporting queue sizes.")
 @description("The control plane is expected to read this register over DMA.")
 @Xilinx_MaxLatency(1)
-@Xilinx_ControlWidth(STATS_REG_DEPTH)
-extern void stats_reg_raw(in bit<STATS_REG_DEPTH> index,
-                          in bit<STATS_REG_WIDTH> newVal,
-                          in bit<STATS_REG_WIDTH> incVal,
-                          in bit<8> opCode,
-                          out bit<STATS_REG_WIDTH> result);
+@Xilinx_ControlWidth(GAUGES_REG_DEPTH)
+extern void stat_gauges_reg_rw(in bit<GAUGES_REG_DEPTH> index,
+                               in bit<GAUGES_REG_WIDTH> newVal,
+                               in bit<8> opCode,
+                               out bit<GAUGES_REG_WIDTH> result);
+
+#define COUNTER_REG_DEPTH 1
+#define COUNTER_REG_WIDTH 32
+
+@brief("Register used for reporting total packet count.")
+@description("The control plane is expected to read this register over DMA.")
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(COUNTER_REG_DEPTH)
+extern void stat_counter_reg_raw(in bit<COUNTER_REG_DEPTH> index,
+                                 in bit<COUNTER_REG_WIDTH> newVal,
+                                 in bit<COUNTER_REG_WIDTH> incVal,
+                                 in bit<8> opCode,
+                                 out bit<COUNTER_REG_WIDTH> result);
 
 // end of the part that should be moved somewhere appropriate
 
@@ -145,18 +160,6 @@ control TopPipe(inout local_t d,
         s.digest.debug2  = d.err.debug; // parser
     }
 
-    action send_stats_digest() {
-        s.digest.dma_q_size = s.sume.dma_q_size;
-        s.digest.nf3_q_size = s.sume.nf3_q_size;
-        s.digest.nf2_q_size = s.sume.nf2_q_size;
-        s.digest.nf1_q_size = s.sume.nf1_q_size;
-        s.digest.nf0_q_size = s.sume.nf0_q_size;
-        // TODO remove:
-        s.digest.unused = 0x47;
-
-        send_digest();
-    }
-
     // // TODO this could be a generic function, but then it gets confusing how to
     // // tell it which register I mean :D
     // action read_and_clear_signal(in signal_idx idx, out bit<1> res) {
@@ -177,7 +180,8 @@ control TopPipe(inout local_t d,
     error_data_t err;
     VerifyHF() verify_current_hf;
 
-    bit<STATS_REG_WIDTH> curcnt;
+    bit<COUNTER_REG_WIDTH> curcnt;
+    bit<GAUGES_REG_WIDTH> notneeded;
     apply {
         // TODO this should be reordered and we should verify and drop first if
         // it is bad
@@ -197,13 +201,24 @@ control TopPipe(inout local_t d,
         // stats_timestamp(1, stats_time);
         // s.digest.debug1 = 40w0 ++ stats_time;
 
-        // Increment the packet counter
+        // Increment the packet counter & copy queue sizes to the stats register
         // this has to be directly in here because SDNet does not support
         // calling externs from actions
-        stats_reg_raw(STAT_TOTAL_PACKET_COUNT, 0, 1, REG_ADD, curcnt);
+        // TODO maybe make a lib/netfpga/netfpga.p4#NFStats control?
+        // stat_gauges_reg_rw(
+        //     0,
+        //     s.sume.dma_q_size ++
+        //     s.sume.nf3_q_size ++
+        //     s.sume.nf2_q_size ++
+        //     s.sume.nf1_q_size ++
+        //     s.sume.nf0_q_size,
+        //     REG_WRITE,
+        //     notneeded // SDNet does not support using _ with an extern 
+        // );
+        stat_counter_reg_raw(0, 0, 1, REG_ADD, curcnt);
+
         // TODO remove:
         s.digest.unused = curcnt[15:0];
-        // if (curcnt == 1) send_stats_digest(); // 1 so that it's visible in tests
 
         CHECK(err);
     }
