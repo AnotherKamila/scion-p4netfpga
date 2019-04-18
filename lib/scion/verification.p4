@@ -130,7 +130,7 @@ control VerifyHF(in  bit<128>        K,
 
     apply {
         // Not quite Generate_Subkey:
-        cmac1_aes128(K, 128w0, L);
+        cmac1_aes128(K, 128w0, L); // TODO we could in theory pre-compute this for a given key
         if (L[1:0] == 0) {
             K1 = L << 1;
         } else {

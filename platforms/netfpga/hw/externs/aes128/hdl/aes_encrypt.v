@@ -59,6 +59,7 @@ module aes_encrypt(datain, key, clk, in_valid, reset, dataout, aes_busy, valid_o
     always @(posedge clk) begin
            if (reset) begin
               valid_out <= 1'b0;
+              aes_busy  <= 1'b0; // TODO BLA
            end
            else begin
                 valid_out <= 1'b0;
