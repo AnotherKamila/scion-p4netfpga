@@ -120,9 +120,9 @@
       |-------------+----------------------+-------------------------+---------------------------------------|
       |             |       Parsing        |       Validation        |              Forwarding               |
       |-------------+----------------------+-------------------------+---------------------------------------|
-      | [[base case]]   |         DONE         | [[Crypto]] DONE; [[Timestamps]] |                 DONE                  |
+      | [[base case]]   |         DONE         | [[Crypto]] INPR; [[Timestamps]] |                 DONE                  |
       | [[XOVER]]       | [[Read the XOVER flag]]  |        as above         |      [[Move the pointers correctly]]      |
-      | [[UP]]          |   [[Read the UP flag]]   |        as above         | [[Swap the interfaces before forwarding]] |
+      | [[UP]]          | Parse the right HFs  |        as above         | [[Swap the interfaces before forwarding]] |
       | [[VRFY_ONLY]]   | [[Parse out the 2nd HF]] |    [[Verify the 2nd HF]]    |                   -                   |
       |-------------+----------------------+-------------------------+---------------------------------------|
       | Performance |    timing issues     |       probably OK       |        OK; sending stats DONE         |
@@ -225,12 +225,12 @@
 ********* DONE *test path verification*                :milestone:validation:
           CLOSED: [2019-04-02 Tue 13:04] SCHEDULED: <2019-03-27 Wed>
 ********* TODO Fix timing violation
-          SCHEDULED: <2019-04-04 Thu>
+          SCHEDULED: <2019-04-29 Mon>
 ******* TODO [0/4] Timestamps                                    :validation:
 ********* TODO write code with placeholders
-          SCHEDULED: <2019-04-03 Wed>
+          SCHEDULED: <2019-05-01 Wed>
 ********* TODO get time into the switch                             :externs:
-          SCHEDULED: <2019-04-04 Thu>
+          SCHEDULED: <2019-05-03 Fri>
           This should be an extern not dissimilar to the ~reg_rw~ one, but
           additionally counting clock cycles.
           => It makes sense to not do it before [[*Generate the extern stubs]].
@@ -243,9 +243,9 @@
           Actually, there is [[https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Timestamp-Extern-Function][a timestamp extern]]. Might be simpler to just use
           that + offset register (written by control plane).
 ********* TODO generate control-plane API
-          SCHEDULED: <2019-04-04 Thu>
+          SCHEDULED: <2019-05-02 Thu>
 ********* TODO *validate the timestamps*
-          SCHEDULED: <2019-04-10 Wed>
+          SCHEDULED: <2019-05-03 Fri>
 ******* TODO Anything else that needs validation? Figure out :D  :validation:
 ******* TODO Measure performance
         SCHEDULED: <2019-04-05 Fri>
@@ -285,7 +285,7 @@
         SCHEDULED: <2019-04-22 Mon>
         probably only L2 learning
 ******* TODO stuff in IP and below
-        SCHEDULED: <2019-04-17 Wed>
+        SCHEDULED: <2019-04-30 Tue>
 ******* TODO test it
         SCHEDULED: <2019-04-25 Thu>
 ***** [1/4] Code hygiene
@@ -306,8 +306,8 @@
 ******* TODO Do not generate error packets on SCMP packets
         => must check whether this is SCMP before sending error
 *** Control plane
-***** TODO think about forwarding :D
-      SCHEDULED: <2019-04-11 Thu>
+***** DONE think about forwarding :D
+      CLOSED: [2019-04-17 Wed 13:21] SCHEDULED: <2019-04-11 Thu>
 *** Directory + make structure
 ***** [2/3] Directory structure
 ******* DONE set up repo skeleton
@@ -342,10 +342,10 @@
         ~set pass [expr {[get_property SLACK [get_timing_paths]] >= 0}]~
 *** [0/3] Performance
 ***** TODO Measure performance of the complete thing
-      SCHEDULED: <2019-04-20 Sat>
+      SCHEDULED: <2019-05-09 Thu>
       how?
 ***** TODO Find bottlenecks
-      SCHEDULED: <2019-04-21 Sun>
+      SCHEDULED: <2019-05-10 Fri>
 ***** TODO Can we make it faster?
       SCHEDULED: <2019-04-22 Mon>
       if needed
