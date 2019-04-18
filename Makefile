@@ -30,17 +30,9 @@ for-all-archs: # Hello, I am a hack!
 		done ;                                                          \
 	done
 
-test-all: ## Build and test for all platforms and architectures.
-	@$(MAKE) --no-print-directory for-all-archs WHAT=test
-	@echo $(MARK) "Nothing broke! Yay!" $(ENDMARK)
-
-synth: ## Synthesise the something something TODO terminology
-	@echo 'Not implemented yet'
-	@/bin/false
-
-test: ## Verify the design and run simulations.
-	@echo $(MARK) "Testing for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
-	$(MAKE) -C platforms/$(PLATFORM) test ARCH=$(ARCH)
+# synth: ## Synthesise the something something TODO terminology
+# 	@echo 'Not implemented yet'
+# 	@/bin/false
 
 flash: ## TODO
 	@echo 'Not implemented yet'
@@ -48,10 +40,24 @@ flash: ## TODO
 
 graph: graphs ## Visualise the control flow of the P4 program
 
+sim: ## Verify the design and run simulations.
+	@echo $(MARK) "Testing for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
+	$(MAKE) -C platforms/$(PLATFORM) test ARCH=$(ARCH)
+
+test: sim ## Alias for sim
+
+# TODO hwtest
+
 clean: ## Remove generated files
 	$(MAKE) -C platforms/$(PLATFORM) clean
 	$(MAKE) -C test clean
 	rm -rf graphs/
+
+test-all: sim-all ## Alias for sim-all
+
+sim-all: ## Build and test for all platforms and architectures.
+	@$(MAKE) --no-print-directory for-all-archs WHAT=sim
+	@echo $(MARK) "Nothing broke! Yay!" $(ENDMARK)
 
 clean-all: ## Remove generated files for all platforms and architectures
 	@$(MAKE) -s for-all-archs WHAT=clean

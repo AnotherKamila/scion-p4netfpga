@@ -23,36 +23,46 @@ SDNET_FLAGS=-busType axi -busWidth 256 -singlecontrolport -altVivadoScripts -ski
 ARCHS=xilinx_stream_switch
 # TODO if I make it a habit to define ARCHS, I can move the listarchs target into $(TOP)/Makefile.inc
 
-.PHONY: help all listarchs ls build sdnet spacetime bigbang clean find-all-target-supports
+.PHONY: help all listarchs ls build sdnet spacetime bigbang clean find-all-target-supports sim simgui
 
 all: build test ## TODO: Prepare and verify everything needed for programming the NetFPGA
 
-listarchs: ## List supported architectures
-	@echo $(ARCHS)
-
-ls: listarchs ## Shorthand for listarchs
+compiler-test: compiler-test-$(ARCH).sdnet ## Compile a test program to check support for P4 features
 
 build: ## TODO: Build everything needed for using the design
 	make -C $(HW) build
 	@echo $(MARK) "Utilisation and timing summary:" $(ENDMARK)
 	@$(MAKE) --no-print-directory spacetime
 
-compiler-test: compiler-test-$(ARCH).sdnet ## Compile a test program to check support for P4 features
-
 sdnet: $(SDNET_TOP) ## Compile for SDNet
 
 hdl: $(GENERATED_HDL_TOP) ## Generate SCION HDL module
+
+sim: $(GENERATED_HDL)/.sim-built ## Run a behavioural simulation for the SCION module
+	cd $(GENERATED_HDL) && ./vivado_sim.bash
+
+simgui: $(GENERATED_HDL)/.sim-built ## Open the Vivado GUI with a behavioural simulation for the SCION module
+	cd $(GENERATED_HDL) && ./vivado_sim_waveform.bash
 
 test: sim ## Alias for sim
 
 hwtest: ## Test the real hardware (TODO maybe shouldn't be here?)
 	$(MAKE) -C $(TOP)/test test
 
-spacetime: ## Check the space usage and timing of the built design.
+spacetime: ## Check the area utilisation and timing of the built design.
 	@$(MAKE) --no-print-directory _spacetime | column -t -s'|'
 	@echo 'Run `make -C $(HW) spacetime` to see the full report.'
 
 bigbang: spacetime # O:-)
+
+listarchs: ## List supported architectures
+	@echo $(ARCHS)
+
+ls: listarchs ## Shorthand for listarchs
+
+clean: clean-gitignore ## Remove generated files
+	$(MAKE) -C $(HW) clean
+#	$(MAKE) -C $(SW) clean
 
 ### Targets that actually do stuff #############
 
@@ -85,14 +95,16 @@ $(EXTERNS)/.built: $(shell find $(EXTERN_TEMPLATES))
   done
 	touch $@
 
-sim: hdl _env ## Run a behavioural simulation for the SCION module
+$(GENERATED_HDL)/.sim-built: $(GENERATED_HDL_TOP)
 	make -C $(TOP)/test gen
 	cp $(TOP)/test/*.txt $(GENERATED_HDL)
 	cp $(TOP)/test/*.axi $(GENERATED_HDL)
 
 	[ -f $(TOP)/test/commands.txt ] && $(MAKE) commandstxt || $(MAKE) notblfiles
 
-	cd $(GENERATED_HDL) && ./vivado_sim.bash
+	touch $@
+
+########################################################
 
 commandstxt: hdl
 	$(SUME_SDNET)/bin/p4_px_tables.py $(TOP)/test/commands.txt $(SWITCHINFO)
@@ -113,10 +125,6 @@ notblfiles: hdl
 $(WORKDIR)/config_writes.sh: $(GENERATED_HDL)/config_writes.txt
 	$(SUME_SDNET)/bin/gen_config_writes.py $< $(P4_SWITCH_BASE_ADDR) $(TOP)/test
 	cp $(TOP)/test/config_writes.sh $@
-
-clean: clean-gitignore ## Remove generated files
-	$(MAKE) -C $(HW) clean
-#	$(MAKE) -C $(SW) clean
 
 SPACE_GET_UTIL_PERCENT=cut -d'|' -f2,6 | sed 's/  */ /g' | sed 's/| /|/' | sed 's/ $$/%/'
 _space:

@@ -21,7 +21,7 @@ Main results (TODO actually deliver them, plus TODO correlate this list with the
 
 1. Set up your environment: See [Prerequisites](#Prerequisites)
 2. Build this: `make` to see help, or `make build` to build everything needed to use this
-3. Flash the NetFPGA: `make flash`.
+3. Flash the NetFPGA: `make flash`. <= NOT WORKING because reasons, TODO
 4. TODO How do we deploy this? => start control plane, make it talk to other SCION stuff
 
 More details in TODO.
@@ -62,7 +62,7 @@ Currently empty.
 
 ### Prerequisites
 
-Prepare your dev machine according to <https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Getting-Started>:
+Prepare your dev machine according to <https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Getting-Started>. Here is a quick, less detailed checklist:
 
 1. Obtain the 3 necessary Xilinx licenses: Vivado, SDNet, and 10G MAC.
 2. This project is tested with **Vivado 2018.2** and **SDNet 2018.2**. Install those versions to avoid surprises.
@@ -117,6 +117,10 @@ Prepare your dev machine according to <https://github.com/NetFPGA/P4-NetFPGA-pub
    see the list of make targets.
    
    `make build` builds everything you need (for the selected `PLATFORM` and `ARCH`). To have more control over the build process: `cd platforms/<your_platform>; make`
+
+   Use `make sim` to run the simulation.
+   
+   For the NetFPGA, use `cd platforms/netfpga; make simgui` to open the simulation in the Vivado GUI.
 
 ### Flash it!
 
