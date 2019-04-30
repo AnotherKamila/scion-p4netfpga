@@ -30,7 +30,12 @@ HEADER_UNION xy_h {
     y_h y;
 }
 
+header skip_h {
+    bit<8> val;
+}
+
 struct headers_t {
+    skip_h skip;
     xy_h xy;
     // t_h[10] ts;
 }
@@ -50,8 +55,27 @@ parser TopParser(packet_in packet,
                  out digest_data_t digest_data,
                  inout sume_metadata_t sume_metadata) {
 
+    bit<8> skip_count = 0;
+
     state start {
-        packet.advance(32);
+        packet.extract(hdr.skip);
+        transition skip_loop;
+    }
+
+    state skip_loop {
+        transition select(skip_count == hdr.skip.val) {
+            true:  skip_done;
+            false: do_skip;
+        }
+    }
+
+    state do_skip {
+        packet.advance(8);
+        skip_count = skip_count + 1;
+        transition skip_loop;
+    }
+
+    state skip_done {
         packet.extract(hdr.xy.x);
         transition accept;
     }

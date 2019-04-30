@@ -43,7 +43,6 @@ parser PacketSkipper8(packet_in packet, in bit<3> skips) (bit<32> skip_size) {
     #endif
 }
 
-// TODO move to compat/
 @brief("Skips bytes from packet in multiples of skip_size bytes.")
 @description("Can skip at most 64 blocks. \
 If not TARGET_SUPPORTS_VAR_LEN_PARSING, it uses more FPGA area, but it works. \
@@ -77,6 +76,35 @@ parser PacketSkipper64(packet_in packet, in bit<6> skips) (bit<32> skip_size) {
     }
 
     #endif
+}
+
+// Never tested this because of an extremely weird SDNet compiler bug. I do not
+// know if it would be better than the unrolled one.
+// TODO test with a different main() to compare.
+@Xilinx_MaxPacketRegion(MTU)
+parser PacketSkipperLinear(packet_in packet, in bit<6> skips) (bit<32> skip_size) {
+
+    bit<6> skip_count = 0;
+
+    state start {
+        transition select(skip_count) {
+            0: accept;
+            default: skip_loop;
+        }
+    }
+
+    state skip_loop {
+        transition select(skip_count == skips) {
+            true:  accept;
+            false: do_skip;
+        }
+    }
+
+    state do_skip {
+        packet.advance(8*skip_size);
+        skip_count = skip_count + 1;
+        transition skip_loop;
+    }
 }
 
 // If we have packet_mod, we can actually skip parts of headers without losing
