@@ -3,12 +3,13 @@
 TOP=.
 include $(TOP)/Makefile.inc
 include $(TOP)/platforms/$(PLATFORM)/Makefile.inc
+include $(TOP)/platforms/$(PLATFORM)/$(ARCH)/Makefile.inc
 
 .PHONY: help all build sim synth test flash graph clean
 
 ##### User-visible targets
 
-all: build graph ## TODO
+all: build ## TODO
 
 compiler-test: ## Compile a test program to check support for P4 features
 	@echo $(MARK) "Compiling for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
@@ -68,7 +69,7 @@ graphs: $(SRCDIR)/$(MAIN) $(shell find $(INCDIR) -name '*.p4')
 # checking GNUMAKE inline to avoid always rebuilding
 	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'GNU make required (run with gmake)'; exit 70; }
 	mkdir -p graphs
-	p4c-graphs --std p4-16 -I$(INCDIR) $(SRCDIR)/$(MAIN) --graphs-dir ./graphs
+	p4c-graphs --std p4-16 $(TARGET_DEFINES) -I$(INCDIR) -I/opt/Xilinx/SDNet/2018.2/data/p4include/ $(SRCDIR)/$(MAIN) --graphs-dir ./graphs
 	cd graphs; for f in *.dot; do dot $$f -T png -x -o $$f.png; done
 	cd graphs; for f in *.dot; do dot $$f -T svg -x -o $$f.svg; done
 	touch graphs

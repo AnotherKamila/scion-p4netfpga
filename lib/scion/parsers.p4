@@ -203,6 +203,7 @@ parser ScionAddressHeaderParser(packet_in packet,
 #else
     state align_to_8_bytes {
         bit<3> skip = -pos_in_hdr[2:0]; // unary minus of last 3 bits = 8 - thingy
+        pos_in_hdr = pos_in_hdr + (packet_size_t)skip;
         skipper.apply(packet, skip);
         transition accept;
     }
