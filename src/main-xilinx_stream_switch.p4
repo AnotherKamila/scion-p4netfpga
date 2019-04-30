@@ -218,7 +218,7 @@ control TopPipe(inout local_t d,
         stat_counter_reg_raw(0, 0, 1, REG_ADD, curcnt);
 
         // TODO remove:
-        s.digest.unused = curcnt[15:0];
+        // s.digest.unused = curcnt[15:0];
 
         CHECK(err);
     }

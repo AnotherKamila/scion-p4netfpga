@@ -13,6 +13,8 @@ from collections import namedtuple
 from scion_scapy import * # yes, I am terrible too
 from datatypes import *  # TODO remove import * after cleaning up this file
 
+random.seed(47)
+
 SCION_IFID_MAP = {iface: i for i, iface in enumerate(SUME_IFACES)}
 VERBOSE=False
 
@@ -54,9 +56,9 @@ def expect_pkt(pkt:Packet, egress_if:str, ingress_if:str=None, digest:Digest=Non
     expected[egress_if].append(PktTup(pkt=pkt, tup=tup))
     expected[ALL_PKTS_IF].append(PktTup(pkt=pkt, tup=tup))
 
-def apply_and_expect(in_pkt:Packet, ingress_if:str,
+def apply_and_expect(time:int,
+                     in_pkt:Packet, ingress_if:str,
                      exp_pkt:Packet, egress_if:str,
-                     time:int,
                      digest:Digest=None,
                      error:str="NoError"):
     apply_pkt(in_pkt, ingress_if, time)
@@ -100,15 +102,14 @@ def padded(pkt, pad_to):
     if pad_len <= 0: return pkt
     return pkt/Padding(b'\x00'*pad_len)
 
-def gen(t=1, badmacs=False, num_hfs_per_seg=3):
+def gen(badmacs=False, num_hfs_per_seg=3):
     """It's not really num hfs per seg :D TODO!"""
     sender = '00:60:dd:44:c2:c4' # enp3s0
     recver = '00:60:dd:44:c2:c5' # enp5s0
 
     for s in range(3):
         for h in range(num_hfs_per_seg):
-            ifs     = ('nf1','nf0') if t%2 == 1 else ('nf0','nf1')
-            # ifs = ('nf0', 'nf1')
+            ifs     = random.choice([('nf0','nf1'), ('nf1','nf0')])
             ifids = SCION_IFID_MAP[ifs[0]], SCION_IFID_MAP[ifs[1]]
             seg     = [(SCION_IFID_MAP['nf2'], SCION_IFID_MAP['nf3'])]*(num_hfs_per_seg)
             currseg = seg[:]
@@ -138,26 +139,23 @@ def gen(t=1, badmacs=False, num_hfs_per_seg=3):
 
             digest = Digest(
                 error=("BadMAC" if badmacs else "NoError"),
-                unused=t  # TODO remove
             )
             # digest.sent = t % PACKET_COUNTER_WRAPAROUND == 1
             yield (encaps/set_current_inf_hf(s,h,   scion)/payload, ifs[0],
                    encaps/set_current_inf_hf(s,h+1, scion)/payload, ifs[1],
-                   t,
                    digest)
-            t += 1
 
 def mkpackets(only_times=None):
-    # for data in itertools.chain(gen(), gen(t=10, badmacs=False)):
-    for data in gen(badmacs=False, num_hfs_per_seg=7):
-        in_pkt, exp_pkt, t = data[0], data[2], data[4]
+    packets = itertools.chain(gen(), gen(badmacs=True), gen(num_hfs_per_seg=7))
+    for t, data in enumerate(packets, 1):
+        in_pkt, in_if, exp_pkt, exp_if, exp_digest = data
         if only_times:
             if t not in only_times: continue
         if VERBOSE:
             print('================ packet {} ================'.format(t))
             in_pkt.show2()
             print('================ end packet {} ================'.format(t))
-        apply_and_expect(*data)
+        apply_and_expect(t, in_pkt, in_if, exp_pkt, exp_if, exp_digest)
     write_files()
 
 if __name__ == '__main__':

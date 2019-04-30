@@ -73,6 +73,7 @@ $(SDNET_TOP): $(basename $(MAIN)).sdnet
 	p4c-sdnet --toplevel_name $(HDL_MODULE_NAME) -o $@ --sdnet_info $(SWITCHINFO) $(TARGET_DEFINES) $(EXTRA_DEFINES) -I$(TOP)/$(INCDIR) $<
 	@echo $(MARK) "Compiled successfully. Today is your lucky day!" $(ENDMARK)
 
+SIM_ADD_VHDL=find -name PKG_*.vhd | { xargs -I % ${XILINX_VIVADO}/bin/xvhdl % ; }\nfind -name *.vhd | { xargs -I % ${XILINX_VIVADO}/bin/xvhdl % ; }
 $(GENERATED_HDL_TOP): $(SDNET_TOP) $(EXTERNS)/.built
 	sdnet $< $(SDNET_FLAGS) -workDir $(SCION_IP_DIR)
 	# SDNet is apparently incompatible with its own output :D
@@ -81,6 +82,12 @@ $(GENERATED_HDL_TOP): $(SDNET_TOP) $(EXTERNS)/.built
 	sed -i 's/$(HDL_MODULE_NAME)_tb_sim#work.glbl/$(HDL_MODULE_NAME)_tb/g' $(GENERATED_HDL)/vivado_sim_waveform.bash
 	# fix for ubuntu
 	# sed -i 's/vsim/vsim \-ldflags \"\-B\/usr\/lib\/x86\_64\-linux-gnu\"/g' $(GENERATED_HDL)/questa.bash
+	# also enable VHDL files
+	awk '/xvlog/ { print; print "$(SIM_ADD_VHDL)"; next }1' < $(GENERATED_HDL)/vivado_sim.bash > $(GENERATED_HDL)/vivado_sim.bash.tmp
+	awk '/xvlog/ { print; print "$(SIM_ADD_VHDL)"; next }1' < $(GENERATED_HDL)/vivado_sim_waveform.bash > $(GENERATED_HDL)/vivado_sim_waveform.bash.tmp
+	mv $(GENERATED_HDL)/vivado_sim.bash.tmp $(GENERATED_HDL)/vivado_sim.bash
+	mv $(GENERATED_HDL)/vivado_sim_waveform.bash.tmp $(GENERATED_HDL)/vivado_sim_waveform.bash
+	chmod a+x $(GENERATED_HDL)/vivado_sim*.bash
 	$(SUME_SDNET)/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(GENERATED_HDL) $(SUME_SDNET)/templates $(TOP)/test/ $(ARCH)/sw/ --base_address $(P4_SWITCH_BASE_ADDR)
 	@echo $(MARK) "Generated HDL in $(GENERATED_HDL)" $(ENDMARK)
 

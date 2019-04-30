@@ -2,7 +2,9 @@
 *.sdnet
 *.dat
 *.tbl
+*.log
 */*.info
+xv*.pb
 
 */sw/
 
