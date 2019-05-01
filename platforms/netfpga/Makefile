@@ -15,6 +15,7 @@ include $(ARCH)/Makefile.inc
 # Also: We need to -skipEval because eval is broken and doesn't link :D
 SDNET_FLAGS=-busType axi -busWidth 256 -singlecontrolport -altVivadoScripts -skipEval
 
+HERE=$(shell pwd)
 
 ### User-facing targets ########################
 
@@ -89,6 +90,8 @@ $(GENERATED_HDL_TOP): $(SDNET_TOP) $(EXTERNS)/.built
 	mv $(GENERATED_HDL)/vivado_sim_waveform.bash.tmp $(GENERATED_HDL)/vivado_sim_waveform.bash
 	chmod a+x $(GENERATED_HDL)/vivado_sim*.bash
 	$(SUME_SDNET)/bin/gen_P4_SWITCH_externs.py $(SWITCHINFO) $(GENERATED_HDL) $(SUME_SDNET)/templates $(TOP)/test/ $(ARCH)/sw/ --base_address $(P4_SWITCH_BASE_ADDR)
+	#env P4_PROJECT_DIR=$(HERE)/$(ARCH) $(SUME_SDNET)/bin/gen_P4_SWITCH_API.py $(SWITCHINFO) $(GENERATED_HDL) $(ARCH)/sw/ $(SUME_SDNET)/templates --base_address $(P4_SWITCH_BASE_ADDR)
+	#env P4_PROJECT_DIR=$(HERE)/$(ARCH) $(SUME_SDNET)/bin/gen_P4_SWITCH_CLI.py $(SWITCHINFO) $(GENERATED_HDL) $(ARCH)/sw/ $(SUME_SDNET)/templates --base_address $(P4_SWITCH_BASE_ADDR)
 	@echo $(MARK) "Generated HDL in $(GENERATED_HDL)" $(ENDMARK)
 
 $(EXTERNS)/.built: $(shell find $(EXTERN_TEMPLATES))
