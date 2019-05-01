@@ -15,7 +15,7 @@ class Regs:
         with open(extern_defines) as f:
             self.externs = json.load(f)
 
-    def get_address(self, reg_name, index):
+    def get_reg_addr(self, reg_name, index):
         reg_width = self.externs.get(reg_name, {}).get('control_width', 0)
         if reg_width == 0:
             raise ValueError("{0} is not a register accessible to the control plane".format(reg_name))
@@ -23,8 +23,8 @@ class Regs:
             raise IndexError("{0}[1]: index out of bounds".format(reg_name, index))
         return self.externs[reg_name]['base_addr'] + index
 
-    def read(self, reg_name, index):
-        return self.libsume.regread(self.get_address(reg_name, index))
+    def reg_read(self, reg_name, index):
+        return self.libsume.regread(self.get_reg_addr(reg_name, index))
 
-    def write(self, reg_name, index, val):
-        return libsume.regwrite(self.get_address(reg_name, index), val)
+    def reg_write(self, reg_name, index, val):
+        return libsume.regwrite(self.get_reg_addr(reg_name, index), val)
