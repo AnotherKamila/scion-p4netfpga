@@ -3,3 +3,6 @@ doc/hw-doc/*.pdf
 
 # Generated files
 graphs/
+
+# cache & co.
+*.pyc
