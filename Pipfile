@@ -7,6 +7,7 @@ verify_ssl = true
 
 [packages]
 twisted = "*"
+prometheus-client = "*"
 
 [requires]
 python_version = "3.5"
