@@ -135,9 +135,9 @@ control TopPipe(inout local_t d,
 
     // TODO the parts related to forwarding should be moved into something like
     // a ScionForwarder control or so
-    error_data_t err;
-    VerifyHF()   verify_current_hf;
-    WriteStats() write_stats;
+    error_data_t  err;
+    VerifyHF()    verify_current_hf;
+    ExposeStats() expose_stats;
 
     apply {
         // TODO this should be reordered and we should verify and drop first if
@@ -158,7 +158,7 @@ control TopPipe(inout local_t d,
         // stats_timestamp(1, stats_time);
         // s.digest.debug1 = 40w0 ++ stats_time;
 
-        write_stats.apply(s.sume);
+        expose_stats.apply(s.sume);
 
         CHECK(err);
     }
