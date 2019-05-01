@@ -7,6 +7,7 @@
 
 #include "settings.p4" // must be included *before* SCION
 
+#include <netfpga/stats.p4>
 #include <scion/datatypes.p4>
 #include <scion/headers.p4>
 #include <scion/parsers.p4>
@@ -51,43 +52,6 @@ parser TopParser(packet_in packet, out local_t d) {
         transition accept;
     }
 }
-
-// TODO move this somewhere appropriate
-
-const bit<8> REG_READ  = 8w0;
-const bit<8> REG_WRITE = 8w1;
-const bit<8> REG_ADD   = 8w2;
-
-// NetFPGA only supports 1 write into the same register, so I just concatenate
-// all the queue sizes into one huge field and split the two registers that need
-// to be handled separately
-
-#define GAUGES_REG_DEPTH 1
-#define GAUGES_REG_WIDTH 80
-
-@brief("Register used for reporting queue sizes.")
-@description("The control plane is expected to read this register over DMA.")
-@Xilinx_MaxLatency(1)
-@Xilinx_ControlWidth(GAUGES_REG_DEPTH)
-extern void stat_gauges_reg_rw(in bit<GAUGES_REG_DEPTH> index,
-                               in bit<GAUGES_REG_WIDTH> newVal,
-                               in bit<8> opCode,
-                               out bit<GAUGES_REG_WIDTH> result);
-
-#define COUNTER_REG_DEPTH 1
-#define COUNTER_REG_WIDTH 32
-
-@brief("Register used for reporting total packet count.")
-@description("The control plane is expected to read this register over DMA.")
-@Xilinx_MaxLatency(1)
-@Xilinx_ControlWidth(COUNTER_REG_DEPTH)
-extern void stat_counter_reg_raw(in bit<COUNTER_REG_DEPTH> index,
-                                 in bit<COUNTER_REG_WIDTH> newVal,
-                                 in bit<COUNTER_REG_WIDTH> incVal,
-                                 in bit<8> opCode,
-                                 out bit<COUNTER_REG_WIDTH> result);
-
-// end of the part that should be moved somewhere appropriate
 
 @brief("The 'main' of the switch.")
 @description("Processes the parsed data and modifies and forwards the packet.")
@@ -160,12 +124,6 @@ control TopPipe(inout local_t d,
         s.digest.debug2  = d.err.debug; // parser
     }
 
-    // // TODO this could be a generic function, but then it gets confusing how to
-    // // tell it which register I mean :D
-    // action read_and_clear_signal(in signal_idx idx, out bit<1> res) {
-    //     signal_reg_praw(idx, 0, 0, REG_WRITE, true, EQ_RELOP, _, res);
-    // }
-
     // this cannot be an action because SDNet does not support
     // calling exit() from an action
     #define CHECK(err)                                              \
@@ -178,10 +136,9 @@ control TopPipe(inout local_t d,
     // TODO the parts related to forwarding should be moved into something like
     // a ScionForwarder control or so
     error_data_t err;
-    VerifyHF() verify_current_hf;
+    VerifyHF()   verify_current_hf;
+    WriteStats() write_stats;
 
-    bit<COUNTER_REG_WIDTH> curcnt;
-    bit<GAUGES_REG_WIDTH> notneeded;
     apply {
         // TODO this should be reordered and we should verify and drop first if
         // it is bad
@@ -201,24 +158,7 @@ control TopPipe(inout local_t d,
         // stats_timestamp(1, stats_time);
         // s.digest.debug1 = 40w0 ++ stats_time;
 
-        // Increment the packet counter & copy queue sizes to the stats register
-        // this has to be directly in here because SDNet does not support
-        // calling externs from actions
-        // TODO maybe make a lib/netfpga/netfpga.p4#NFStats control?
-        // stat_gauges_reg_rw(
-        //     0,
-        //     s.sume.dma_q_size ++
-        //     s.sume.nf3_q_size ++
-        //     s.sume.nf2_q_size ++
-        //     s.sume.nf1_q_size ++
-        //     s.sume.nf0_q_size,
-        //     REG_WRITE,
-        //     notneeded // SDNet does not support using _ with an extern 
-        // );
-        stat_counter_reg_raw(0, 0, 1, REG_ADD, curcnt);
-
-        // TODO remove:
-        // s.digest.unused = curcnt[15:0];
+        write_stats.apply(s.sume);
 
         CHECK(err);
     }
