@@ -94,9 +94,6 @@ def write_files():
 # generate testdata #
 #####################
 
-PACKET_COUNTER_WIDTH = 17  # TODO read from settings.p4
-PACKET_COUNTER_WRAPAROUND = 2**PACKET_COUNTER_WIDTH
-
 def padded(pkt, pad_to):
     pad_len = pad_to - len(pkt)
     if pad_len <= 0: return pkt
@@ -145,6 +142,8 @@ def gen(badmacs=False, num_hfs_per_seg=3):
                    encaps/set_current_inf_hf(s,h+1, scion)/payload, ifs[1],
                    digest)
 
+PAD_TO = 1450
+
 def mkpackets(only_times=None):
     packets = itertools.chain(gen(), gen(badmacs=True), gen(num_hfs_per_seg=7))
     for t, data in enumerate(packets, 1):
@@ -155,7 +154,7 @@ def mkpackets(only_times=None):
             print('================ packet {} ================'.format(t))
             in_pkt.show2()
             print('================ end packet {} ================'.format(t))
-        apply_and_expect(t, in_pkt, in_if, exp_pkt, exp_if, exp_digest)
+        apply_and_expect(t, padded(in_pkt, PAD_TO), in_if, padded(exp_pkt, PAD_TO), exp_if, exp_digest)
     write_files()
 
 if __name__ == '__main__':

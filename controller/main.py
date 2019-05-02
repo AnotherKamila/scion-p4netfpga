@@ -35,10 +35,9 @@ class P4SwitchCollector:
             unit='packets',
         )
         queues = prom.GaugeMetricFamily(
-            'p4switch_queue_size_bytes',
+            'p4switch_queue_size_blocks',
             'Input queue sizes for each interface', # TODO really? :D
             labels=['interface'],
-            unit='bytes',
         )
 
         # add data
@@ -48,11 +47,10 @@ class P4SwitchCollector:
 
             # There is just one queue for all DMA stuff => handled separately
             if name.startswith('dma'): continue
-            # NetFPGA measures in 32-byte blocks, so we have to multiply by 32 here
-            queues.add_metric([name], self.p4switch.reg_read('stat_queue_sizes', i)*32)
+            queues.add_metric([name], self.p4switch.reg_read('stat_queue_sizes', i))
 
         # DMA queue size lives at index 1
-        queues.add_metric(['dma'], self.p4switch.reg_read('stat_queue_sizes', 1)*32)
+        queues.add_metric(['dma'], self.p4switch.reg_read('stat_queue_sizes', 1))
 
         # give metrics to prometheus_client
         yield recv
