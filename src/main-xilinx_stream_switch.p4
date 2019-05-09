@@ -140,6 +140,7 @@ control TopPipe(inout local_t d,
     ExposeStats() expose_stats;
 
     apply {
+        // TODO validate timestamp
         verify_current_hf.apply(HF_MAC_KEY,
                                 d.hdr.scion.path.current_inf.timestamp,
                                 d.hdr.scion.path.current_hf,
@@ -147,8 +148,9 @@ control TopPipe(inout local_t d,
                                 err);
 
         egress_ifid_to_port.apply();
-
         increment_hf();
+
+        // TODO update encapsulation -- something like encaps_table.apply()
 
         update_checksums();
 
