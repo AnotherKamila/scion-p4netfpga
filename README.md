@@ -19,17 +19,17 @@ Main results (TODO actually deliver them, plus TODO correlate this list with the
 
 ## Quick start
 
-1. Set up your environment: See [Prerequisites](#Prerequisites)
+1. Set up your environment: See [Prerequisites](#prerequisites)
 2. Build this: `make` to see help, or `make build` to build everything needed to use this
 3. Flash the NetFPGA:  
    Run as root (with the env vars available):
    1. `make flash`
    2. reboot
    3. `platforms/netfpga/scripts/pci_init.sh`
-   (TODO make a `make flash` target instead of step 1)
 4. TODO Start controller: How do we deploy this? => start control plane, make it talk to other SCION stuff
 
-More details in TODO.
+More details [below](#building-this-project).
+
 ## What's where?
 
 ### `doc/`: Documentation
@@ -44,12 +44,13 @@ The main contribution of this project.
 
 A reference border router that uses the components from `lib/`. Runnable on several hardware platforms (see below).
 
-This reference implementation assumes that the AS uses IP for internal routing. It is modular, so it can be modified to support different routing techniques, such as MPLS.
+This reference implementation assumes that the AS uses IP for internal routing. However, it is modular, so it can be modified to support different routing techniques, such as MPLS.
 
 ### `platforms/`: Files that allow the reference router to run on various hardware
 
 Currently supported: Xilinx NetFPGA SUME, with the `XilinxStreamSwitch`
 architecture. In the future, SimpleSumeSwitch might be supported, as well as the `bmv2` software switch.
+We are aiming to make this project easily portable to other platforms.
 
 ### `controller/`: The control plane for the router
 
