@@ -140,18 +140,17 @@ control TopPipe(inout local_t d,
     ExposeStats() expose_stats;
 
     apply {
-        // TODO this should be reordered and we should verify and drop first if
-        // it is bad
-        egress_ifid_to_port.apply();
-
-        increment_hf();
-        update_checksums();
-
         verify_current_hf.apply(HF_MAC_KEY,
                                 d.hdr.scion.path.current_inf.timestamp,
                                 d.hdr.scion.path.current_hf,
                                 d.hdr.scion.path.prev_hf,
                                 err);
+
+        egress_ifid_to_port.apply();
+
+        increment_hf();
+
+        update_checksums();
 
         // TODO remove: this is me figuring out how the timestamp thing works
         // bit<24> stats_time;

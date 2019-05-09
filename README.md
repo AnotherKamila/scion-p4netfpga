@@ -21,8 +21,13 @@ Main results (TODO actually deliver them, plus TODO correlate this list with the
 
 1. Set up your environment: See [Prerequisites](#Prerequisites)
 2. Build this: `make` to see help, or `make build` to build everything needed to use this
-3. Flash the NetFPGA: `make flash`. <= NOT WORKING because reasons, TODO
-4. TODO How do we deploy this? => start control plane, make it talk to other SCION stuff
+3. Flash the NetFPGA:  
+   Run as root (with the env vars available):
+   1. `platforms/netfpga/scripts/program_switch.sh platforms/netfpga/$ARCH/hw/Scion.bit`
+   2. reboot (needed because PCI device enumeration)
+   3. `platforms/netfpga/scripts/pci_init.sh`
+   (TODO make a `make flash` target instead of step 1)
+4. TODO Start controller: How do we deploy this? => start control plane, make it talk to other SCION stuff
 
 More details in TODO.
 ## What's where?
