@@ -23,7 +23,7 @@ Main results (TODO actually deliver them, plus TODO correlate this list with the
 2. Build this: `make` to see help, or `make build` to build everything needed to use this
 3. Flash the NetFPGA:  
    Run as root (with the env vars available):
-   1. `platforms/netfpga/scripts/program_switch.sh platforms/netfpga/$ARCH/hw/Scion.bit`
+   1. `make flash`
    2. reboot
    3. `platforms/netfpga/scripts/pci_init.sh`
    (TODO make a `make flash` target instead of step 1)
@@ -136,11 +136,12 @@ Although the flashing happens in the command line, the Xilinx tool gets stuck if
 there is no $DISPLAY. Therefore, if using over SSH, you need X11 forwarding to
 flash it: SSH with `ssh -Y`.
 
-Flash the NetFPGA with:
+Flash the bitfile with `make flash`.
+
+If you want to pass a different bitfile:
 ```
-platforms/netfpga/scripts/program_switch.sh platforms/netfpga/$ARCH/hw/Scion.bit
+platforms/netfpga/scripts/program_switch.sh path_to_your_file.bit
 ```
-TODO this should be a `make flash`
 
 Reboot afterwards to have the PCI bus work reliably. This is needed because the
 PCI addresses may have changed and the PCI device enumeration only happens at

@@ -67,7 +67,7 @@ _show-settings: _gmake
 ###### Targets that complain if the environment smells wrong ###############
 
 _gmake:
-	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'ERROR: GNU make required (run with gmake)'; exit 70; }
+	@[ "$(GNUMAKE)" = "GNUMAKE" ] || { echo; echo 'ERROR: GNU make required'; exit 70; }
 
 _env: _gmake
 	@which vivado || { echo "ERROR: Xilinx tools not in PATH, source something like /opt/Xilinx/Vivado/2018.2/settings64.sh"; exit 78; }

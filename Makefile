@@ -36,8 +36,7 @@ for-all-archs: # Hello, I am a hack!
 # 	@/bin/false
 
 flash: ## TODO
-	@echo 'Not implemented yet'
-	@/bin/false
+	make -C platforms/$(PLATFORM) flash ARCH=$(ARCH)
 
 graph: graphs ## Visualise the control flow of the P4 program
 

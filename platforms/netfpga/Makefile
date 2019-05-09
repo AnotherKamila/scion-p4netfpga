@@ -24,7 +24,7 @@ HERE=$(shell pwd)
 ARCHS=xilinx_stream_switch
 # TODO if I make it a habit to define ARCHS, I can move the listarchs target into $(TOP)/Makefile.inc
 
-.PHONY: help all listarchs ls build sdnet spacetime bigbang clean find-all-target-supports sim simgui
+.PHONY: help all listarchs ls build sdnet spacetime bigbang clean find-all-target-supports sim simgui flash
 
 all: build test ## TODO: Prepare and verify everything needed for programming the NetFPGA
 
@@ -49,6 +49,9 @@ test: sim ## Alias for sim
 
 hwtest: ## Test the real hardware (TODO maybe shouldn't be here?)
 	$(MAKE) -C $(TOP)/test test
+
+flash: $(BITFILE) _env _root
+	./scripts/program_switch.sh $(BITFILE)
 
 spacetime: ## Check the area utilisation and timing of the built design.
 	@$(MAKE) --no-print-directory _spacetime | column -t -s'|'
