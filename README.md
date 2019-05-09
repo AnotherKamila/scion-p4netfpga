@@ -24,7 +24,7 @@ Main results (TODO actually deliver them, plus TODO correlate this list with the
 3. Flash the NetFPGA:  
    Run as root (with the env vars available):
    1. `platforms/netfpga/scripts/program_switch.sh platforms/netfpga/$ARCH/hw/Scion.bit`
-   2. reboot (needed because PCI device enumeration)
+   2. reboot
    3. `platforms/netfpga/scripts/pci_init.sh`
    (TODO make a `make flash` target instead of step 1)
 4. TODO Start controller: How do we deploy this? => start control plane, make it talk to other SCION stuff
@@ -129,4 +129,26 @@ Prepare your dev machine according to <https://github.com/NetFPGA/P4-NetFPGA-pub
 
 ### Flash it!
 
-TODO :D
+All of this must be run as root. Remember that your root shell also needs the
+Xilinx and NetFPGA environment variables set up.
+
+Although the flashing happens in the command line, the Xilinx tool gets stuck if
+there is no $DISPLAY. Therefore, if using over SSH, you need X11 forwarding to
+flash it: SSH with `ssh -Y`.
+
+Flash the NetFPGA with:
+```
+platforms/netfpga/scripts/program_switch.sh platforms/netfpga/$ARCH/hw/Scion.bit
+```
+TODO this should be a `make flash`
+
+Reboot afterwards to have the PCI bus work reliably. This is needed because the
+PCI addresses may have changed and the PCI device enumeration only happens at
+boot.
+
+When the machine has rebooted, run `platforms/netfpga/scripts/pci_init.sh` to
+initialise the NetFPGA's DMA. You need to run this after every reboot / power
+on.
+
+If the machine was powered off (cold) and the `pci_init.sh` script gives you an
+error, reboot and try again. Yes, really.
