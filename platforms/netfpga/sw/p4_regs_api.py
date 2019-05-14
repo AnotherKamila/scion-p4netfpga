@@ -41,4 +41,4 @@ class Regs:
         return self.libsume.regread(self.get_reg_addr(reg_name, index))
 
     def reg_write(self, reg_name, index, val):
-        return libsume.regwrite(self.get_reg_addr(reg_name, index), val)
+        return self.libsume.regwrite(self.get_reg_addr(reg_name, index), val)
