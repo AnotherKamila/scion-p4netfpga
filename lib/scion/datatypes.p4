@@ -10,7 +10,7 @@ typedef bit<16> scion_isd;
 typedef bit<48> scion_as;
 typedef bit<6>  scion_host_addr_type_t;
 typedef bit<16> scion_svc_addr_t;
-typedef bit<32> scion_timestamp;
+typedef bit<32> scion_timestamp_t;
 
 typedef bit<16> packet_size_t; // in bytes => max len 64kB
 

@@ -121,7 +121,7 @@ def gen(badmacs=False, num_hfs_per_seg=3):
                     dst_host='10.0.0.47', src_host='10.0.0.42',
                 ),
                 path=[
-                    PathSegment(timestamp=147, isd=42, hops=[
+                    PathSegment(timestamp=0, isd=42, hops=[
                         HopField(ingress_if=in_if, egress_if=eg_if, mac=(0x47 if badmacs else None))
                         for (in_if, eg_if) in seg
                     ])

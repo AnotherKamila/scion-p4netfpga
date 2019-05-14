@@ -79,10 +79,10 @@ struct scion_addr_header_t {
 /// Path header
 
 header scion_inf_h {
-    bit<8>          flags;
-    scion_timestamp timestamp;
-    scion_isd       isd;
-    bit<8>          nhops;
+    bit<8>            flags;
+    scion_timestamp_t timestamp;
+    scion_isd         isd;
+    bit<8>            nhops;
 }
 
 header scion_hf_h {

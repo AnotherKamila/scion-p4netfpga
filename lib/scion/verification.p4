@@ -23,11 +23,11 @@ extern void cmac2_aes128(in bit<128> K, in bit<128> data, out bit<128> result);
 @description("Computes the AES-CMAC of current (plus prev without flags). \
 See SCION book, p. 122 / eq. 7.8. \
 Implements a *simplified* version of RFC 4493.")
-control VerifyHF(in  bit<128>        K,
-                 in  scion_timestamp timestamp,
-                 in  scion_hf_h      current,
-                 in  scion_hf_h      prev,
-                 out error_data_t    err) {
+control VerifyHF(in  bit<128>          K,
+                 in  scion_timestamp_t timestamp,
+                 in  scion_hf_h        current,
+                 in  scion_hf_h        prev,
+                 out error_data_t      err) {
     /*******************************************************************
     This is an *incomplete* implementation of AES-CMAC, *simplified*
     because we have exactly one exactly 128-bit block of data.
@@ -157,6 +157,24 @@ control VerifyHF(in  bit<128>        K,
         // err.debug = T[127:64];
     }
 
+}
+
+
+control CheckHFExpiry(in scion_timestamp_t now,
+                      in scion_timestamp_t inf_timestamp,
+                      in bit<8>            expires,
+                      out error_data_t     err) {
+    // SCION book, eq. 15.6: valid_until = inf_timestamp + (1+expires)*floor(24*60*60/256)
+    // except that SDNet can't multiply :D
+    // floor(24*60*60/256) = 0b101010001 => x*that = x + (x<<4) + (x<<6) + (x<<8)
+    scion_timestamp_t real_exp = (scion_timestamp_t)(expires) + 1;
+    scion_timestamp_t hf_validity = real_exp + (real_exp << 4) + (real_exp << 6) + (real_exp << 8);
+    scion_timestamp_t valid_until = inf_timestamp + hf_validity;
+    apply {
+        // TODO actually, should there be a grace period, not an exact match?
+        err.error_flag = inf_timestamp <= now && now <= valid_until ? ERROR.NoError : ERROR.ExpiredHF;
+        err.debug = now ++ valid_until;
+    }
 }
 
 

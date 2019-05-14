@@ -8,6 +8,7 @@
 #include "settings.p4" // must be included *before* SCION
 
 #include <netfpga/stats.p4>
+#include <netfpga/wallclock.p4>
 #include <scion/datatypes.p4>
 #include <scion/headers.p4>
 #include <scion/parsers.p4>
@@ -129,23 +130,34 @@ control TopPipe(inout local_t d,
     #define CHECK(err)                                              \
         if (err.error_flag != ERROR.NoError) {                      \
             copy_error_to_digest(err);                              \
-            IFDBG(copy_debug_to_digest(err));  \
+            IFDBG(copy_debug_to_digest(err));                       \
+            IFDBG(send_digest());                                   \
             exit;                                                   \
         }                                                           \
 
     // TODO the parts related to forwarding should be moved into something like
     // a ScionForwarder control or so
-    error_data_t  err;
-    VerifyHF()    verify_current_hf;
-    ExposeStats() expose_stats;
+    error_data_t    err;
+    bit<32>         now;
+    ReadWallClock() read_wall_clock;
+    CheckHFExpiry() check_hf_expiry;
+    VerifyHF()      verify_current_hf;
+    ExposeStats()   expose_stats;
 
     apply {
-        // TODO validate timestamp
+        read_wall_clock.apply(now);
+        check_hf_expiry.apply(now,
+                              d.hdr.scion.path.current_inf.timestamp,
+                              d.hdr.scion.path.current_hf.expiry,
+                              err);
+        CHECK(err);
+
         verify_current_hf.apply(HF_MAC_KEY,
                                 d.hdr.scion.path.current_inf.timestamp,
                                 d.hdr.scion.path.current_hf,
                                 d.hdr.scion.path.prev_hf,
                                 err);
+        CHECK(err);
 
         egress_ifid_to_port.apply();
         increment_hf();
@@ -160,8 +172,6 @@ control TopPipe(inout local_t d,
         // s.digest.debug1 = 40w0 ++ stats_time;
 
         expose_stats.apply(s.sume);
-
-        CHECK(err);
     }
 }
 

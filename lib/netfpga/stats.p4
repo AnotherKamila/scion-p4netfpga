@@ -18,10 +18,8 @@ These are the splits I made here:
 
 
 #include <sume_switch.p4>
+#include <netfpga/regs.p4>
 
-const bit<8> REG_READ  = 8w0;
-const bit<8> REG_WRITE = 8w1;
-const bit<8> REG_ADD   = 8w2;
 
 #define STATS_REGS_DEPTH 3
 #define STATS_REGS_WIDTH 32
