@@ -1,7 +1,5 @@
 # corresponds to src/datatypes.p4
 # TODO should be (partly? largely!) generated
-# TODO there's a more up to date copy in controller/datatypes.py and this one
-# needs to die once that one is in lib/
 
 import scapy.all as scapy
 
@@ -63,6 +61,10 @@ class Digest(scapy.Packet):
     ] + QUEUE_SIZES_FIELDS + [
         scapy.XBitField('unused',   0, 16),
     ]
+
+    def mysummary(self):
+        debug = ' (debug:{}/{})'.format(self.debug1, self.debug2) if self.debug1 or self.debug2 else ''
+        return "{name} {error}{debug}".format(name=self.name, error=self.get_field('error').i2repr(self, self.error), debug=debug)
 
 class SwitchMeta(scapy.Packet):
     """Switch metadata format. Corresponds to src/main-xilinx-stream-switch.p4#switch_meta_t.

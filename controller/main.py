@@ -12,6 +12,7 @@ from .base_controller import BaseController
 from .nfstats import NFStats
 from .nfwallclock import NFWallClock
 
+DEBUG = os.getenv('DEBUG', '0') != '0'
 
 @attr.s
 class NFScionController(BaseController):
@@ -29,6 +30,9 @@ class NFScionController(BaseController):
         self.wall_clock     = NFWallClock.get_initialised(self.p4switch)
         self.stats          = NFStats.get_initialised(self.p4switch)
         self.init_http_server()
+
+        if DEBUG:
+            self.wall_clock.force_time(247)
 
     def init_http_server(self):
         endpoints.serverFromString(
