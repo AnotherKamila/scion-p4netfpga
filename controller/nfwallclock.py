@@ -4,7 +4,7 @@ from twisted.internet import task
 
 from .base_controller import BaseController
 
-UPDATE_FREQUENCY = 1  # seconds
+UPDATE_FREQUENCY = 0.1  # seconds
 
 class NFWallClock(BaseController):
     def init(self):
