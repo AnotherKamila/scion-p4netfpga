@@ -22,10 +22,10 @@ Main results (TODO actually deliver them, plus TODO correlate this list with the
 1. Set up your environment: See [Prerequisites](#prerequisites)
 2. Build this: `make` to see help, or `make build` to build everything needed to use this
 3. Flash the NetFPGA:  
-   Run as root (with the env vars available):
+   Run **as root** (with the env vars available):
    1. `make flash`
    2. reboot
-   3. `platforms/netfpga/scripts/pci_init.sh`
+   3. `make devinit`
 4. TODO Start controller: How do we deploy this? => start control plane, make it talk to other SCION stuff
 
 More details [below](#building-this-project).
@@ -130,12 +130,8 @@ Prepare your dev machine according to <https://github.com/NetFPGA/P4-NetFPGA-pub
 
 ### Flash it!
 
-All of this must be run as root. Remember that your root shell also needs the
+All of this must be run **as root**. Remember that your root shell also needs the
 Xilinx and NetFPGA environment variables set up.
-
-Although the flashing happens in the command line, the Xilinx tool gets stuck if
-there is no $DISPLAY. Therefore, if using over SSH, you need X11 forwarding to
-flash it: SSH with `ssh -Y`.
 
 Flash the bitfile with `make flash`.
 
@@ -144,13 +140,13 @@ If you want to pass a different bitfile:
 platforms/netfpga/scripts/program_switch.sh path_to_your_file.bit
 ```
 
-Reboot afterwards to have the PCI bus work reliably. This is needed because the
-PCI addresses may have changed and the PCI device enumeration only happens at
-boot.
+**Reboot** afterwards to have the PCI bus work reliably. This is needed because
+the PCI addresses may have changed and the PCI device enumeration only happens
+at boot.
 
-When the machine has rebooted, run `platforms/netfpga/scripts/pci_init.sh` to
+When the machine has rebooted, run `make devinit` to
 initialise the NetFPGA's DMA. You need to run this after every reboot / power
 on.
 
-If the machine was powered off (cold) and the `pci_init.sh` script gives you an
-error, reboot and try again. Yes, really.
+If the machine was powered off (cold) and `make devinit` gives you an error,
+reboot and try again. Yes, really.
