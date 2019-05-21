@@ -35,8 +35,11 @@ for-all-archs: # Hello, I am a hack!
 # 	@echo 'Not implemented yet'
 # 	@/bin/false
 
-flash: ## TODO
+flash: ## Flash the built program onto the target device
 	make -C platforms/$(PLATFORM) flash ARCH=$(ARCH)
+
+devinit: ## Initialise the device (if needed)
+	make -C platforms/$(PLATFORM) devinit ARCH=$(ARCH)
 
 graph: graphs ## Visualise the control flow of the P4 program
 

@@ -50,8 +50,11 @@ test: sim ## Alias for sim
 hwtest: ## Test the real hardware (TODO maybe shouldn't be here?)
 	$(MAKE) -C $(TOP)/test test
 
-flash: $(BITFILE) _env _root
+flash: $(BITFILE) _env _root ## Flash the built program onto the target device
 	./scripts/program_switch.sh $(BITFILE)
+
+devinit: _root ## Initialise the device (if needed)
+	./scripts/pci_init.sh
 
 spacetime: ## Check the area utilisation and timing of the built design.
 	@$(MAKE) --no-print-directory _spacetime | column -t -s'|'
