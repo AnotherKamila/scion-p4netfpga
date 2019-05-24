@@ -117,18 +117,18 @@
 * Project breakdown
 *** Data plane
 ***** Progress overview:
-      |-------------+----------------------+-------------------------+---------------------------------------|
-      |             |       Parsing        |       Validation        |              Forwarding               |
-      |-------------+----------------------+-------------------------+---------------------------------------|
-      | [[base case]]   |         DONE         | [[Crypto]] INPR; [[Timestamps]] |                 DONE                  |
-      | [[XOVER]]       | [[Read the XOVER flag]]  |        as above         |      [[Move the pointers correctly]]      |
-      | [[UP]]          | Parse the right HFs  |        as above         | [[Swap the interfaces before forwarding]] |
-      | [[VRFY_ONLY]]   | [[Parse out the 2nd HF]] |    [[Verify the 2nd HF]]    |                   -                   |
-      |-------------+----------------------+-------------------------+---------------------------------------|
-      | Performance |    timing issues     |       probably OK       |        OK; sending stats DONE         |
-      |-------------+----------------------+-------------------------+---------------------------------------|
-      |             |         <c>          |           <c>           |                  <c>                  |
-***** [2/6] base case
+      |-------------+----------------------+------------------------------+---------------------------------------|
+      |             |       Parsing        |          Validation          |              Forwarding               |
+      |-------------+----------------------+------------------------------+---------------------------------------|
+      | [[base case]]   |         DONE         | [[Crypto]] DONE; [[Timestamps]] DONE |          DONE; overlay TODO           |
+      | [[XOVER]]       | [[Read the XOVER flag]]  |           as above           |      [[Move the pointers correctly]]      |
+      | [[UP]]          | Parse the right HFs  |           as above           | [[Swap the interfaces before forwarding]] |
+      | [[VRFY_ONLY]]   | [[Parse out the 2nd HF]] |      [[Verify the 2nd HF]]       |                   -                   |
+      |-------------+----------------------+------------------------------+---------------------------------------|
+      | Performance |    timing issues     |         probably OK          |        OK; sending stats DONE         |
+      |-------------+----------------------+------------------------------+---------------------------------------|
+      |             |         <c>          |             <c>              |                  <c>                  |
+***** [3/6] base case
 ******* INPR parsing                                                :parsing:
 ********* [1/1] Meta
 *********** DONE get some SCION packets
@@ -191,8 +191,8 @@
           CLOSED: [2019-03-17 Sun 17:57] SCHEDULED: <2019-03-15 Fri>
 ********* DONE forward base case
           CLOSED: [2019-03-17 Sun 18:15] SCHEDULED: <2019-03-18 Mon>
-******* INPR [9/10] Crypto                                       :validation:
-        CLOSED: [2019-04-02 Tue 13:09]
+******* DONE [10/10] Crypto                                      :validation:
+        CLOSED: [2019-05-15 Wed 15:56]
 ********* DONE Figure out how the crypto works                          :aes:
           CLOSED: [2019-03-18 Mon 12:48] SCHEDULED: <2019-03-18 Mon>
           sig = MAC_K(timestamp || flags' || exptime || in_if || eg_if || HF')
@@ -224,13 +224,14 @@
           CLOSED: [2019-03-25 Mon 13:26] SCHEDULED: <2019-03-25 Mon>
 ********* DONE *test path verification*                :milestone:validation:
           CLOSED: [2019-04-02 Tue 13:04] SCHEDULED: <2019-03-27 Wed>
-********* TODO Fix timing violation
-          SCHEDULED: <2019-04-29 Mon>
-******* TODO [0/4] Timestamps                                    :validation:
-********* TODO write code with placeholders
-          SCHEDULED: <2019-05-01 Wed>
-********* TODO get time into the switch                             :externs:
-          SCHEDULED: <2019-05-03 Fri>
+********* DONE Fix timing violation
+          CLOSED: [2019-05-15 Wed 15:56] SCHEDULED: <2019-04-29 Mon>
+******* DONE [4/4] Timestamps                                    :validation:
+        CLOSED: [2019-05-15 Wed 15:56]
+********* DONE write code with placeholders
+          CLOSED: [2019-05-15 Wed 15:56] SCHEDULED: <2019-05-01 Wed>
+********* DONE get time into the switch                             :externs:
+          CLOSED: [2019-05-15 Wed 15:56] SCHEDULED: <2019-05-03 Fri>
           This should be an extern not dissimilar to the ~reg_rw~ one, but
           additionally counting clock cycles.
           => It makes sense to not do it before [[*Generate the extern stubs]].
@@ -242,10 +243,10 @@
           
           Actually, there is [[https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Timestamp-Extern-Function][a timestamp extern]]. Might be simpler to just use
           that + offset register (written by control plane).
-********* TODO generate control-plane API
-          SCHEDULED: <2019-05-02 Thu>
-********* TODO *validate the timestamps*
-          SCHEDULED: <2019-05-03 Fri>
+********* DONE generate control-plane API
+          CLOSED: [2019-05-15 Wed 15:56] SCHEDULED: <2019-05-02 Thu>
+********* DONE *validate the timestamps*
+          CLOSED: [2019-05-15 Wed 15:56] SCHEDULED: <2019-05-03 Fri>
 ******* TODO Anything else that needs validation? Figure out :D  :validation:
 ******* TODO Measure performance
         SCHEDULED: <2019-04-05 Fri>
@@ -308,6 +309,51 @@
 *** Control plane
 ***** DONE think about forwarding :D
       CLOSED: [2019-04-17 Wed 13:21] SCHEDULED: <2019-04-11 Thu>
+***** INPR Running a local topology with NetFPGA in the middle
+        1. create a dumb netfpga bitfile that just forwards between physical and fake interfaces
+        2. installed SCION on both machines + ran =scion.sh run= and =scion.sh test= to make sure it works
+        3. created a MyTiny.topo (on netfpga machine): star with 4 links, core in the middle
+           see https://github.com/scionproto/scion/blob/master/topology/README.md for how to make 1 BR with 4 interfaces instead of 4 BRs with 1 interface
+           => see MyTiny.topo
+        4. generate topology --> gives me a starting gen folder
+           => see make_topology.sh
+        5. split the gen folder into the bits that will run on different machines: netfpga's AS in one, the rest in the other
+        6. set IP addresses on the network interfaces according to make_topology.sh
+        7. test it:
+           1. =tail -f $SC/logs/bs*.DEBUG= --> look for beacons
+           2. bwtest:
+              =bwtestserver -s 1-ff00:0:111,[127.0.0.1]:30100 -sciondFromIA=
+              =bwtestclient -s 1-ff00:0:111,[127.0.0.1]:30100 -c 1-ff00:0:112,[127.0.0.1]:30101 -sciondFromIA -cs '10,1200,?,10Mbps'=
+              Note: Without netfpga:
+              #+begin_src 
+              kamila@netfpga-target ~/g/s/g/s/scion> bwtestclient -s 1-ff00:0:111,[127.0.0.1]:30100 -c 1-ff00:0:112,[127.0.0.1]:30101 -sciondFromIA -cs '10,1200,?,200Mbps' -sc '10,1200,?,2
+              00Mbps'
+              DBUG[05-24|14:20:09] Path selection algorithm choice          path="Hops: [1-ff00:0:112 1>2 1-ff00:0:110 1>1 1-ff00:0:111] Mtu: 1472" score=0.953
+              DBUG[05-24|14:20:09] Registered with dispatcher               addr="1-ff00:0:112,[127.0.0.1]:30101 (UDP)"
+              Client DC       Next Hop [127.0.0.25]:31004     Server Host [127.0.0.1]:30101
+              DBUG[05-24|14:20:09] Registered with dispatcher               addr="1-ff00:0:112,[127.0.0.1]:30102 (UDP)"
+
+              Test parameters:
+              clientDCAddr -> serverDCAddr 1-ff00:0:112,[127.0.0.1]:30102 (UDP) -> 1-ff00:0:111,[127.0.0.1]:30101 (UDP)
+              client->server: 10 seconds, 1200 bytes, 208333 packets
+              server->client: 10 seconds, 1200 bytes, 208333 packets
+
+              S->C results
+              Attempted bandwidth: 199999680 bps / 200.00 Mbps
+              Achieved bandwidth: 139212480 bps / 139.21 Mbps
+              Loss rate: 30 %
+              Interarrival time variance: 8ms, average interarrival time: 0ms
+              Interarrival time min: 0ms, interarrival time max: 8ms
+
+              C->S results
+              Attempted bandwidth: 199999680 bps / 200.00 Mbps
+              Achieved bandwidth: 139234560 bps / 139.23 Mbps
+              Loss rate: 30 %
+              Interarrival time variance: 12ms, average interarrival time: 0ms
+              Interarrival time min: 0ms, interarrival time max: 12ms
+              #+end_src
+
+       TODO commit MyTiny.topo and make_topology.sh
 *** Directory + make structure
 ***** [2/3] Directory structure
 ******* DONE set up repo skeleton
