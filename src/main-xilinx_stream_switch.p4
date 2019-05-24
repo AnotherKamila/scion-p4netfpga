@@ -9,6 +9,7 @@
 
 #include <netfpga/stats.p4>
 #include <netfpga/wallclock.p4>
+#include <netfpga/passthrough_to_cpu.p4>
 #include <scion/datatypes.p4>
 #include <scion/headers.p4>
 #include <scion/parsers.p4>
@@ -86,6 +87,7 @@ control TopPipe(inout local_t d,
     // TODO so... we don't actually need any tables, and if I could get rid of
     // them, I think I should get rid of them. But it doesn't work without them
     // by default :-/
+    // TODO(realtraffic) change into the IFID => overlay table
     @brief("Maps SCION egress interface ID to physical port.")
     table egress_ifid_to_port {
         key = {
@@ -105,11 +107,6 @@ control TopPipe(inout local_t d,
         d.hdr.encaps.udp.checksum = 0; // checksum not used -- TODO one day :D
     }
 
-    action increment_hf() {
-        // TODO move current pointer properly -- with xover and stuff
-        d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
-    }
-
     // from here on this should stay in main :D
 
     action send_digest() {
@@ -127,11 +124,14 @@ control TopPipe(inout local_t d,
 
     // this cannot be an action because SDNet does not support
     // calling exit() from an action
-    #define CHECK(err)                                              \
+    // TODO but it could be a control?
+    // TODO count errors by type and expose as metrics
+    #define CHECK_OR_PASS_TO_CPU(err)                               \
         if (err.error_flag != ERROR.NoError) {                      \
             copy_error_to_digest(err);                              \
             IFDBG(copy_debug_to_digest(err));                       \
             IFDBG(send_digest());                                   \
+            PASS_TO_CPU(s.sume);                                    \
             exit;                                                   \
         }                                                           \
 
@@ -145,31 +145,49 @@ control TopPipe(inout local_t d,
     ExposeStats()   expose_stats;
 
     apply {
+        // if this came from the CPU, don't judge and just pass it through
+        if (IS_CPU_PORT(s.sume.src_port)) {
+            PASS_FROM_CPU(s.sume);
+            exit;
+        }
+
+        // check for parser error
+        CHECK_OR_PASS_TO_CPU(d.err);
+
+        // TODO check incoming port
+
         read_wall_clock.apply(now);
         check_hf_expiry.apply(now,
                               d.hdr.scion.path.current_inf.timestamp,
                               d.hdr.scion.path.current_hf.expiry,
                               err);
-        CHECK(err);
+        CHECK_OR_PASS_TO_CPU(err);
 
+        // TODO(realtraffic) read AS key from a reg
         verify_current_hf.apply(HF_MAC_KEY,
                                 d.hdr.scion.path.current_inf.timestamp,
                                 d.hdr.scion.path.current_hf,
                                 d.hdr.scion.path.prev_hf,
                                 err);
-        CHECK(err);
+        CHECK_OR_PASS_TO_CPU(err);
 
-        egress_ifid_to_port.apply();
-        increment_hf();
+        // TODO(realtraffic): actually, apply the ifid->port action (constant)
+        // and the overlay table
+        if (!egress_ifid_to_port.apply().hit) {
+            err.error_flag = ERROR.BadIf;
+            CHECK_OR_PASS_TO_CPU(err);
+        }
 
-        // TODO update encapsulation -- something like encaps_table.apply()
+        // update HF and maybe INF pointers
+        // TODO this could be a control, maybe
+        if ((d.hdr.scion.path.current_hf.flags & HF_FLAG_XOVER) != 0) {
+            d.hdr.scion.common.curr_INF = d.hdr.scion.common.curr_HF + 1;
+            d.hdr.scion.common.curr_HF  = d.hdr.scion.common.curr_INF + 1;
+        } else {
+            d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
+        }
 
         update_checksums();
-
-        // TODO remove: this is me figuring out how the timestamp thing works
-        // bit<24> stats_time;
-        // stats_timestamp(1, stats_time);
-        // s.digest.debug1 = 40w0 ++ stats_time;
 
         expose_stats.apply(s.sume);
     }

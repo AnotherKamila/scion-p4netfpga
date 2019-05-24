@@ -27,6 +27,8 @@ class NFScionController(BaseController):
         return root
 
     def init(self):
+        # TODO(realtraffic) write into SCION interfaces table
+        # TODO(realtraffic) write AS key into a reg
         self.wall_clock     = NFWallClock.get_initialised(self.p4switch)
         self.stats          = NFStats.get_initialised(self.p4switch)
         self.init_http_server()

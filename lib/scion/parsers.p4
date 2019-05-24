@@ -222,8 +222,8 @@ parser ScionPathParser(packet_in packet,
                        out scion_path_header_t path,
                        out error_data_t err) {
     // TODO make this set smaller :-)
-    const bit<8> UNSUPPORTED_INF_FLAGS = INF_FLAG_RESERVED | INF_FLAG_UP;
-    const bit<8> UNSUPPORTED_HF_FLAGS  = HF_FLAG_RESERVED | HF_FLAG_CONTINUE | HF_FLAG_VRF_ONLY;
+    const bit<8> UNSUPPORTED_INF_FLAGS = INF_FLAG_UP;
+    const bit<8> UNSUPPORTED_HF_FLAGS  = HF_FLAG_CONTINUE | HF_FLAG_VRF_ONLY;
 
     // note: offsets validation happens in CommonHeaderParser, so we don't have
     // to worry about that here
@@ -278,7 +278,7 @@ parser ScionPathParser(packet_in packet,
 
     state parse_current_hf {
         packet.extract(path.current_hf);
-        transition select(path.current_hf.flags & UNSUPPORTED_HF_FLAGS);
+        transition select(path.current_hf.flags & UNSUPPORTED_HF_FLAGS) {
             0: accept;
             default: unsupported_flags;
         }
@@ -307,7 +307,7 @@ parser ScionExtensionsParser(packet_in packet,
     }
 
     state hop_by_hop {
-        PARSE_ERROR(UnsupportedExtension); // TODO :D
+        PARSE_ERROR(NotImpl_UnsupportedExtension); // TODO :D
     }
 }
 
