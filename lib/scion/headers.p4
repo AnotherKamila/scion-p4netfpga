@@ -77,13 +77,18 @@ struct scion_addr_header_t {
 
 
 /// Path header
-
+  // SCION book p. 347
 header scion_inf_h {
     bit<8>            flags;
     scion_timestamp_t timestamp;
     scion_isd         isd;
     bit<8>            nhops;
 }
+// TODO make sure this is the right endianness XD
+const bit<8> INF_FLAG_RESERVED = 0b00011111;
+const bit<8> INF_FLAG_PEERING  = 0b00100000;
+const bit<8> INF_FLAG_SHORTCUT = 0b01000000;
+const bit<8> INF_FLAG_UP       = 0b10000000;
 
 header scion_hf_h {
     bit<8>    flags;
@@ -92,9 +97,12 @@ header scion_hf_h {
     bit<12>   egress_if;
     bit<24>   mac;
 }
-const bit<8> SCION_HF_FLAG_UP = 0; // TODO
-const bit<8> SCION_HF_FLAG_XOVER = 0; // TODO
-const bit<8> SCION_HF_IMMUTABLE_FLAGS = 0x0; // SCION book, p. 162
+const bit<8> HF_FLAG_CONTINUE = 0b00000001;
+const bit<8> HF_FLAG_RESERVED = 0b00011110;
+const bit<8> HF_FLAG_FW_ONLY  = 0b00100000;
+const bit<8> HF_FLAG_VRF_ONLY = 0b01000000;
+const bit<8> HF_FLAG_XOVER    = 0b10000000;
+const bit<8> HF_IMMUTABLE_FLAGS = HF_FLAG_FW_ONLY; // SCION book, p. 162
 
 struct scion_path_header_t {
     scion_inf_h current_inf;

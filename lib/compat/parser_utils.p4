@@ -27,7 +27,10 @@ parser PacketSkipper8(packet_in packet, in bit<3> skips) (bit<32> skip_size) {
 
     #else
 
-    // ♪♫ we do what we must because we can ♫
+    // A loop doesn't work because SDNet gets extremely confused and generates
+    // invalid px code.
+    // Can't really reproduce with simpler code either, so...
+    // ♪♫ We do what we must because we can... ♫
     state start {
         transition select(skips) {
             #define LOOPBODY(i) i: skip_##i;

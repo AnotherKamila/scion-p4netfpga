@@ -1,4 +1,5 @@
 # TODO this makefile will need a *lot* of cleanup :D
+# TODO move bitfiles to $PLATFORM instead of $PLATFORM/$ARCH
 
 TOP=../..
 include $(TOP)/Makefile.inc

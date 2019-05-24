@@ -6,21 +6,13 @@
 // The top-level ScionParser expects the full L2 packet (starting with the
 // Ethernet header), and it will reject anything that is not SCION and indicate
 // this by setting error to error.notScion.
-// If you want to process non-SCION packets as well, create your own equivalent
+// If you want to parse non-SCION packets as well, create your own equivalent
 // of ScionParser by replacing the ScionEncapsulationParser with what you need
 // and re-using ScionHeaderParser.
-//
-// TODO Actually, it is possible to parametrise the parsers with whether it
-// should accept or reject non-SCION: just replayce verify(false, ...) with
-// verify(parameter, ...) and put a transition: accept below
 
 #ifndef SC__LIB__SCION__PARSERS_P4_
 #define SC__LIB__SCION__PARSERS_P4_
 
-
-// TODO actually, I desperately want verify... figure out how we can implement
-// it for SDNet
-// TODO ...and then handle parser errors properly :D
 
 #include <compat/macros.p4>
 #include <compat/parser_utils.p4>
@@ -37,6 +29,9 @@
 #if !(defined TARGET_SUPPORTS_VAR_LEN_PARSING || defined TARGET_SUPPORTS_PACKET_MOD)
 #error This file requires one of TARGET_SUPPORTS_{VAR_LEN_PARSING,PACKET_MOD}.
 #endif
+
+// I wish SDNet supported verify, but it doesn't, hence the plethora of states
+// containing only a PARSE_ERROR.
 
 @brief("Parses IP/UDP encapsulation (if present), choosing by ethertype.")
 @Xilinx_MaxPacketRegion(MTU)
@@ -79,10 +74,10 @@ parser ScionEncapsulationParser(packet_in          packet,
     state parse_udp {
         packet.extract(encaps.udp);
         // TODO UDP checksum
-        transition select(encaps.udp.dst_port) {
-            SCION_PORT: accept;
-            default:    not_scion;
-        }
+        // Ideally, here I'd check whether this is coming from a SCION port, but
+        // I can't get the information about the overlay ports here, so I can't do
+        // that and therefore I just accept everything here.
+        transition accept;
     }
 
     state not_scion {
@@ -103,7 +98,14 @@ parser ScionCommonHeaderParser(packet_in            packet,
 
         packet.extract(hdr);
         pos_in_hdr = pos_in_hdr + SCION_COMMON_H_SIZE;
-        transition check_offsets;
+        transition check_version;
+    }
+
+    state check_version {
+        transition select(hdr.version) {
+            0:       check_offsets;
+            default: bad_version;
+        }
     }
 
     // This has to be a select instead of just a call to verify() because SDNet
@@ -119,10 +121,13 @@ parser ScionCommonHeaderParser(packet_in            packet,
         }
     }
 
+    state bad_version {
+        PARSE_ERROR(BadVersion);
+    }
+ 
     state invalid_offset {
         PARSE_ERROR(InvalidOffset);
     }
-
 }
 
 // Parses the given type of SCION host address (IPv4, IPv6 or Service).
@@ -187,7 +192,6 @@ parser ScionAddressHeaderParser(packet_in packet,
 
         dst_host_parser.apply(packet, common.dst_addr_type, host_addr_len1, hdr.dst_host, err);
         src_host_parser.apply(packet, common.src_addr_type, host_addr_len2, hdr.src_host, err);
-        // if both had an error, some error will fall out at the end :D
 
         pos_in_hdr = pos_in_hdr + 2*SCION_ISDAS_ADDR_H_SIZE + host_addr_len1 + host_addr_len2;
         transition align_to_8_bytes;
@@ -210,12 +214,17 @@ parser ScionAddressHeaderParser(packet_in packet,
 #endif
 }
 
+// Currently only supports 8-byte HFs -- TODO
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionPathParser(packet_in packet, 
                        in  packet_size_t pos_in_hdr,
                        in  scion_common_h common,
                        out scion_path_header_t path,
                        out error_data_t err) {
+    // TODO make this set smaller :-)
+    const bit<8> UNSUPPORTED_INF_FLAGS = INF_FLAG_RESERVED | INF_FLAG_UP;
+    const bit<8> UNSUPPORTED_HF_FLAGS  = HF_FLAG_RESERVED | HF_FLAG_CONTINUE | HF_FLAG_VRF_ONLY;
+
     // note: offsets validation happens in CommonHeaderParser, so we don't have
     // to worry about that here
     PacketSkipper64(8) skipper1; // TODO can we re-use the same one?
@@ -224,19 +233,23 @@ parser ScionPathParser(packet_in packet,
     bit<8> skips_to_hf  = common.curr_HF  - (bit<8>)(pos_in_hdr/8) - skips_to_inf - 1;
     // -1 because we extract current_inf, which is 1 8-byte block
 
-    bool skip_too_long = skips_to_hf[7:6] != 0 || skips_to_inf[7:6] != 0; // TODO handle this :D
-    // TODO ... ooor ... just see what it costs to support full-length paths :D
-    // SCION does only up to 256 anyway...
-
     state start {
         err = {ERROR.NoError, 0};
-        transition skip_to_inf;
+        // TODO see what it costs to support full-length paths :D
+        // SCION does only up to 256 anyway...
+        transition select(skips_to_hf[7:6] == 0 && skips_to_inf[7:6] == 0) {
+            true:    skip_to_inf;
+            default: path_too_long;
+        }
     }
 
     state skip_to_inf {
         skipper1.apply(packet, skips_to_inf[5:0]);
         packet.extract(path.current_inf);
-        transition skip_to_hf;
+        transition select(path.current_inf.flags & UNSUPPORTED_INF_FLAGS) {
+            0:       skip_to_hf;
+            default: unsupported_flags;
+        }
     }
 
     state skip_to_hf {
@@ -265,22 +278,40 @@ parser ScionPathParser(packet_in packet,
 
     state parse_current_hf {
         packet.extract(path.current_hf);
-        transition accept;
+        transition select(path.current_hf.flags & UNSUPPORTED_HF_FLAGS);
+            0: accept;
+            default: unsupported_flags;
+        }
     }
 
+    state path_too_long {
+        PARSE_ERROR(NotImpl_PathTooLong);
+    }
+
+    state unsupported_flags {
+        PARSE_ERROR(NotImpl_UnsupportedFlags);
+    }
 }
 
-// TODO
 @Xilinx_MaxPacketRegion(MTU)
-parser ScionExtensionsParser(packet_in packet, 
-                             out scion_header_t hdr) {
+parser ScionExtensionsParser(packet_in packet,
+                             in  packet_size_t pos_in_hdr,
+                             in  protocol_t    next_hdr,
+                             out error_data_t err) {
 
     state start {
-        transition accept;
+        transition select(next_hdr) {
+            0x00:    hop_by_hop;
+            default: accept; // not something that the BR cares about
+        }
+    }
+
+    state hop_by_hop {
+        PARSE_ERROR(UnsupportedExtension); // TODO :D
     }
 }
 
-// Parses the SCION header (NOT including encapsulation).
+@brief("Parses the SCION header (NOT including encapsulation).")
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionHeaderParser(packet_in          packet, 
                          out scion_header_t hdr,
@@ -289,16 +320,14 @@ parser ScionHeaderParser(packet_in          packet,
     ScionCommonHeaderParser()  common_header_parser;
     ScionAddressHeaderParser() address_header_parser;
     ScionPathParser()          path_parser;
-    // ScionExtensionsParser()    extensions_parser;
+    ScionExtensionsParser()    extensions_parser;
 
     state start {
-        // TODO check errors!
         // parameters:              packet  state       input data  parsed header err
         common_header_parser.apply( packet, pos_in_hdr,             hdr.common,   err);
         address_header_parser.apply(packet, pos_in_hdr, hdr.common, hdr.addr,     err);
         path_parser.apply(          packet, pos_in_hdr, hdr.common, hdr.path,     err);
-        // TODO:
-        // extensions_parser.apply(packet, hdr, meta);
+        extensions_parser.apply(    packet, pos_in_hdr, hdr.common.next_hdr,      err);
 
         transition accept;
     }
@@ -316,23 +345,7 @@ parser ScionParser(packet_in               packet,
     state start {
         packet.extract(hdr.ethernet);
         encaps_parser.apply(packet, hdr.ethernet.ethertype, hdr.encaps, err);
-        transition select(err.error_flag) {
-            ERROR.NoError: parse_scion;
-            default:       handle_err;
-        }
-    }
-
-    state parse_scion {
         scion_header_parser.apply(packet, hdr.scion, err);
-        transition accept;
-    }
-
-    state handle_err {
-        // TODO should we be accepting or rejecting if we want to generate an
-        // error message?
-        // TODO check what reject does; if it can be used, then we could apply
-        // an ErrorChecker parser that just rejects in NetFPGA case or calls
-        // verify(false, err) for bmv2
         transition accept;
     }
 }

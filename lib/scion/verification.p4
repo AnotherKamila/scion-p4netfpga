@@ -4,6 +4,7 @@
 
 
 #include <scion/errors.p4>
+#include <scion/headers.p4>
 
 // TODO figure out a more reasonable externs thingy or something, IDK
 // the @brief and @description should certainly be instance-specific, so the
@@ -112,7 +113,7 @@ control VerifyHF(in  bit<128>          K,
     );
     bit<128> M = (
         timestamp ++                                   // 32b
-        (current.flags & SCION_HF_IMMUTABLE_FLAGS) ++  //  8b
+        (current.flags & HF_IMMUTABLE_FLAGS) ++  //  8b
         current.expiry ++                              //  8b
         current.ingress_if ++                          // 12b
         current.egress_if ++                           // 12b
