@@ -309,7 +309,8 @@
 *** Control plane
 ***** DONE think about forwarding :D
       CLOSED: [2019-04-17 Wed 13:21] SCHEDULED: <2019-04-11 Thu>
-***** INPR Running a local topology with NetFPGA in the middle
+***** DONE Running a local topology with NetFPGA in the middle
+      CLOSED: [2019-05-24 Fri 14:23]
         1. create a dumb netfpga bitfile that just forwards between physical and fake interfaces
         2. installed SCION on both machines + ran =scion.sh run= and =scion.sh test= to make sure it works
         3. created a MyTiny.topo (on netfpga machine): star with 4 links, core in the middle
@@ -352,8 +353,7 @@
               Interarrival time variance: 12ms, average interarrival time: 0ms
               Interarrival time min: 0ms, interarrival time max: 12ms
               #+end_src
-
-       TODO commit MyTiny.topo and make_topology.sh
+***** NEXT filling out the interfaces table
 *** Directory + make structure
 ***** [2/3] Directory structure
 ******* DONE set up repo skeleton
