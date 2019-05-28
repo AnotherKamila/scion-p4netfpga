@@ -107,6 +107,7 @@ def gen(badmacs=False, num_hfs_per_seg=3):
     for s in range(3):
         for h in range(num_hfs_per_seg):
             ifs     = random.choice([('nf0','nf1'), ('nf1','nf0')])
+            if badmacs: ifs[1].replace('nf', 'dma') # send to CPU on error
             ifids = SCION_IFID_MAP[ifs[0]], SCION_IFID_MAP[ifs[1]]
             seg     = [(SCION_IFID_MAP['nf2'], SCION_IFID_MAP['nf3'])]*(num_hfs_per_seg)
             currseg = seg[:]
@@ -145,6 +146,8 @@ def gen(badmacs=False, num_hfs_per_seg=3):
 PAD_TO = 1450
 
 def mkpackets(only_times=None):
+    # TODO really test error handling: make sure that the correct errors are
+    # returned in all cases
     packets = itertools.chain(gen(), gen(badmacs=True), gen(num_hfs_per_seg=7))
     for t, data in enumerate(packets, 1):
         in_pkt, in_if, exp_pkt, exp_if, exp_digest = data

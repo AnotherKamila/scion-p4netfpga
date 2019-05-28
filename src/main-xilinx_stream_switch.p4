@@ -84,23 +84,45 @@ control TopPipe(inout local_t d,
         set_dst_port(8w1 << d.hdr.scion.path.current_hf.egress_if[2:0]);
     }
 
-    // TODO so... we don't actually need any tables, and if I could get rid of
-    // them, I think I should get rid of them. But it doesn't work without them
-    // by default :-/
-    // TODO(realtraffic) change into the IFID => overlay table
     @brief("Maps SCION egress interface ID to physical port.")
     table egress_ifid_to_port {
         key = {
-            d.hdr.scion.path.current_hf.egress_if[2:0]: direct;
-            // ha ha, netfpga scripts don't support direct match type
-            // TODO fix them
+            d.hdr.scion.path.current_hf.egress_if: exact;
         }
         actions = {
             set_dst_port;
             set_default_dst_port_from_ifid;
         }
         default_action = set_default_dst_port_from_ifid();
-        // note that size is 2^key width
+        size = 64; // smallest possible exact match size
+    }
+
+    action set_overlay_udp_v4(ipv4_addr_t my_addr, udp_port_t my_port, ipv4_addr_t remote_addr, udp_port_t remote_port) {
+        d.hdr.encaps.ip.v6.setInvalid();
+        d.hdr.encaps.ip.v4.src_addr = my_addr;
+        d.hdr.encaps.ip.v4.dst_addr = remote_addr;
+        d.hdr.encaps.udp.src_port = my_port;
+        d.hdr.encaps.udp.dst_port = remote_port;
+    }
+
+    action set_overlay_udp_v6(ipv6_addr_t my_addr, udp_port_t my_port, ipv6_addr_t remote_addr, udp_port_t remote_port) {
+        d.hdr.encaps.ip.v4.setInvalid();
+        d.hdr.encaps.ip.v6.src_addr = my_addr;
+        d.hdr.encaps.ip.v6.dst_addr = remote_addr;
+        d.hdr.encaps.udp.src_port = my_port;
+        d.hdr.encaps.udp.dst_port = remote_port;
+    }
+
+    @brief("Link overlay table: maps IFID to overlay.")
+    table link_overlay {
+        key = {
+            d.hdr.scion.path.current_hf.egress_if: exact;
+        }
+        actions = {
+            set_overlay_udp_v4;
+            set_overlay_udp_v6;
+        }
+        size = 64; // smallest possible exact match size
     }
 
     action update_checksums() {
@@ -171,12 +193,8 @@ control TopPipe(inout local_t d,
                                 err);
         CHECK_OR_PASS_TO_CPU(err);
 
-        // TODO(realtraffic): actually, apply the ifid->port action (constant)
-        // and the overlay table
-        if (!egress_ifid_to_port.apply().hit) {
-            err.error_flag = ERROR.BadIf;
-            CHECK_OR_PASS_TO_CPU(err);
-        }
+        egress_ifid_to_port.apply();
+        link_overlay.apply();
 
         // update HF and maybe INF pointers
         // TODO this could be a control, maybe
