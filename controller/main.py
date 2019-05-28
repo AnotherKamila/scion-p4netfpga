@@ -8,14 +8,14 @@ from twisted.web import resource, server
 from twisted.internet import defer, reactor, endpoints
 
 from .p4_api import P4Switch
-from .base_controller import BaseController
 from .nfstats import NFStats
 from .nfwallclock import NFWallClock
 
 DEBUG = os.getenv('DEBUG', '0') != '0'
 
 @attr.s
-class NFScionController(BaseController):
+class NFScionController:
+    p4switch  = attr.ib()
     reactor   = attr.ib()
     http_port = attr.ib()
     http_root = attr.ib()
@@ -26,17 +26,20 @@ class NFScionController(BaseController):
         root.putChild(b'metrics', MetricsResource())
         return root
 
-    def init(self):
+    def start(self):
         # TODO(realtraffic) write into SCION interfaces table
         # TODO(realtraffic) write AS key into a reg
-        self.wall_clock     = NFWallClock.get_initialised(self.p4switch)
-        self.stats          = NFStats.get_initialised(self.p4switch)
-        self.init_http_server()
+        self.stats          = NFStats(self.p4switch)
+        self.wall_clock     = NFWallClock(self.p4switch)
+
+        self.stats.register_metrics()
+        self.wall_clock.start()
+        self.start_http_server()
 
         if DEBUG:
-            self.wall_clock.force_time(247)
+            self.wall_clock.forced_time = 247  # to make testing independent of time
 
-    def init_http_server(self):
+    def start_http_server(self):
         endpoints.serverFromString(
             self.reactor, r'tcp:interface=\:\:0:port={}'.format(self.http_port)
         ).listen(server.Site(self.http_root))
@@ -48,7 +51,8 @@ def main():
         extern_defines='platforms/netfpga/xilinx_stream_switch/sw/CLI/Scion_extern_defines.json'
     )
     PORT = os.getenv('PORT', 9600)
-    ctrl = NFScionController.get_initialised(reactor=reactor, p4switch=p4switch, http_port=PORT)
+    ctrl = NFScionController(reactor=reactor, p4switch=p4switch, http_port=PORT)
+    ctrl.start()
 
     reactor.run()
 

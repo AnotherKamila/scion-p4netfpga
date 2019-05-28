@@ -1,13 +1,13 @@
+import attr
 import prometheus_client.core as prom
 
-from .base_controller import BaseController
+from .datatypes import SUME_IFACES
 
-SUME_IFACES = ['eth0', 'dma0', 'eth1', 'dma1', 'eth2', 'dma2', 'eth3', 'dma3']
+@attr.s(cmp=False)
+class NFStats:
+    p4switch  = attr.ib()
 
-class NFStatsCollector:
     PREFIX = 'nf_'
-    def __init__(self, p4switch):
-        self.p4switch = p4switch
 
     def collect(self):
         # create metrics
@@ -48,7 +48,5 @@ class NFStatsCollector:
         yield send
         yield queues
 
-
-class NFStats(BaseController):
-    def init(self):
-        prom.REGISTRY.register(NFStatsCollector(self.p4switch))
+    def register_metrics(self):
+        prom.REGISTRY.register(self)

@@ -6,8 +6,8 @@ import sys
 platform_lib_path = os.path.join(os.path.dirname(__file__),
                                  '../platforms/netfpga/sw/')
 sys.path.append(platform_lib_path)
-from p4_regs_api import Regs
+from nf_p4_api import NFSwitchAPI
 
-# TODO add table API
-class P4Switch(Regs):
+# TODO add higher-level table API
+class P4Switch(NFSwitchAPI):
     pass

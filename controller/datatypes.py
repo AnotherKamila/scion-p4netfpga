@@ -3,7 +3,9 @@
 
 import scapy.all as scapy
 
-SUME_IFACES = ['nf0', 'dma0', 'nf1', 'dma1', 'nf2', 'dma2', 'nf3', 'dma3']
+SUME_IFACES = ['eth0', 'dma0', 'eth1', 'dma1', 'eth2', 'dma2', 'eth3', 'dma3']
+DMA_IFACES  = [iface for iface in SUME_IFACES if     iface.startswith('dma')]
+REAL_IFACES = [iface for iface in SUME_IFACES if not iface.startswith('dma')]
 # the SUME representation of interfaces is one-hot encoded:
 SUME_IFACE_MAP = { 1<<i: iface for i, iface in enumerate(SUME_IFACES)}
 
