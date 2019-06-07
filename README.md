@@ -20,13 +20,16 @@ Main results (TODO actually deliver them, plus TODO correlate this list with the
 ## Quick start
 
 1. Set up your environment: See [Prerequisites](#prerequisites)
+   TODO Right now we also need to edit NetFPGA repo's index of externs, which is terrible. I should figure out how to better handle this and send a patch to NetFPGA. See https://github.com/NetFPGA/P4-NetFPGA-live/issues/24 for the current status.
 2. Build this: `make` to see help, or `make build` to build everything needed to use this
 3. Flash the NetFPGA:  
-   Run **as root** (with the env vars available):
+   Run **as root** (with the env vars set up):
    1. `make flash`
    2. reboot
    3. `make devinit`
 4. TODO Start controller: How do we deploy this? => start control plane, make it talk to other SCION stuff
+   1. deploy SCION infra, make the SW BR bind to NetFPGA's `nf*` interfaces by configuring them with the IP addresses specified for the BR in its topology.json => see TODO docs
+   2. start NetFPGA controller: `pipenv run python -m controller.main`
 
 More details [below](#building-this-project).
 
