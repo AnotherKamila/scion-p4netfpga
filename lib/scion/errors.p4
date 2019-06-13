@@ -15,6 +15,7 @@ enum UserError {
     NoError,
 #endif
     // GENERAL
+    NotSCION,
     L2Error,
     // COMMON HEADER
     BadVersion,
@@ -37,24 +38,15 @@ enum UserError {
     // EXTENSION
     // SIBRA
 
+    // INTERNAL
     // Not implemented -- these are used to indicate that the packet should be
     // passed to CPU, because we can't handle it in hardware (yet?)
     NotImpl_UnsupportedFlags,
     NotImpl_PathTooLong,
     NotImpl_UnsupportedExtension,
+    InternalError_UnconfiguredIFID, // The IFID looks valid, but we don't have overlay/L2 info about the peer
     InternalError // This should never happen. If it happened, something somewhere went terribly wrong.
 }
-
-// Reason: SDNet does not support errors; see P4-SDNet p.8
-#ifdef TARGET_SUPPORTS_VERIFY
-#define PARSE_ERROR(e)              verify(false, ERROR.e)
-#define PARSE_ERROR2(e, save_dest)  verify(false, ERROR.e)
-#else
-// assumes that "err" is in current scope
-#define PARSE_ERROR(e)              err.error_flag = ERROR.e; transition reject
-// this one doesn't
-#define PARSE_ERROR2(e, save_dest)  save_dest      = ERROR.e; transition reject
-#endif
 
 
 #endif

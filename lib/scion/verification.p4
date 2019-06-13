@@ -113,7 +113,7 @@ control VerifyHF(in  bit<128>          K,
     );
     bit<128> M = (
         timestamp ++                                   // 32b
-        (current.flags & HF_IMMUTABLE_FLAGS) ++  //  8b
+        (current.flags & HF_IMMUTABLE_FLAGS) ++        //  8b
         current.expiry ++                              //  8b
         current.ingress_if ++                          // 12b
         current.egress_if ++                           // 12b

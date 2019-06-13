@@ -30,6 +30,22 @@
 #error This file requires one of TARGET_SUPPORTS_{VAR_LEN_PARSING,PACKET_MOD}.
 #endif
 
+// Reason: SDNet does not support errors; see P4-SDNet p.8
+// Also note that SDNet breaks in weird ways if I try to use the packet after a
+// reject; so I define PARSE_ERROR to accept everything here.
+#ifdef TARGET_SUPPORTS_VERIFY
+#define PARSE_ERROR(e)              verify(false, ERROR.e)
+#define PARSE_ERROR2(e, save_dest)  verify(false, ERROR.e)
+#else
+// assumes that "err" is in current scope
+#define PARSE_ERROR(e)              err.error_flag = ERROR.e; transition accept
+// this one doesn't
+#define PARSE_ERROR2(e, save_dest)  save_dest      = ERROR.e; transition accept
+#endif
+
+#define IS_ERROR(err)  err.error_flag != ERROR.NoError
+#define MERGE_ERRS(e1, e2)  (IS_ERROR(e1) ? e1 : e2)
+
 // I wish SDNet supported verify, but it doesn't, hence the plethora of states
 // containing only a PARSE_ERROR.
 
@@ -81,7 +97,7 @@ parser ScionEncapsulationParser(packet_in          packet,
     }
 
     state not_scion {
-        PARSE_ERROR(L2Error);
+        PARSE_ERROR(NotSCION);
     }
 }
 
@@ -322,13 +338,36 @@ parser ScionHeaderParser(packet_in          packet,
     ScionPathParser()          path_parser;
     ScionExtensionsParser()    extensions_parser;
 
+    // Because of SDNet, we have to accept everywhere, even if we have an error,
+    // and we need to check for error manually here.
+
     state start {
         // parameters:              packet  state       input data  parsed header err
         common_header_parser.apply( packet, pos_in_hdr,             hdr.common,   err);
-        address_header_parser.apply(packet, pos_in_hdr, hdr.common, hdr.addr,     err);
-        path_parser.apply(          packet, pos_in_hdr, hdr.common, hdr.path,     err);
-        extensions_parser.apply(    packet, pos_in_hdr, hdr.common.next_hdr,      err);
+        transition select(err.error_flag) {
+            ERROR.NoError: parse_address_header;
+            default:       accept;  // stop parsing and give what you have to the pipeline
+        }
+    }
 
+    state parse_address_header {
+        address_header_parser.apply(packet, pos_in_hdr, hdr.common, hdr.addr,     err);
+        transition select(err.error_flag) {
+            ERROR.NoError: parse_path;
+            default:       accept;  // stop parsing and give what you have to the pipeline
+        }
+    }
+
+    state parse_path {
+        path_parser.apply(          packet, pos_in_hdr, hdr.common, hdr.path,     err);
+        transition select(err.error_flag) {
+            ERROR.NoError: parse_extensions;
+            default:       accept;  // stop parsing and give what you have to the pipeline
+        }
+    }
+
+    state parse_extensions {
+        extensions_parser.apply(    packet, pos_in_hdr, hdr.common.next_hdr,      err);
         transition accept;
     }
 }
@@ -342,9 +381,19 @@ parser ScionParser(packet_in               packet,
     ScionEncapsulationParser() encaps_parser;
     ScionHeaderParser()        scion_header_parser;
 
+    // Because of SDNet, we have to accept everywhere, even if we have an error,
+    // and we need to check for error manually here.
+
     state start {
         packet.extract(hdr.ethernet);
         encaps_parser.apply(packet, hdr.ethernet.ethertype, hdr.encaps, err);
+        transition select(err.error_flag) {
+            ERROR.NoError: parse_scion;
+            default:       accept;  // stop parsing and give what you have to the pipeline
+        }
+    }
+
+    state parse_scion {
         scion_header_parser.apply(packet, hdr.scion, err);
         transition accept;
     }

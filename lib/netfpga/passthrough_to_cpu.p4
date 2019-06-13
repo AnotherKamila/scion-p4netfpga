@@ -1,4 +1,4 @@
-// Controls that handle passing packets through to/from the CPU
+// Macros for passing packets through to/from the CPU
 
 #ifndef SC_LIB_NETFPGA_PASSTHROUGH_TO_CPU_P4_
 #define SC_LIB_NETFPGA_PASSTHROUGH_TO_CPU_P4_
