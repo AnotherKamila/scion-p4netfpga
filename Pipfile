@@ -10,6 +10,7 @@ twisted = "*"
 prometheus-client = "*"
 attrs = "*"
 scapy = "*"
+cryptography = "*"
 
 [requires]
 python_version = "3.5"

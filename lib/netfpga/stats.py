@@ -37,8 +37,8 @@ class NFStats:
             send.add_metric([name], self.p4switch.reg_read('stat_send_pkt_cnt', i))
 
             # There is just one queue for all DMA stuff => handled separately
-            if name.startswith('dma'): continue
-            queues.add_metric([name], self.p4switch.reg_read('stat_queue_sizes', i))
+            if not name.startswith('dma'):
+                queues.add_metric([name], self.p4switch.reg_read('stat_queue_sizes', i))
 
         # DMA queue size lives at index 1
         queues.add_metric(['dma'], self.p4switch.reg_read('stat_queue_sizes', 1))
@@ -48,5 +48,5 @@ class NFStats:
         yield send
         yield queues
 
-    def register_metrics(self):
-        prom.REGISTRY.register(self)
+    def register_metrics(self, registry=prom.REGISTRY):
+        registry.register(self)

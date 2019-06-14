@@ -7,9 +7,10 @@ from prometheus_client.twisted import MetricsResource
 from twisted.web import resource, server
 from twisted.internet import defer, reactor, endpoints
 
-from .p4_api import P4Switch
-from .nfstats import NFStats
-from .nfwallclock import NFWallClock
+# TODO choose the correct platform, somehow?
+from netfpga.p4_api import P4Switch
+from netfpga.stats import NFStats
+from netfpga.wallclock import NFWallClock
 
 DEBUG = os.getenv('DEBUG', '0') != '0'
 
@@ -31,7 +32,6 @@ class NFScionController:
         # TODO(realtraffic) write AS key into a reg
         self.stats          = NFStats(self.p4switch)
         self.wall_clock     = NFWallClock(self.p4switch)
-
         self.stats.register_metrics()
         self.wall_clock.start()
         self.start_http_server()
@@ -47,11 +47,9 @@ class NFScionController:
 
 
 def main():
-    p4switch = P4Switch(
-        extern_defines='platforms/netfpga/xilinx_stream_switch/sw/CLI/Scion_extern_defines.json'
-    )
-    PORT = os.getenv('PORT', 9600)
-    ctrl = NFScionController(reactor=reactor, p4switch=p4switch, http_port=PORT)
+    p4switch = P4Switch()
+    http_port = os.getenv('PORT', 9600)
+    ctrl = NFScionController(reactor=reactor, p4switch=p4switch, http_port=http_port)
     ctrl.start()
 
     reactor.run()
