@@ -10,6 +10,7 @@
 #include <netfpga/stats.p4>
 #include <netfpga/wallclock.p4>
 #include <netfpga/passthrough_to_cpu.p4>
+#include <common/checksums.p4>
 #include <scion/datatypes.p4>
 #include <scion/headers.p4>
 #include <scion/parsers.p4>
@@ -66,24 +67,61 @@ control TopPipe(inout local_t d,
 
     // TODO modularise this once the architecture is clear
 
-    action reflect_L2() {
-        eth_addr_t tmp_src_addr = d.hdr.ethernet.src_addr;
-        d.hdr.ethernet.src_addr = d.hdr.ethernet.dst_addr;
-        d.hdr.ethernet.dst_addr = tmp_src_addr;
-
-        s.sume.dst_port = s.sume.src_port;
-    }
+    // TODO the parts related to forwarding should be moved into something like
+    // a ScionForwarder control or so
+    error_data_t ingress_if_check_err;
+    error_data_t hf_expiry_err;
+    error_data_t hf_mac_err;
+    error_data_t hf_err;
+    error_data_t egress_if_match_err;
+    bit<12>      egress_if;
+    bit<32>      now;
+    ReadWallClock()      read_wall_clock;
+    CheckHFExpiry()      check_hf_expiry;
+    VerifyHF()           verify_current_hf;
+    UpdateIPv4Checksum() update_ipv4_checksum;
+    UpdateUDPChecksum()  update_udp_checksum;
+    ExposeStats()        expose_stats;
 
     action set_dst_port(port_t port) {
         s.sume.dst_port = port;
     }
 
-    @brief("Sets port to 1 << current_hf.egress_if.")
-    @description("Meant to be used as a default action if there is no mapping in the IFID => port table.")
-    action set_default_dst_port_from_ifid() {
-        set_dst_port(8w1 << d.hdr.scion.path.current_hf.egress_if[2:0]);
+    action set_ptp_link() {
+        // TODO this would be better with some well-known SCION_PTP_MCAST_MAC
+        // compile-time constant instead of just broadcast
+        d.hdr.ethernet.dst_addr = 0xffffffffffff;
     }
 
+
+    action set_overlay_udp_v4(ipv4_addr_t my_addr, udp_port_t my_port, ipv4_addr_t remote_addr, udp_port_t remote_port, eth_addr_t remote_mac) {
+        d.hdr.encaps.ip.v6.setInvalid();
+        d.hdr.encaps.ip.v4.src_addr = my_addr;
+        d.hdr.encaps.ip.v4.dst_addr = remote_addr;
+        d.hdr.encaps.udp.src_port = my_port;
+        d.hdr.encaps.udp.dst_port = remote_port;
+        d.hdr.ethernet.dst_addr = remote_mac;
+    }
+
+    // No v6 checksum function => not implementable ATM, TODO fix if possible
+    // action set_overlay_udp_v6(ipv6_addr_t my_addr, udp_port_t my_port, ipv6_addr_t remote_addr, udp_port_t remote_port, eth_addr_t remote_mac) {
+    //     d.hdr.encaps.ip.v4.setInvalid();
+    //     d.hdr.encaps.ip.v6.src_addr = my_addr;
+    //     d.hdr.encaps.ip.v6.dst_addr = remote_addr;
+    //     d.hdr.encaps.udp.src_port = my_port;
+    //     d.hdr.encaps.udp.dst_port = remote_port;
+    //     d.hdr.ethernet.dst_addr = remote_mac;
+    // }
+
+    action egress_if_match_err_unconfigured_ifid() {
+        egress_if_match_err.debug = 20w0 ++ 16w0xfeee ++ d.hdr.scion.path.current_hf.egress_if ++ 16w0xfeee;
+        egress_if_match_err.error_flag = ERROR.InternalError_UnconfiguredIFID;
+    }
+
+    /// TABLES ///////////////////////////////////////////////////////////////
+
+    // TODO currently, control plane needs to fill this out by correlating the
+    // IP addresses from the topology.json with the ones set on nf* interfaces
     @brief("Maps SCION egress interface ID to physical port.")
     table egress_ifid_to_port {
         key = {
@@ -91,28 +129,15 @@ control TopPipe(inout local_t d,
         }
         actions = {
             set_dst_port;
-            set_default_dst_port_from_ifid;
+            egress_if_match_err_unconfigured_ifid;
         }
-        default_action = set_default_dst_port_from_ifid();
+        default_action = egress_if_match_err_unconfigured_ifid();
         size = 64; // smallest possible exact match size
     }
 
-    action set_overlay_udp_v4(ipv4_addr_t my_addr, udp_port_t my_port, ipv4_addr_t remote_addr, udp_port_t remote_port) {
-        d.hdr.encaps.ip.v6.setInvalid();
-        d.hdr.encaps.ip.v4.src_addr = my_addr;
-        d.hdr.encaps.ip.v4.dst_addr = remote_addr;
-        d.hdr.encaps.udp.src_port = my_port;
-        d.hdr.encaps.udp.dst_port = remote_port;
-    }
-
-    action set_overlay_udp_v6(ipv6_addr_t my_addr, udp_port_t my_port, ipv6_addr_t remote_addr, udp_port_t remote_port) {
-        d.hdr.encaps.ip.v4.setInvalid();
-        d.hdr.encaps.ip.v6.src_addr = my_addr;
-        d.hdr.encaps.ip.v6.dst_addr = remote_addr;
-        d.hdr.encaps.udp.src_port = my_port;
-        d.hdr.encaps.udp.dst_port = remote_port;
-    }
-
+    // This "should" be two layers/tables: L3 overlay and L2 ARP/NDP. However,
+    // because the mapping is 1:1, we can save ourselves the second lookup by
+    // declaring that to be The Control Plane's Problem.
     @brief("Link overlay table: maps IFID to overlay.")
     table link_overlay {
         key = {
@@ -120,14 +145,51 @@ control TopPipe(inout local_t d,
         }
         actions = {
             set_overlay_udp_v4;
-            set_overlay_udp_v6;
+            // TODO enable if it turns out that NetFPGA python scripts are only
+            // annoyingly broken, not deal-breakingly broken
+            // ... and once we can compute IPv6 checksums
+            // set_overlay_udp_v6;
+            // set_ptp_link;
+            egress_if_match_err_unconfigured_ifid;
         }
+        // TODO instead of error, this should be set_ptp_link once we support
+        // overlay-free communication
+        default_action = egress_if_match_err_unconfigured_ifid();
         size = 64; // smallest possible exact match size
     }
 
-    action update_checksums() {
-        d.hdr.encaps.udp.checksum = 0; // checksum not used -- TODO one day :D
+    action set_src_mac(eth_addr_t mac) {
+        d.hdr.ethernet.src_addr = mac;
     }
+    table my_mac {
+        key = {
+            s.sume.dst_port: exact;
+        }
+        actions = {
+            set_src_mac;
+        }
+        // TODO error with default_action
+        size = 64;
+    }
+
+    action set_result(bit<32> data) {
+        s.digest.debug1 = 16w0xfeee ++ data ++ 16w0xfeee;
+    }
+    // P4-SDNet is weird non-deterministic shit.
+    // This table does not do anything. But if I remove it, the above tables,
+    // which actually do something, will magically stop working. Magically. It
+    // makes no sense at all. Took 2 days to figure out, too. Just don't touch
+    // this table.
+    table noop_table {
+        key = {
+            d.hdr.scion.path.current_hf.egress_if: exact;
+        }
+        actions = {
+            set_result;
+        }
+        size = 64;
+    }
+
 
     // from here on this should stay in main :D
 
@@ -135,78 +197,93 @@ control TopPipe(inout local_t d,
         s.sume.send_dig_to_cpu = 1;
     }
 
-    action copy_error_to_digest(in error_data_t err) {
-        s.digest.error_flag = err.error_flag;
+    action copy_error_to_digest(in error_data_t err_) {
+        s.digest.error_flag = err_.error_flag;
     }
 
-    action copy_debug_to_digest(in error_data_t err) {
-        s.digest.debug1  = err.debug;   // local
+    action copy_debug_to_digest(in error_data_t err_) {
+        s.digest.debug1  = err_.debug;  // local
         s.digest.debug2  = d.err.debug; // parser
     }
 
-    // this cannot be an action because SDNet does not support
-    // calling exit() from an action
-    // TODO but it could be a control?
     // TODO count errors by type and expose as metrics
-    #define CHECK_OR_PASS_TO_CPU(err)                               \
-        if (err.error_flag != ERROR.NoError) {                      \
-            copy_error_to_digest(err);                              \
-            IFDBG(copy_debug_to_digest(err));                       \
-            IFDBG(send_digest());                                   \
-            PASS_TO_CPU(s.sume);                                    \
-            exit;                                                   \
-        }                                                           \
+    action err_and_pass_to_cpu(in error_data_t err) {
+        copy_error_to_digest(err);
+        IFDBG(copy_debug_to_digest(err));
+        IFDBG(send_digest());
+        PASS_TO_CPU(s.sume);
+    }
 
-    // TODO the parts related to forwarding should be moved into something like
-    // a ScionForwarder control or so
-    error_data_t    err;
-    bit<32>         now;
-    ReadWallClock() read_wall_clock;
-    CheckHFExpiry() check_hf_expiry;
-    VerifyHF()      verify_current_hf;
-    ExposeStats()   expose_stats;
-
+    // TODO BUG:
+    // if CHECK_OR_PASS_TO_CPU exits immediately, it won't update stats;
+    // and I can't put the stats update into CHECK_OR_PASS_TO_CPU because
+    // SDNet does not allow the same control to occur twice in the control
+    // flow, even if it will actually only be needed once
+    // And anyway, as found after 3 days of debugging, SDNet handles exit
+    // incorrectly and eats the packet if I use exit. So I have to fix up
+    // the control flow (and these comments) -- TODO.
+    // That's the reason why the following is so terrible.
+    // TODO actually maybe that's false, test again. I hate this.
     apply {
         // if this came from the CPU, don't judge and just pass it through
         if (IS_CPU_PORT(s.sume.src_port)) {
             PASS_FROM_CPU(s.sume);
-            exit;
+        } else { // not from the CPU => our turn to process it
+            if (IS_ERROR(d.err)) { // parser error => give up
+                err_and_pass_to_cpu(d.err);
+            } else { // actual SCION packet processing
+
+
+                // P4-SDNet is a non-deterministic piece of shit.
+                // TODO figure this shit out, maybe one day.
+                noop_table.apply();
+
+
+                // TODO check incoming port
+
+                read_wall_clock.apply(now);
+                check_hf_expiry.apply(now,
+                                      d.hdr.scion.path.current_inf.timestamp,
+                                      d.hdr.scion.path.current_hf.expiry,
+                                      hf_expiry_err);
+
+                // TODO(realtraffic) read AS key from a reg
+                verify_current_hf.apply(HF_MAC_KEY,
+                                        d.hdr.scion.path.current_inf.timestamp,
+                                        d.hdr.scion.path.current_hf,
+                                        d.hdr.scion.path.prev_hf,
+                                        hf_mac_err);
+                hf_err = IS_ERROR(hf_expiry_err) ? hf_expiry_err : hf_mac_err;
+
+                if (IS_ERROR(hf_err)) {
+                    err_and_pass_to_cpu(hf_err);
+                } else {
+                    egress_if = d.hdr.scion.path.current_hf.egress_if;
+                    egress_ifid_to_port.apply();
+                    link_overlay.apply();
+                    if (IS_ERROR(egress_if_match_err)) {
+                        err_and_pass_to_cpu(egress_if_match_err);
+                    } else {
+                        // done error checking -- we can modify the packet now
+
+                        // update HF and maybe INF pointers
+                        // TODO this could be a control, maybe
+                        if ((d.hdr.scion.path.current_hf.flags & HF_FLAG_XOVER) != 0) {
+                            d.hdr.scion.common.curr_INF = d.hdr.scion.common.curr_HF + 1;
+                            d.hdr.scion.common.curr_HF  = d.hdr.scion.common.curr_INF + 1;
+                        } else {
+                            d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
+                        }
+
+                        my_mac.apply();
+
+                        // TODO check whether we want to update v4 or v6, once we support v6
+                        update_ipv4_checksum.apply(d.hdr.encaps.ip.v4);
+                        update_udp_checksum.apply(d.hdr.encaps.udp);
+                    }
+                }
+            }
         }
-
-        // check for parser error
-        CHECK_OR_PASS_TO_CPU(d.err);
-
-        // TODO check incoming port
-
-        read_wall_clock.apply(now);
-        check_hf_expiry.apply(now,
-                              d.hdr.scion.path.current_inf.timestamp,
-                              d.hdr.scion.path.current_hf.expiry,
-                              err);
-        CHECK_OR_PASS_TO_CPU(err);
-
-        // TODO(realtraffic) read AS key from a reg
-        verify_current_hf.apply(HF_MAC_KEY,
-                                d.hdr.scion.path.current_inf.timestamp,
-                                d.hdr.scion.path.current_hf,
-                                d.hdr.scion.path.prev_hf,
-                                err);
-        CHECK_OR_PASS_TO_CPU(err);
-
-        egress_ifid_to_port.apply();
-        link_overlay.apply();
-
-        // update HF and maybe INF pointers
-        // TODO this could be a control, maybe
-        if ((d.hdr.scion.path.current_hf.flags & HF_FLAG_XOVER) != 0) {
-            d.hdr.scion.common.curr_INF = d.hdr.scion.common.curr_HF + 1;
-            d.hdr.scion.common.curr_HF  = d.hdr.scion.common.curr_INF + 1;
-        } else {
-            d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
-        }
-
-        update_checksums();
-
         expose_stats.apply(s.sume);
     }
 }
@@ -220,7 +297,11 @@ parser TopDeparser(in local_t d, packet_mod pkt) {
     // with the contract of changing L2, encaps and INF+HF offsets and nothing else.
     ScionEncapsulationModDeparser() encaps_deparser;
 
-    state start{
+    // Below, notice that I am unconditionally calling pkt.update(...), even
+    // though the header may not be valid. Though this is not specified anywhere,
+    // in my experiments this seems to be a no-op with invalid headers, so it's
+    // okay.
+    state start {
         // we changed L2
         pkt.update(d.hdr.ethernet);
 

@@ -40,7 +40,11 @@ sdnet: $(SDNET_TOP) ## Compile for SDNet
 
 hdl: $(GENERATED_HDL_TOP) ## Generate SCION HDL module
 
-sim: $(GENERATED_HDL)/.sim-built ## Run a behavioural simulation for the SCION module
+sim: $(GENERATED_HDL_TOP) ## Run a behavioural simulation for the SCION module
+	make -C $(TOP)/test gen
+	cp $(TOP)/test/*.txt $(GENERATED_HDL)
+	cp $(TOP)/test/*.axi $(GENERATED_HDL)
+	if [ -f $(TOP)/test/commands.txt ] ; then $(MAKE) commandstxt ; else $(MAKE) notblfiles ; fi
 	cd $(GENERATED_HDL) && ./vivado_sim.bash
 
 simgui: $(GENERATED_HDL)/.sim-built ## Open the Vivado GUI with a behavioural simulation for the SCION module
@@ -113,22 +117,13 @@ $(EXTERNS)/.built: $(shell find $(EXTERN_TEMPLATES))
   done
 	touch $@
 
-$(GENERATED_HDL)/.sim-built: $(GENERATED_HDL_TOP)
-	make -C $(TOP)/test gen
-	cp $(TOP)/test/*.txt $(GENERATED_HDL)
-	cp $(TOP)/test/*.axi $(GENERATED_HDL)
-
-	[ -f $(TOP)/test/commands.txt ] && $(MAKE) commandstxt || $(MAKE) notblfiles
-
-	touch $@
-
 ########################################################
 
 commandstxt: hdl
 	$(SUME_SDNET)/bin/p4_px_tables.py $(TOP)/test/commands.txt $(SWITCHINFO)
 	cp *.tbl $(GENERATED_HDL) || true
 	# modify the P4_SWITCH_tb so that it writes the table config writes to a file
-	$(SUME_SDNET)/bin/modify_P4_SWITCH_tb.py $(GENERATED_HDL)/Testbench/$(HDL_MODULE_NAME)_tb.sv
+	#$(SUME_SDNET)/bin/modify_P4_SWITCH_tb.py $(GENERATED_HDL)/Testbench/$(HDL_MODULE_NAME)_tb.sv
 
 notblfiles: hdl
 	sed -i 's,\(update_[^(]*("[^.]*.tbl");\),// \1,g' $(GENERATED_HDL)/Testbench/$(HDL_MODULE_NAME)_tb.sv

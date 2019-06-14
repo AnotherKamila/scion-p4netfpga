@@ -4,18 +4,19 @@ import itertools
 import typing
 import random
 import sys
+from collections import namedtuple
 
 assert sys.version_info >= (3,5), "Python 3.5 or newer is needed."
 
 from scapy.all import *
 
-from collections import namedtuple
+from netfpga.datatypes import *  # TODO remove import * after cleaning up this file
+
 from scion_scapy import * # yes, I am terrible too
-from datatypes import *  # TODO remove import * after cleaning up this file
 
 random.seed(47)
 
-SCION_IFID_MAP = {iface: i for i, iface in enumerate(SUME_IFACES)}
+SCION_IFID_MAP = {'eth{}'.format(i): i+1 for i in range(4)}
 VERBOSE=False
 
 TUPLES_APPLIED_FILE       = "Tuple_in.txt"
@@ -101,15 +102,18 @@ def padded(pkt, pad_to):
 
 def gen(badmacs=False, num_hfs_per_seg=3):
     """It's not really num hfs per seg :D TODO!"""
-    sender = '00:60:dd:44:c2:c4' # enp3s0
-    recver = '00:60:dd:44:c2:c5' # enp5s0
+    sender  = '00:60:dd:44:c2:c4' # enp3s0
+    me_base = '7f:9a:b3:3a:00:{}' # last byte is 0 for eth0 .. 3 for eth3
+    recver  = '00:60:dd:44:c2:c5' # enp5s0
 
     for s in range(3):
         for h in range(num_hfs_per_seg):
-            ifs     = random.choice([('nf0','nf1'), ('nf1','nf0')])
-            if badmacs: ifs[1].replace('nf', 'dma') # send to CPU on error
+            # ifs     = random.choice([('nf0','nf1'), ('nf1','nf0')])
+            ifs     = ('eth0','eth1')
             ifids = SCION_IFID_MAP[ifs[0]], SCION_IFID_MAP[ifs[1]]
-            seg     = [(SCION_IFID_MAP['nf2'], SCION_IFID_MAP['nf3'])]*(num_hfs_per_seg)
+            if badmacs: ifs[1].replace('eth', 'dma') # send to CPU on error
+
+            seg     = [(SCION_IFID_MAP['eth2'], SCION_IFID_MAP['eth3'])]*(num_hfs_per_seg)
             currseg = seg[:]
             currseg.insert(h, ifids)
             segs    = [seg[:], seg[:]]
@@ -130,25 +134,41 @@ def gen(badmacs=False, num_hfs_per_seg=3):
                 ]
             )
             # scion.show2()
-            encaps = (Ether(dst=recver, src=sender) /
-                    IP(dst='2.2.2.2', src='1.1.1.1') /
+            encaps_there = (Ether(src=sender, dst=me_base.format(0)) /
+                    IP(src='10.10.10.11', dst='10.10.10.1') /
+                    UDP(dport=50000, sport=50000, chksum=0))  # checksum not used
+            encaps_back = (Ether(dst=recver, src=me_base.format(1)) /
+                    IP(src='10.10.10.2', dst='10.10.10.12') /
                     UDP(dport=50000, sport=50000, chksum=0))  # checksum not used
             payload = UDP(dport=1047, sport=1042) / "hello seg {} hop {}\n".format(s, h)
 
-            digest = Digest(
-                error=("BadMAC" if badmacs else "NoError"),
-            )
-            # digest.sent = t % PACKET_COUNTER_WRAPAROUND == 1
-            yield (encaps/set_current_inf_hf(s,h,   scion)/payload, ifs[0],
-                   encaps/set_current_inf_hf(s,h+1, scion)/payload, ifs[1],
-                   digest)
+            if not badmacs:
+                yield (encaps_there / set_current_inf_hf(s,h,   scion)/payload, ifs[0],
+                       encaps_back  / set_current_inf_hf(s,h+1, scion)/payload, ifs[1],
+                       Digest())
+            else:  # send to CPU and note the error
+                yield (encaps_there / set_current_inf_hf(s,h, scion)/payload, ifs[0],
+                       encaps_there / set_current_inf_hf(s,h, scion)/payload, ifs[0].replace('eth', 'dma'),
+                       Digest(error='BadMAC'))
+
+def gen_nonscion():
+    packet = IP(dst="192.168.0.47") / ICMP() / (b'\x47'*1000)
+    yield packet, 'dma0', packet, 'eth0', Digest()  # no error, just passthrough from CPU
+    yield packet, 'eth1', packet, 'dma1', Digest(error="NotSCION")  # not SCION + expect passthrough
+
 
 PAD_TO = 1450
 
 def mkpackets(only_times=None):
     # TODO really test error handling: make sure that the correct errors are
     # returned in all cases
-    packets = itertools.chain(gen(), gen(badmacs=True), gen(num_hfs_per_seg=7))
+    # packets = itertools.chain(gen_nonscion(), gen(), gen(badmacs=True), gen(num_hfs_per_seg=7))
+    packets = itertools.chain(
+        gen_nonscion(),
+        gen(),
+        gen(badmacs=True),
+        gen(num_hfs_per_seg=7)
+    )
     for t, data in enumerate(packets, 1):
         in_pkt, in_if, exp_pkt, exp_if, exp_digest = data
         if only_times:
@@ -159,6 +179,7 @@ def mkpackets(only_times=None):
             print('================ end packet {} ================'.format(t))
         apply_and_expect(t, padded(in_pkt, PAD_TO), in_if, padded(exp_pkt, PAD_TO), exp_if, exp_digest)
     write_files()
+
 
 if __name__ == '__main__':
     times = [int(x) for x in sys.argv[1:]] if len(sys.argv) > 1 else None
