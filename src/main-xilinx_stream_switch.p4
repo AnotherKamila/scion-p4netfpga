@@ -214,16 +214,12 @@ control TopPipe(inout local_t d,
         PASS_TO_CPU(s.sume);
     }
 
-    // TODO BUG:
-    // if CHECK_OR_PASS_TO_CPU exits immediately, it won't update stats;
-    // and I can't put the stats update into CHECK_OR_PASS_TO_CPU because
-    // SDNet does not allow the same control to occur twice in the control
-    // flow, even if it will actually only be needed once
-    // And anyway, as found after 3 days of debugging, SDNet handles exit
-    // incorrectly and eats the packet if I use exit. So I have to fix up
-    // the control flow (and these comments) -- TODO.
-    // That's the reason why the following is so terrible.
-    // TODO actually maybe that's false, test again. I hate this.
+    // The following is kind of terrible because if I exited early, I would be
+    // unable to update stats, because SDNet does not allow to have the same
+    // extern in the control flow more than once, even if it always gets
+    // executed at most once at runtime. Therefore, I have to have branching
+    // instead of calling exit, so that I can update stats at the end, exactly
+    // once.
     apply {
         // if this came from the CPU, don't judge and just pass it through
         if (IS_CPU_PORT(s.sume.src_port)) {
@@ -268,6 +264,10 @@ control TopPipe(inout local_t d,
 
                         // update HF and maybe INF pointers
                         // TODO this could be a control, maybe
+                        // TODO just like everything else, this assumes
+                        // fixed-size HFs. That's fine here, as we reject
+                        // continuation flag in the parser, but one day we
+                        // should maybe fix that.
                         if ((d.hdr.scion.path.current_hf.flags & HF_FLAG_XOVER) != 0) {
                             d.hdr.scion.common.curr_INF = d.hdr.scion.common.curr_HF + 1;
                             d.hdr.scion.common.curr_HF  = d.hdr.scion.common.curr_INF + 1;
@@ -284,7 +284,7 @@ control TopPipe(inout local_t d,
                 }
             }
         }
-        expose_stats.apply(s.sume);
+        expose_stats.apply(s.sume, s.digest.error_flag);
     }
 }
 

@@ -19,11 +19,11 @@ These are the splits I made here:
 
 #include <sume_switch.p4>
 #include <netfpga/regs.p4>
+#include <scion/errors.p4>
 
 
 #define STATS_REGS_DEPTH 3
 #define STATS_REGS_WIDTH 32
-
 
 @brief("Register used for reporting queue sizes.")
 @description("The control plane is expected to read this register over DMA. \
@@ -60,6 +60,18 @@ extern void stat_send_pkt_cnt_reg_raw(in bit<STATS_REGS_DEPTH> index,
                                       in bit<STATS_REGS_WIDTH> incVal,
                                       in bit<8> opCode,
                                       out bit<STATS_REGS_WIDTH> result);
+
+@brief("Register used for reporting total error count per src port.")
+@description("The control plane is expected to read this register over DMA. \
+Unfortunately with SDNet it is impossible to cast the error flag into anything \
+that supports casting to an index, so I cannot expose a count by type here.")
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(STATS_REGS_DEPTH)
+extern void stat_error_cnt_reg_raw(in bit<STATS_REGS_DEPTH> index,
+                                   in bit<STATS_REGS_WIDTH> newVal,
+                                   in bit<STATS_REGS_WIDTH> incVal,
+                                   in bit<8> opCode,
+                                   out bit<STATS_REGS_WIDTH> result);
 
 control GetPortIndex(in port_t port, out bit<STATS_REGS_DEPTH> index) {
     // has to be a control, because SDNet does not support ifs in actions
@@ -109,15 +121,16 @@ control GetThisQueue(in  port_t                port,
     }
 }
 
-control ExposeStats(in sume_metadata_t sume) {
+control ExposeStats(in sume_metadata_t sume, in ERROR err) {
     bit<STATS_REGS_DEPTH> port_index;
     bit<16> q_size;
     bit<STATS_REGS_WIDTH> notneeded; // SDNet does not support using _ with an extern
 
     apply {
-        // increment received
+        // increment received + error counter
         GetPortIndex.apply(sume.src_port, port_index);
         stat_recv_pkt_cnt_reg_raw(port_index, 0, 1, REG_ADD, notneeded);
+        stat_error_cnt_reg_raw(port_index, 0, err == ERROR.NoError ? 32w0 : 32w1, REG_ADD, notneeded);
         // increment sent
         GetPortIndex.apply(sume.dst_port, port_index);
         stat_send_pkt_cnt_reg_raw(port_index, 0, 1, REG_ADD, notneeded);
