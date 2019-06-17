@@ -112,7 +112,7 @@ identifier:
 	echo FFFF0000 >> rom_data.txt
 	echo FFFF0000 >> rom_data.txt
 	echo FFFF0000 >> rom_data.txt
-	cp ${SUME_FOLDER}/tools/scripts/format_coe.py . && python format_coe.py && rm -f format_coe.py
+	cp ${SUME_FOLDER}/tools/scripts/format_coe.py . && python2 format_coe.py && rm -f format_coe.py
 	mv -f id_rom16x32.coe create_ip/
 	mv -f rom_data.txt create_ip/
 
