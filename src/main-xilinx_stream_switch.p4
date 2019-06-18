@@ -7,6 +7,7 @@
 
 #include "settings.p4" // must be included *before* SCION
 
+#include <netfpga/regs.p4>
 #include <netfpga/stats.p4>
 #include <netfpga/wallclock.p4>
 #include <netfpga/passthrough_to_cpu.p4>
@@ -18,8 +19,6 @@
 #include <scion/mod_deparsers.p4>
 
 #include "datatypes.p4"
-
-const bit<128> HF_MAC_KEY = 128w0x47; // TODO set by control plane instead of compiling in
 
 // TODO maybe I should move this to its own header?
 @brief("Metadata passed from/to the NetFPGA, such as ingress/egress ports.")
@@ -56,6 +55,13 @@ parser TopParser(packet_in packet, out local_t d) {
     }
 }
 
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(STATS_REGS_DEPTH)
+extern void as_key_reg_rw(in bit<128> index,
+                          in bit<128> newVal,
+                          in bit<8> opCode,
+                          out bit<128> result);
+
 @brief("The 'main' of the switch.")
 @description("Processes the parsed data and modifies and forwards the packet.")
 // DO NOT RENAME the 's' parameter: the generated Verilog derives wire names
@@ -76,6 +82,7 @@ control TopPipe(inout local_t d,
     error_data_t egress_if_match_err;
     bit<12>      egress_if;
     bit<32>      now;
+    bit<128>     hf_mac_key;
     ReadWallClock()      read_wall_clock;
     CheckHFExpiry()      check_hf_expiry;
     VerifyHF()           verify_current_hf;
@@ -243,8 +250,11 @@ control TopPipe(inout local_t d,
                                       d.hdr.scion.path.current_hf.expiry,
                                       hf_expiry_err);
 
-                // TODO(realtraffic) read AS key from a reg
-                verify_current_hf.apply(HF_MAC_KEY,
+                // TODO think about whether you want to have a table or a reg for the AS key
+                as_key_reg_rw(0, 0, REG_ADD, hf_mac_key);
+                // TODO remove once we can write registers in sim :D
+                hf_mac_key = 128w0x47;
+                verify_current_hf.apply(hf_mac_key,
                                         d.hdr.scion.path.current_inf.timestamp,
                                         d.hdr.scion.path.current_hf,
                                         d.hdr.scion.path.prev_hf,
