@@ -11,9 +11,7 @@ table_cam_add_entry my_mac set_src_mac 0b10000000 => 7f:9a:b3:3a:00:f3
 // SCION IFID => port mapping
 table_cam_add_entry egress_ifid_to_port set_dst_port 0x1 => 0x1
 table_cam_add_entry egress_ifid_to_port set_dst_port 0x2 => 0x4
-table_cam_add_entry egress_ifid_to_port set_dst_port 0x0202 => 0x4
 
 // SCION overlay table
 table_cam_add_entry link_overlay set_overlay_udp_v4    0x1 => 10.10.10.1 50000 10.10.10.11 50000 00:60:dd:44:c2:c4
 table_cam_add_entry link_overlay set_overlay_udp_v4    0x2 => 10.10.10.2 50000 10.10.10.12 50000 00:60:dd:44:c2:c5
-table_cam_add_entry link_overlay set_overlay_udp_v4 0x0202 => 10.10.10.2 50000 10.10.10.12 50000 00:60:dd:44:c2:c5

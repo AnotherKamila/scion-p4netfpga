@@ -164,10 +164,10 @@ def mkpackets(only_times=None):
     # returned in all cases
     # packets = itertools.chain(gen_nonscion(), gen(), gen(badmacs=True), gen(num_hfs_per_seg=7))
     packets = itertools.chain(
-        gen_nonscion(),
         gen(),
         gen(badmacs=True),
-        gen(num_hfs_per_seg=7)
+        gen(num_hfs_per_seg=7),
+        gen_nonscion(),
     )
     for t, data in enumerate(packets, 1):
         in_pkt, in_if, exp_pkt, exp_if, exp_digest = data
