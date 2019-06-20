@@ -11,6 +11,13 @@ prometheus-client = "*"
 attrs = "*"
 scapy = "*"
 cryptography = "*"
+ptpython = "*"
+netifaces = "*"
+pyyaml = "*"
+pyasn1 = "*"
+pyasn1-modules = "*"
+service-identity = "*"
+treq = "*"
 
 [requires]
 python_version = "3.5"

@@ -11,6 +11,7 @@ from twisted.internet import defer, reactor, endpoints
 from netfpga.p4_api import P4Switch
 from netfpga.stats import NFStats
 from netfpga.wallclock import NFWallClock
+from .scion_links import ASSettings, ASLinks
 
 DEBUG = os.getenv('DEBUG', '0') != '0'
 
@@ -30,39 +31,18 @@ class NFScionController:
     def start(self):
         # TODO(realtraffic) write into SCION interfaces table
         # TODO(realtraffic) write AS key into a reg
-        self.stats          = NFStats(self.p4switch)
-        self.wall_clock     = NFWallClock(self.p4switch)
+        self.settings   = ASSettings()
+        self.links      = ASLinks(self.p4switch, self.reactor, self.settings)
+        self.stats      = NFStats(self.p4switch)
+        self.wall_clock = NFWallClock(self.p4switch)
+
+        self.links.fill_p4_tables()
         self.stats.register_metrics()
         self.wall_clock.start()
         self.start_http_server()
 
         if DEBUG:
             self.wall_clock.forced_time = 247  # to make testing independent of time
-
-    def fill_tables_TODO_dont_hardcode_me(self):
-        """Currently hard-codes the same things as commands.txt.
-
-        Should be changed into a proper controller one day.
-        """
-        # set my MAC addresses
-        self.p4switch.table_add('my_mac', [0b00000001], 'set_src_mac', ['7f:9a:b3:3a:00:00'])
-        self.p4switch.table_add('my_mac', [0b00000100], 'set_src_mac', ['7f:9a:b3:3a:00:01'])
-        self.p4switch.table_add('my_mac', [0b00010000], 'set_src_mac', ['7f:9a:b3:3a:00:02'])
-        self.p4switch.table_add('my_mac', [0b01000000], 'set_src_mac', ['7f:9a:b3:3a:00:03'])
-        self.p4switch.table_add('my_mac', [0b00000010], 'set_src_mac', ['7f:9a:b3:3a:00:f0'])
-        self.p4switch.table_add('my_mac', [0b00001000], 'set_src_mac', ['7f:9a:b3:3a:00:f1'])
-        self.p4switch.table_add('my_mac', [0b00100000], 'set_src_mac', ['7f:9a:b3:3a:00:f2'])
-        self.p4switch.table_add('my_mac', [0b10000000], 'set_src_mac', ['7f:9a:b3:3a:00:f3'])
-
-        # SCION IFID => port mapping
-        self.p4switch.table_add('egress_ifid_to_port', [1], 'set_dst_port', [0b00000001])
-        self.p4switch.table_add('egress_ifid_to_port', [2], 'set_dst_port', [0b00000100])
-
-        # SCION overlay table
-        self.p4switch.table_add('link_overlay', [0x1], 'set_overlay_udp_v4',
-                                ['10.10.10.1', 50000, '10.10.10.11', 50000, '00:60:dd:44:c2:c4'])
-        self.p4switch.table_add('link_overlay', [0x2], 'set_overlay_udp_v4',
-                                ['10.10.10.2', 50000, '10.10.10.12', 50000, '00:60:dd:44:c2:c5'])
 
     def start_http_server(self):
         endpoints.serverFromString(
@@ -76,11 +56,6 @@ def main():
     http_port = os.getenv('PORT', 9600)
     ctrl = NFScionController(reactor=reactor, p4switch=p4switch, http_port=http_port)
     ctrl.start()
-
-
-    # TODO remove
-    ctrl.fill_tables_TODO_dont_hardcode_me()
-
     reactor.run()
 
 

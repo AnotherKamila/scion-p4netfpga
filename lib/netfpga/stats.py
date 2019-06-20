@@ -17,13 +17,11 @@ class NFStats:
             self.PREFIX+'receive_packets_total',
             'Total number of packets received by the P4 pipeline',
             labels=['interface'],
-            unit='packets',
         )
         send = prom.CounterMetricFamily(
             self.PREFIX+'transmit_packets_total',
             'Total number of packets sent by the P4 pipeline',
             labels=['interface'],
-            unit='packets',
         )
         queues = prom.GaugeMetricFamily(
             self.PREFIX+'queue_size_blocks',

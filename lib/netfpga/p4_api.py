@@ -25,15 +25,20 @@ class P4Table:
     d    = attr.ib()
     lib  = attr.ib()
 
+    @utils.print_method_call
     def add(self, keys, action_name, action_data):
         key, value = self._poke(keys, action_name, action_data)
-        ret = self.lib.cam.cam_add_entry(self.table_id,
+        print("would call cam_add_entry with: ", self.table_id,
                                          bytes('{:X}'.format(key),   'ascii'),
                                          bytes('{:X}'.format(value), 'ascii'))
-        err = self.lib.cam.cam_error_decode(ret)
-        if err: raise TableError(err)
+        # ret = self.lib.cam.cam_add_entry(self.table_id,
+        #                                  bytes('{:X}'.format(key),   'ascii'),
+        #                                  bytes('{:X}'.format(value), 'ascii'))
+        # err = self.lib.cam.cam_error_decode(ret)
+        # if err: raise TableError(err)
 
     def _poke(self, keys, action_name=None, action_data=None):
+        # TODO this method is too long for my taste
         if self.d['match_type'] != 'EM':
             raise NotImplementedError(
                 'Cannot add to table {}: Only exact match tables are currently supported'.format(
@@ -59,7 +64,6 @@ class P4Table:
             ret.append(self._convert_fields(values, fields))
         return ret
 
-    @utils.print_method_call
     def _convert_fields(self, values, fields):
         ret = 0
         for val, (name, size) in zip(map(utils.to_int, values), fields):
