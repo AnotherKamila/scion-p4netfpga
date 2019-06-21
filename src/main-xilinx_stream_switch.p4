@@ -156,12 +156,9 @@ control TopPipe(inout local_t d,
             // annoyingly broken, not deal-breakingly broken
             // ... and once we can compute IPv6 checksums
             // set_overlay_udp_v6;
-            // set_ptp_link;
-            egress_if_match_err_unconfigured_ifid;
+            set_ptp_link;
         }
-        // TODO instead of error, this should be set_ptp_link once we support
-        // overlay-free communication
-        default_action = egress_if_match_err_unconfigured_ifid();
+        default_action = set_ptp_link();
         size = 64; // smallest possible exact match size
     }
 
@@ -189,14 +186,14 @@ control TopPipe(inout local_t d,
     // this table.
     table noop_table {
         key = {
-            d.hdr.scion.path.current_hf.egress_if: exact;
+            // d.hdr.scion.path.current_hf.egress_if: exact;
+            s.sume.src_port: exact;
         }
         actions = {
-            set_result;
+            NoAction;
         }
         size = 64;
     }
-
 
     // from here on this should stay in main :D
 
@@ -264,13 +261,12 @@ control TopPipe(inout local_t d,
                 if (IS_ERROR(hf_err)) {
                     err_and_pass_to_cpu(hf_err);
                 } else {
-                    egress_if = d.hdr.scion.path.current_hf.egress_if;
                     egress_ifid_to_port.apply();
-                    link_overlay.apply();
                     if (IS_ERROR(egress_if_match_err)) {
                         err_and_pass_to_cpu(egress_if_match_err);
                     } else {
                         // done error checking -- we can modify the packet now
+                        link_overlay.apply();
 
                         // update HF and maybe INF pointers
                         // TODO this could be a control, maybe
