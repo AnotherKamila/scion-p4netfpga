@@ -37,6 +37,7 @@ class NFScionController:
         self.wall_clock = NFWallClock(self.p4switch)
 
         self.links.fill_p4_tables()
+        self.links.set_as_key()
         self.stats.register_metrics()
         self.wall_clock.start()
         self.start_http_server()

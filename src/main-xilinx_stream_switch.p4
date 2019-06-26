@@ -56,8 +56,8 @@ parser TopParser(packet_in packet, out local_t d) {
 }
 
 @Xilinx_MaxLatency(1)
-@Xilinx_ControlWidth(STATS_REGS_DEPTH)
-extern void as_key_reg_rw(in bit<128> index,
+@Xilinx_ControlWidth(1)
+extern void as_key_reg_rw(in bit<1> index,
                           in bit<128> newVal,
                           in bit<8> opCode,
                           out bit<128> result);
@@ -127,8 +127,8 @@ control TopPipe(inout local_t d,
 
     /// TABLES ///////////////////////////////////////////////////////////////
 
-    // TODO currently, control plane needs to fill this out by correlating the
-    // IP addresses from the topology.json with the ones set on nf* interfaces
+    // Currently, control plane needs to fill this out by correlating the
+    // IP addresses from the topology.json with the ones set on nf* interfaces.
     @brief("Maps SCION egress interface ID to physical port.")
     table egress_ifid_to_port {
         key = {
@@ -165,7 +165,7 @@ control TopPipe(inout local_t d,
     action set_src_mac(eth_addr_t mac) {
         d.hdr.ethernet.src_addr = mac;
     }
-    table my_mac {
+    table my_macs {
         key = {
             s.sume.dst_port: exact;
         }
@@ -174,6 +174,33 @@ control TopPipe(inout local_t d,
         }
         // TODO error with default_action
         size = 64;
+    }
+
+    // Instead of having the above tables, I squished them together so that I
+    // only have one CAM lookup. Every CAM lookup costs more than 0.1ns, so
+    // having 1 table instead of 3 shaves off 0.2ns, which is enough for us to
+    // pass timing.
+    action all_the_things_overlay_v4(port_t dst_port,
+                                     eth_addr_t my_mac,
+                                     ipv4_addr_t my_addr,
+                                     udp_port_t my_port,
+                                     ipv4_addr_t remote_addr,
+                                     udp_port_t remote_port,
+                                     eth_addr_t remote_mac) {
+        set_dst_port(dst_port);
+        set_overlay_udp_v4(my_addr, my_port, remote_addr, remote_port, remote_mac);
+        set_src_mac(my_mac);
+    }
+    table squished {
+        key =  {
+            d.hdr.scion.path.current_hf.egress_if: exact;
+        }
+        actions = {
+            all_the_things_overlay_v4;
+            egress_if_match_err_unconfigured_ifid;
+        }
+        default_action = egress_if_match_err_unconfigured_ifid();
+        size = 64; // smallest possible exact match size
     }
 
     action set_result(bit<32> data) {
@@ -248,7 +275,7 @@ control TopPipe(inout local_t d,
                                       hf_expiry_err);
 
                 // TODO think about whether you want to have a table or a reg for the AS key
-                as_key_reg_rw(0, 0, REG_ADD, hf_mac_key);
+                as_key_reg_rw(0, 0, REG_READ, hf_mac_key);
                 // TODO remove once we can write registers in sim :D
                 hf_mac_key = 128w0x47;
                 verify_current_hf.apply(hf_mac_key,
@@ -261,12 +288,13 @@ control TopPipe(inout local_t d,
                 if (IS_ERROR(hf_err)) {
                     err_and_pass_to_cpu(hf_err);
                 } else {
-                    egress_ifid_to_port.apply();
+                    // egress_ifid_to_port.apply();
+                    squished.apply();
                     if (IS_ERROR(egress_if_match_err)) {
                         err_and_pass_to_cpu(egress_if_match_err);
                     } else {
                         // done error checking -- we can modify the packet now
-                        link_overlay.apply();
+                        // link_overlay.apply();
 
                         // update HF and maybe INF pointers
                         // TODO this could be a control, maybe
@@ -281,7 +309,7 @@ control TopPipe(inout local_t d,
                             d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
                         }
 
-                        my_mac.apply();
+                        // my_macs.apply();
 
                         // TODO check whether we want to update v4 or v6, once we support v6
                         update_ipv4_checksum.apply(d.hdr.encaps.ip.v4);

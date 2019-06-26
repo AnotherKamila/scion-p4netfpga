@@ -18,6 +18,12 @@ from . import utils
 
 try:
     from lib.topology import Topology
+    from lib.crypto.symcrypto import kdf
+    from lib.crypto.util import (
+        get_master_key,
+        MASTER_KEY_0,
+        MASTER_KEY_1
+    )
 except ImportError as e:
     print('Cannot import SCION Python lib, make sure scion/python is in PYTHONPATH', file=sys.stderr)
     raise e
@@ -48,6 +54,7 @@ class ASSettings:
     TODO this should actually expose all of the AS settings, not just the BR,
     and allow to load them selectively.
     """
+    conf_dir  = attr.ib(default=os.path.join(GEN_FOLDER_PATH, MY_CONFIG_PATH))
     topo_file = attr.ib(default=TOPO_FILE)
     topo = attr.ib(default=None)  # none => read from TOPO_FILE
 
@@ -119,19 +126,39 @@ class ASLinks:
         print("     - remote MAC addr: {}".format(remote_mac))
 
         # my MAC address
-        self.p4switch.table_add('my_mac', [my_nf_eth_port], 'set_src_mac', [my_mac])
+        # self.p4switch.table_add('my_mac', [my_nf_eth_port], 'set_src_mac', [my_mac])
 
         # SCION IFID => port mapping
-        self.p4switch.table_add('egress_ifid_to_port', [iface.if_id],
-                                'set_dst_port', [my_nf_eth_port])
+        # self.p4switch.table_add('egress_ifid_to_port', [iface.if_id],
+        #                         'set_dst_port', [my_nf_eth_port])
 
         # SCION overlay table
+        # self.p4switch.table_add(
+        #     'link_overlay',
+        #     [iface.if_id],
+        #     'set_overlay_udp_v4',
+        #     [my_ip, my_port, remote_ip, remote_port, remote_mac]
+        # )
+
+        # squished all of the above into one table to save CAM lookups, so here goes that one biiig table
         self.p4switch.table_add(
-            'link_overlay',
+            'squished',
             [iface.if_id],
-            'set_overlay_udp_v4',
-            [my_ip, my_port, remote_ip, remote_port, remote_mac]
+            'all_the_things_overlay_v4',
+            [
+                my_nf_eth_port,
+                my_mac,
+                my_ip, my_port, remote_ip, remote_port,
+                remote_mac,
+            ]
         )
+
+    def set_as_key(self):
+        master0 = get_master_key(self.settings.conf_dir, MASTER_KEY_0)
+        as_key  = kdf(master0, b"Derive OF Key")
+        # TODO this throws because the NetFPGA API only supports 32-bit
+        # registers, we need to figure out how to write bigger ones
+        self.p4switch.reg_write('as_key', 0, as_key)
 
     # TODO support IPv6
     @utils.ensure_deferred_f
