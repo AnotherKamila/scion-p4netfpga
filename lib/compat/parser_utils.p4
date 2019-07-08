@@ -12,8 +12,43 @@
 
 
 @brief("Skips bytes from packet in multiples of skip_size.")
-@description("Can skip at most 8 blocks. \
-If not TARGET_SUPPORTS_VAR_LEN_PARSING, it uses more FPGA area, but it works. \
+@description("Can skip at most 3 blocks. \
+If not TARGET_SUPPORTS_VAR_LEN_PARSING, it uses more area, but it works. \
+Note that unless you use packet_mod, the skipped bytes are lost.")
+@Xilinx_MaxPacketRegion(MTU)
+parser PacketSkipper4(packet_in packet, in bit<2> skips) (bit<32> skip_size) {
+
+    #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
+
+    state start {
+        packet.advance(8*skip_size*skips);
+        transition accept;
+    }
+
+    #else
+
+    // A loop doesn't work because SDNet gets extremely confused and generates
+    // invalid px code.
+    // Can't really reproduce with simpler code either, so...
+    // ♪♫ We do what we must because we can... ♫
+    state start {
+        transition select(skips) {
+            #define LOOPBODY(i) i: skip_##i;
+            #include <compat/loop4.itm>
+            #undef LOOPBODY
+        }
+    }
+
+    #define LOOPBODY(i) state skip_##i { packet.advance(8*skip_size*i); transition accept; }
+    #include <compat/loop4.itm>
+    #undef LOOPBODY
+
+    #endif
+}
+
+@brief("Skips bytes from packet in multiples of skip_size.")
+@description("Can skip at most 7 blocks. \
+If not TARGET_SUPPORTS_VAR_LEN_PARSING, it uses more area, but it works. \
 Note that unless you use packet_mod, the skipped bytes are lost.")
 @Xilinx_MaxPacketRegion(MTU)
 parser PacketSkipper8(packet_in packet, in bit<3> skips) (bit<32> skip_size) {
@@ -47,11 +82,11 @@ parser PacketSkipper8(packet_in packet, in bit<3> skips) (bit<32> skip_size) {
 }
 
 @brief("Skips bytes from packet in multiples of skip_size bytes.")
-@description("Can skip at most 64 blocks. \
+@description("Can skip at most 15 blocks. \
 If not TARGET_SUPPORTS_VAR_LEN_PARSING, it uses more FPGA area, but it works. \
 Note that unless you use packet_mod, the skipped bytes are lost.")
 @Xilinx_MaxPacketRegion(MTU)
-parser PacketSkipper64(packet_in packet, in bit<6> skips) (bit<32> skip_size) {
+parser PacketSkipper16(packet_in packet, in bit<4> skips) (bit<32> skip_size) {
 
     #ifdef TARGET_SUPPORTS_VAR_LEN_PARSING
 
@@ -65,16 +100,16 @@ parser PacketSkipper64(packet_in packet, in bit<6> skips) (bit<32> skip_size) {
     // Square root idea:
     // 1. let maximum supported skips = k^2
     // 2. then we can write skips = k*a + b
-    //                      where a = skips / 8, b = skips mod 8
+    //                      where a = skips / 4, b = skips mod 4
     // => we skip in two stages, stage 1 with "big" skips sized k*skip_size and stage 2 with "normal-sized" skips
 
     // in our case k = 8:
-    // SDNet does not consider X*8 a compile time constant, but X<<3 is fine :D
-    PacketSkipper8(skip_size << 3) stage1; // skips to skip_size/8 * floor(skips / 8)
-    PacketSkipper8(skip_size)      stage2; // skips to skips % 8
+    // SDNet does not consider X*8 a compile time constant, but X<<2 is fine :D
+    PacketSkipper4(skip_size << 2) stage1; // skips to skip_size/4 * floor(skips / 4)
+    PacketSkipper4(skip_size)      stage2; // skips to skips % 4
     state start {
-        stage1.apply(packet, skips[5:3]);
-        stage2.apply(packet, skips[2:0]);
+        stage1.apply(packet, skips[3:2]);
+        stage2.apply(packet, skips[1:0]);
         transition accept;
     }
 

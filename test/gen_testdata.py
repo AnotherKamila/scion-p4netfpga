@@ -100,7 +100,7 @@ def padded(pkt, pad_to):
     if pad_len <= 0: return pkt
     return pkt/Padding(b'\x00'*pad_len)
 
-def gen(badmacs=False, num_hfs_per_seg=3):
+def gen(badmacs=False, num_hfs_per_seg=4):
     """It's not really num hfs per seg :D TODO!"""
     sender  = '00:60:dd:44:c2:c4' # enp3s0
     me_base = '7f:9a:b3:3a:00:{}' # last byte is 0 for eth0 .. 3 for eth3
@@ -113,7 +113,7 @@ def gen(badmacs=False, num_hfs_per_seg=3):
             ifids = SCION_IFID_MAP[ifs[0]], SCION_IFID_MAP[ifs[1]]
             if badmacs: ifs[1].replace('eth', 'dma') # send to CPU on error
 
-            seg     = [(SCION_IFID_MAP['eth2'], SCION_IFID_MAP['eth3'])]*(num_hfs_per_seg)
+            seg     = [(SCION_IFID_MAP['eth2'], SCION_IFID_MAP['eth3'])]*(num_hfs_per_seg-1)
             currseg = seg[:]
             currseg.insert(h, ifids)
             segs    = [seg[:], seg[:]]
@@ -152,7 +152,7 @@ def gen(badmacs=False, num_hfs_per_seg=3):
                        Digest(error='BadMAC'))
 
 def gen_nonscion():
-    packet = IP(dst="192.168.0.47") / ICMP() / (b'\x47'*1000)
+    packet = IP(dst="10.10.10.71", src="10.10.10.66") / ICMP() / (b'\x47'*1000)
     yield packet, 'dma0', packet, 'eth0', Digest()  # no error, just passthrough from CPU
     yield packet, 'eth1', packet, 'dma1', Digest(error="NotSCION")  # not SCION + expect passthrough
 
@@ -166,7 +166,7 @@ def mkpackets(only_times=None):
     packets = itertools.chain(
         gen(),
         gen(badmacs=True),
-        gen(num_hfs_per_seg=7),
+        gen(num_hfs_per_seg=1),
         gen_nonscion(),
     )
     for t, data in enumerate(packets, 1):

@@ -13,6 +13,9 @@ from cryptography.hazmat.primitives import cmac
 from cryptography.hazmat.primitives.ciphers import algorithms
 
 HF_MAC_KEY = b'\0'*15 + b'\x47'  # 128w0x47
+# MASTER_KEY = bytes.fromhex('99389b42dd1d9eaf3efc23885b3c12c1')
+# from lib.crypto.symcrypto import kdf
+# HF_MAC_KEY = kdf(MASTER_KEY, b'Derive OF Key')
 
 SCION_ADDR_TYPE = {1: 'ipv4', 2: 'ipv6', 3: 'svc'}
 

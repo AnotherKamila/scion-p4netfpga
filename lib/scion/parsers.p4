@@ -243,24 +243,22 @@ parser ScionPathParser(packet_in packet,
 
     // note: offsets validation happens in CommonHeaderParser, so we don't have
     // to worry about that here
-    PacketSkipper64(8) skipper1; // TODO can we re-use the same one?
-    PacketSkipper64(8) skipper2;
+    PacketSkipper16(8) skipper1; // TODO can we re-use the same one?
+    PacketSkipper16(8) skipper2;
     bit<8> skips_to_inf = common.curr_INF - (bit<8>)(pos_in_hdr/8);
     bit<8> skips_to_hf  = common.curr_HF  - (bit<8>)(pos_in_hdr/8) - skips_to_inf - 1;
     // -1 because we extract current_inf, which is 1 8-byte block
 
     state start {
         err = {ERROR.NoError, 0};
-        // TODO see what it costs to support full-length paths :D
-        // SCION does only up to 256 anyway...
-        transition select(skips_to_hf[7:6] == 0 && skips_to_inf[7:6] == 0) {
+        transition select(skips_to_hf[7:4] == 0 && skips_to_inf[7:4] == 0) {
             true:    skip_to_inf;
             default: path_too_long;
         }
     }
 
     state skip_to_inf {
-        skipper1.apply(packet, skips_to_inf[5:0]);
+        skipper1.apply(packet, skips_to_inf[3:0]);
         packet.extract(path.current_inf);
         transition select(path.current_inf.flags & UNSUPPORTED_INF_FLAGS) {
             0:       skip_to_hf;
@@ -270,7 +268,7 @@ parser ScionPathParser(packet_in packet,
 
     state skip_to_hf {
         // is this the first HF in this segment?
-        transition select(skips_to_hf) {
+        transition select(skips_to_hf[3:0]) {
             0:       no_prev_hf;
             default: skip_to_prev_hf;
         }
@@ -287,7 +285,7 @@ parser ScionPathParser(packet_in packet,
     }
 
     state skip_to_prev_hf {
-        skipper2.apply(packet, skips_to_hf[5:0] - 1); // -1 because we want prev
+        skipper2.apply(packet, skips_to_hf[3:0] - 1); // -1 because we want prev
         packet.extract(path.prev_hf);
         transition parse_current_hf;
     }
@@ -336,7 +334,7 @@ parser ScionHeaderParser(packet_in          packet,
     ScionCommonHeaderParser()  common_header_parser;
     ScionAddressHeaderParser() address_header_parser;
     ScionPathParser()          path_parser;
-    ScionExtensionsParser()    extensions_parser;
+    // ScionExtensionsParser()    extensions_parser;
 
     // Because of SDNet, we have to accept everywhere, even if we have an error,
     // and we need to check for error manually here.
@@ -360,16 +358,18 @@ parser ScionHeaderParser(packet_in          packet,
 
     state parse_path {
         path_parser.apply(          packet, pos_in_hdr, hdr.common, hdr.path,     err);
-        transition select(err.error_flag) {
-            ERROR.NoError: parse_extensions;
-            default:       accept;  // stop parsing and give what you have to the pipeline
-        }
+        transition accept;
+        // TODO extensions
+        // transition select(err.error_flag) {
+        //     ERROR.NoError: parse_extensions;
+        //     default:       accept;  // stop parsing and give what you have to the pipeline
+        // }
     }
 
-    state parse_extensions {
-        extensions_parser.apply(    packet, pos_in_hdr, hdr.common.next_hdr,      err);
-        transition accept;
-    }
+    // state parse_extensions {
+    //     extensions_parser.apply(    packet, pos_in_hdr, hdr.common.next_hdr,      err);
+    //     transition accept;
+    // }
 }
 
 @brief("Parses SCION packets. Expects the full packet including Ethernet.")

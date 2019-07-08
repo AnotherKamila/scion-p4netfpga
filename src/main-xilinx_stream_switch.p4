@@ -39,6 +39,9 @@ needed.")
 struct local_t {
     error_data_t err;
     scion_all_headers_t hdr;
+    // Used in the deparser to skip modifying the packet if it needs to be sent
+    // out unmodified.
+    bool can_modify;
 }
 
 @brief("The top-level parser block.")
@@ -206,21 +209,6 @@ control TopPipe(inout local_t d,
     action set_result(bit<32> data) {
         s.digest.debug1 = 16w0xfeee ++ data ++ 16w0xfeee;
     }
-    // P4-SDNet is weird non-deterministic shit.
-    // This table does not do anything. But if I remove it, the above tables,
-    // which actually do something, will magically stop working. Magically. It
-    // makes no sense at all. Took 2 days to figure out, too. Just don't touch
-    // this table.
-    table noop_table {
-        key = {
-            // d.hdr.scion.path.current_hf.egress_if: exact;
-            s.sume.src_port: exact;
-        }
-        actions = {
-            NoAction;
-        }
-        size = 64;
-    }
 
     // from here on this should stay in main :D
 
@@ -252,6 +240,7 @@ control TopPipe(inout local_t d,
     // instead of calling exit, so that I can update stats at the end, exactly
     // once.
     apply {
+        d.can_modify = false;
         // if this came from the CPU, don't judge and just pass it through
         if (IS_CPU_PORT(s.sume.src_port)) {
             PASS_FROM_CPU(s.sume);
@@ -259,41 +248,42 @@ control TopPipe(inout local_t d,
             if (IS_ERROR(d.err)) { // parser error => give up
                 err_and_pass_to_cpu(d.err);
             } else { // actual SCION packet processing
-
-
-                // P4-SDNet is a non-deterministic piece of shit.
-                // TODO figure this shit out, maybe one day.
-                noop_table.apply();
-
-
-                // TODO check incoming port
-
-                read_wall_clock.apply(now);
-                check_hf_expiry.apply(now,
-                                      d.hdr.scion.path.current_inf.timestamp,
-                                      d.hdr.scion.path.current_hf.expiry,
-                                      hf_expiry_err);
-
-                // TODO think about whether you want to have a table or a reg for the AS key
-                as_key_reg_rw(0, 0, REG_READ, hf_mac_key);
-                // TODO remove once we can write registers in sim :D
-                hf_mac_key = 128w0x47;
-                verify_current_hf.apply(hf_mac_key,
-                                        d.hdr.scion.path.current_inf.timestamp,
-                                        d.hdr.scion.path.current_hf,
-                                        d.hdr.scion.path.prev_hf,
-                                        hf_mac_err);
-                hf_err = IS_ERROR(hf_expiry_err) ? hf_expiry_err : hf_mac_err;
-
-                if (IS_ERROR(hf_err)) {
-                    err_and_pass_to_cpu(hf_err);
+                // P4-SDNet is a piece of shit and breaks tables if I call an
+                // extern before applying the table.
+                // Therefore, I have to apply this here, at the beginning of the
+                // control flow, even though I haven't checked MACs yet.
+                // Everything is terrible.
+                squished.apply();
+                if (IS_ERROR(egress_if_match_err)) {
+                    err_and_pass_to_cpu(egress_if_match_err);
                 } else {
-                    // egress_ifid_to_port.apply();
-                    squished.apply();
-                    if (IS_ERROR(egress_if_match_err)) {
-                        err_and_pass_to_cpu(egress_if_match_err);
+                    // TODO check incoming port
+
+                    read_wall_clock.apply(now);
+                    check_hf_expiry.apply(now,
+                                          d.hdr.scion.path.current_inf.timestamp,
+                                          d.hdr.scion.path.current_hf.expiry,
+                                          hf_expiry_err);
+
+                    // TODO think about whether you want to have a table or a reg for the AS key
+                    as_key_reg_rw(0, 0, REG_READ, hf_mac_key);
+                    // TODO remove once we can write 128-bit registers (+ sim)
+                    // hf_mac_key = 128w289747456937680922868865545818481690095; // *shrug*
+                    hf_mac_key = 128w0x47;
+                    verify_current_hf.apply(hf_mac_key,
+                                            d.hdr.scion.path.current_inf.timestamp,
+                                            d.hdr.scion.path.current_hf,
+                                            d.hdr.scion.path.prev_hf,
+                                            hf_mac_err);
+                    hf_err = IS_ERROR(hf_expiry_err) ? hf_expiry_err : hf_mac_err;
+
+                    if (IS_ERROR(hf_err)) {
+                        err_and_pass_to_cpu(hf_err);
                     } else {
+                        // egress_ifid_to_port.apply();
+                        // egress_if_match_error check was here
                         // done error checking -- we can modify the packet now
+                        d.can_modify = true;
                         // link_overlay.apply();
 
                         // update HF and maybe INF pointers
@@ -331,11 +321,18 @@ parser TopDeparser(in local_t d, packet_mod pkt) {
     // with the contract of changing L2, encaps and INF+HF offsets and nothing else.
     ScionEncapsulationModDeparser() encaps_deparser;
 
+    state start {
+        transition select (d.can_modify) {
+            true:  real_start;
+            false: accept;
+        }
+    }
+
     // Below, notice that I am unconditionally calling pkt.update(...), even
     // though the header may not be valid. Though this is not specified anywhere,
     // in my experiments this seems to be a no-op with invalid headers, so it's
     // okay.
-    state start {
+    state real_start {
         // we changed L2
         pkt.update(d.hdr.ethernet);
 

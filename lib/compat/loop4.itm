@@ -1,0 +1,7 @@
+// Reason: SDNet does not support parsing with things that aren't compile-time constants.
+// Solution: Unroll all the things / make all possibilities compile-time :-/
+// Usage example lives in /lib/compat/parser_utils.p4, search for PacketSkipper
+LOOPBODY(0)
+LOOPBODY(1)
+LOOPBODY(2)
+LOOPBODY(3)
