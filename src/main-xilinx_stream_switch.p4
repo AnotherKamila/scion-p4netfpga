@@ -83,7 +83,7 @@ control TopPipe(inout local_t d,
     error_data_t hf_mac_err;
     error_data_t hf_err;
     error_data_t egress_if_match_err;
-    bit<12>      egress_if;
+    error_data_t merged_err;
     bit<32>      now;
     bit<128>     hf_mac_key;
     ReadWallClock()      read_wall_clock;
@@ -254,57 +254,54 @@ control TopPipe(inout local_t d,
                 // control flow, even though I haven't checked MACs yet.
                 // Everything is terrible.
                 squished.apply();
-                if (IS_ERROR(egress_if_match_err)) {
-                    err_and_pass_to_cpu(egress_if_match_err);
+                // TODO check incoming port
+
+                read_wall_clock.apply(now);
+                check_hf_expiry.apply(now,
+                                      d.hdr.scion.path.current_inf.timestamp,
+                                      d.hdr.scion.path.current_hf.expiry,
+                                      hf_expiry_err);
+
+                // TODO test whether it is better to have a table or a reg for the AS key
+                as_key_reg_rw(0, 0, REG_READ, hf_mac_key);
+                // TODO remove once we can write 128-bit registers (+ sim)
+                // hf_mac_key = 128w289747456937680922868865545818481690095; // *shrug*
+                hf_mac_key = 128w0x47;
+                verify_current_hf.apply(hf_mac_key,
+                                        d.hdr.scion.path.current_inf.timestamp,
+                                        d.hdr.scion.path.current_hf,
+                                        d.hdr.scion.path.prev_hf,
+                                        hf_mac_err);
+                hf_err = IS_ERROR(hf_expiry_err) ? hf_expiry_err : hf_mac_err;
+
+                merged_err = IS_ERROR(hf_err) ? hf_err : egress_if_match_err;
+                if (IS_ERROR(merged_err)) {
+                    err_and_pass_to_cpu(merged_err);
                 } else {
-                    // TODO check incoming port
+                    // egress_ifid_to_port.apply();
+                    // egress_if_match_error check was here
+                    // done error checking -- we can modify the packet now
+                    d.can_modify = true;
+                    // link_overlay.apply();
 
-                    read_wall_clock.apply(now);
-                    check_hf_expiry.apply(now,
-                                          d.hdr.scion.path.current_inf.timestamp,
-                                          d.hdr.scion.path.current_hf.expiry,
-                                          hf_expiry_err);
-
-                    // TODO think about whether you want to have a table or a reg for the AS key
-                    as_key_reg_rw(0, 0, REG_READ, hf_mac_key);
-                    // TODO remove once we can write 128-bit registers (+ sim)
-                    // hf_mac_key = 128w289747456937680922868865545818481690095; // *shrug*
-                    hf_mac_key = 128w0x47;
-                    verify_current_hf.apply(hf_mac_key,
-                                            d.hdr.scion.path.current_inf.timestamp,
-                                            d.hdr.scion.path.current_hf,
-                                            d.hdr.scion.path.prev_hf,
-                                            hf_mac_err);
-                    hf_err = IS_ERROR(hf_expiry_err) ? hf_expiry_err : hf_mac_err;
-
-                    if (IS_ERROR(hf_err)) {
-                        err_and_pass_to_cpu(hf_err);
+                    // update HF and maybe INF pointers
+                    // TODO this could be a control, maybe
+                    // TODO just like everything else, this assumes
+                    // fixed-size HFs. That's fine here, as we reject
+                    // continuation flag in the parser, but one day we
+                    // should maybe fix that.
+                    if ((d.hdr.scion.path.current_hf.flags & HF_FLAG_XOVER) != 0) {
+                        d.hdr.scion.common.curr_INF = d.hdr.scion.common.curr_HF + 1;
+                        d.hdr.scion.common.curr_HF  = d.hdr.scion.common.curr_INF + 1;
                     } else {
-                        // egress_ifid_to_port.apply();
-                        // egress_if_match_error check was here
-                        // done error checking -- we can modify the packet now
-                        d.can_modify = true;
-                        // link_overlay.apply();
-
-                        // update HF and maybe INF pointers
-                        // TODO this could be a control, maybe
-                        // TODO just like everything else, this assumes
-                        // fixed-size HFs. That's fine here, as we reject
-                        // continuation flag in the parser, but one day we
-                        // should maybe fix that.
-                        if ((d.hdr.scion.path.current_hf.flags & HF_FLAG_XOVER) != 0) {
-                            d.hdr.scion.common.curr_INF = d.hdr.scion.common.curr_HF + 1;
-                            d.hdr.scion.common.curr_HF  = d.hdr.scion.common.curr_INF + 1;
-                        } else {
-                            d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
-                        }
-
-                        // my_macs.apply();
-
-                        // TODO check whether we want to update v4 or v6, once we support v6
-                        update_ipv4_checksum.apply(d.hdr.encaps.ip.v4);
-                        update_udp_checksum.apply(d.hdr.encaps.udp);
+                        d.hdr.scion.common.curr_HF = d.hdr.scion.common.curr_HF + 1;
                     }
+
+                    // my_macs.apply();
+
+                    // TODO check whether we want to update v4 or v6, once we support v6
+                    update_ipv4_checksum.apply(d.hdr.encaps.ip.v4);
+                    update_udp_checksum.apply(d.hdr.encaps.udp);
                 }
             }
         }
