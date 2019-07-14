@@ -1,0 +1,81 @@
+%
+% Fonts
+% kpfonts already includes amsmath, amsfonts, amssymb. 
+% `fulloldstylenums` option makes numbers in enums nicer
+% add `light` option for printing, saves 20% toner
+\usepackage[fulloldstylenums]{kpfonts} 
+\usepackage{microtype} 	% Better kerning
+%
+% Layout
+\usepackage{multicol}   % Allows multi-column layout
+\usepackage{float}      % Better interface for defining floating objects
+\usepackage{flafter}    % Always place floats _after_ their definition
+%
+% Nicer-looking tables
+\usepackage{booktabs,tabularx}
+%
+% Figures
+\usepackage{graphicx}
+\usepackage{wrapfig}    % Wrap text around figures
+\usepackage{subfig}     % Create subfigures
+%
+% Miscellanous
+\usepackage[nice]{nicefrac} % Display ½ nicely
+\usepackage{enumitem}       % Allows customizing enumerate counters
+\usepackage{xcolor}         % Colors!
+% 
+% Bibliography
+\usepackage{natbib}
+%
+% Hyperref package for links in TOC, index, PDF metadata, bookmarks, etc.
+\usepackage[plainpages=false,pdfpagelabels,bookmarks=true,backref=false,pagebackref=false]{hyperref}
+\hypersetup{ 
+    pdfauthor={\thesisAuthor},
+    pdftitle={\thesisTitle},
+    pdfsubject={\thesisType},
+    colorlinks=false,
+    breaklinks=true,
+    pdfhighlight=/I,
+    bookmarksopen=false,
+    bookmarksnumbered=true
+}
+%
+% Basic source formatting
+\usepackage{listings}
+\lstloadlanguages{C}
+\lstset{
+    numbers=left, 
+    numberstyle=\tiny, 
+    numbersep=5pt, 
+    language=C, 
+    basicstyle=\ttfamily\scriptsize, 
+    tabsize=2, 
+    breaklines=true
+}
+%
+% Advanced source formatting, requires pygments
+%   $ easy_install pygments
+\usepackage[cache=true,outputdir=.texpadtmp]{minted}
+% Configuration for Texpad on macOS:
+% - Use manual typesetting
+% - Disable "Hide intermediate files"
+% - Enable "Shell escape"
+% - Use pdfLaTeX engine
+%
+%
+% Index
+\usepackage{makeidx}    % Requires \makeindex (below).
+                        % Add word to index like this:
+                        %   `this is an example\index{example}`
+                        % Print the index with \printindex
+% \makeindex
+%
+%
+% No single lines at the start of a paragraph (Schusterjungen)
+\clubpenalty = 10000
+%
+% No single lines at the end of a paragraph (Hurenkinder)
+\widowpenalty = 10000 \displaywidowpenalty = 10000
+%
+\renewcommand{\topfraction}{1.0}    % Figures can appear at start of page
+\renewcommand{\bottomfraction}{1.0} % Figures can appear at end of page

@@ -1,0 +1,51 @@
+\documentclass[a4paper, toc=index, 12pt, DIV=14, twoside, BCOR=2cm, headsepline,
+numbers=noenddot, bibliography=totoc]{scrbook}
+
+\usepackage[utf8]{inputenc}
+\DeclareUnicodeCharacter{00A0}{~}   % replace non-breaking space
+\usepackage[T1]{fontenc}        % Includes diacritics with single-glyphs
+\usepackage[english]{babel}     % Choose languages here. This affects the 
+                                % section naming as well, like "Abstract" in EN 
+                                % and "Zusammenfassung" in DE.
+
+\newcommand{\thesisTitle}{Line-rate packet forwarding for the SCION future Internet architecture}
+\newcommand{\thesisType}{Master Thesis}
+\newcommand{\thesisAuthor}{Kamila Součková} 
+\newcommand{\thesisStudentID}{1X-XX-XXX}
+\newcommand{\thesisEmail}{skamila@ethz.ch}
+
+\newcommand{\thesisSemester}{Spring 2019}
+\newcommand{\thesisSubmission}{August 19, 2019}
+
+\include{format}
+
+\begin{document}
+
+\frontmatter
+
+\include{title}
+
+\include{sections/abstract}
+\include{sections/acknowledgements}
+
+\tableofcontents
+
+\mainmatter
+
+% Add/remove sections as required
+% \input{sections/introduction}
+% \input{sections/background}
+% \input{sections/method}
+% \input{sections/implementation}
+% \input{sections/evaluation}
+% \input{sections/conclusion}
+\input{thesis.tex}
+
+\bibliographystyle{abbrv}
+\bibliography{bibliography}
+
+\appendix
+\include{sections/appendix}
+\parskip 0pt
+
+\end{document}

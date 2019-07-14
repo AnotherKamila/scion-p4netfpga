@@ -1,0 +1,32 @@
+#+NAME: setup
+#+BEGIN_SRC emacs-lisp :results silent :exports none
+(unless (find "per-file-class" org-latex-classes :key 'car
+          :test 'equal)
+  (add-to-list 'org-latex-classes
+           '("per-file-class"
+              "\\documentclass{scrbook}
+               \\usepackage[AUTO]{inputenc}
+               \\usepackage[T1]{fontenc}
+               \\usepackage[english]{babel}
+              [NO-DEFAULT-PACKAGES]
+              [EXTRA]"
+              ("\\chapter{%s}" . "\\chapter*{%s}")
+              ("\\section{%s}" . "\\section*{%s}")
+              ("\\subsection{%s}" . "\\subsection*{%s}")
+              ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+              ("\\paragraph{%s}" . "\\paragraph*{%s}")
+              ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+#+END_SRC
+
+#+LATEX_CLASS: per-file-class
+#+LATEX_CLASS_OPTIONS: [a4paper, toc=index, 12pt, DIV=14, twoside, BCOR=2cm, headsepline, numbers=noenddot, bibliography=totoc]
+#+OPTIONS: toc:nil H:3 num:2
+#+LATEX_HEADER: \include{format}
+#+LATEX_HEADER: \usepackage{titling}
+#+LATEX_HEADER: \newcommand{\thesisTitle}{\thetitle}
+#+LATEX_HEADER: \newcommand{\thesisType}{Master Thesis}
+#+LATEX_HEADER: \newcommand{\thesisAuthor}{\theauthor} 
+#+LATEX_HEADER: \newcommand{\thesisStudentID}{1X-XX-XXX}
+#+LATEX_HEADER: \newcommand{\thesisEmail}{skamila@ethz.ch}
+#+LATEX_HEADER: \newcommand{\thesisSemester}{Spring 2019}
+#+LATEX_HEADER: \newcommand{\thesisSubmission}{\thedate}
