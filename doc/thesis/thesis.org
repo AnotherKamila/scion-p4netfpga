@@ -3,12 +3,221 @@
 #+DATE:   August 19, 2019
 #+INCLUDE: thesis-setup.org
 
-* Introduction
-* Background and Related Work
-* Aims
-* Design and Implementation
-* Results
-or Evaluation?
-* Discussion
-* Implications for the SCION protocol
-* Conclusion
+* [1/1] Abstract
+  CLOSED: [2019-07-15 Mon 15:45]
+  :PROPERTIES:
+  :UNNUMBERED: t
+  :END:
+The SCION future Internet architecture is designed to provide route control,
+failure isolation, and explicit trust information for end-to-end communication.
+Its viability has already been demonstrated in production, but to work
+at Internet scale, it is necessary to make it perform at high speeds, reduce
+costs, and evaluate suitability for eventual implementation in hardware.
+This project implements a SCION border router capable of line-rate packet
+forwarding, currently running on an FPGA target.
+It uses P4: a new language for programming packet forwarding planes.
+This enables target independence, a quicker development cycle, and a more
+modular approach.
+Based on this work, we suggest changes to the SCION data plane that allow for
+more efficient processing in hardware.
+* [0/3] Introduction
+  What is SCION and why?
+  What problems is SCION trying to solve?
+  What problems is my thingy trying to solve?
+  Why is it interesting?
+  # [In field X, we still don’t understand Y & Z.]
+  #
+  # Write a summary of the question(s) you are trying to answer.
+  # What is the state of the world before your research came along?
+  # Also, answer the harsh but important question: Who cares?
+  #
+  # In writing this, you can start general, but make sure you clearly define the “before” state of the world’s knowledge for the specific area this paper is addressing.
+*** TODO The Internet sucks
+  The problem is that current IP-based Internet wasn't designed for having a bunch of actors that don't all trust everyone else; and wasn't designed to be resilient, because nobody thought it would become this friggin important. Therefore, it:
+  - breaks all the time, and breaks globally
+  - requires global trust, which doesn't exist
+  - has not much in the way of security
+  - can't scale because routing tables don't fit
+  - eats a lot of energy
+*** TODO SCION wants to solve it, but
+    The problem is that there are no hardware implementations of SCION, so currently it is slow and expensive, and we don't even know whether it can be implemented in HW in a way that doesn't suck.
+    This is a problem because nobody is going to use SCION if it isn't fast and cheap and easy to scale.
+*** TODO We are going to solve this problem by...
+    providing a high-speed, modular and extensible FPGA-based border router that can forward SCION really fast.
+    TODO ^ This is the point of the introduction. Make it stand out.
+* [0/4] Background and Related Work
+P4 and NetFPGA and SCION and what we’re working with and what we’re trying to achieve and related work and stuff.
+# [We have here method A, B, and our new method C.]
+#
+# You have established the core question(s) of your research.
+# Now introduce the tools you are going to use to understand it.
+*** TODO SCION
+***** Overview of the SCION architecture
+***** What exactly are we trying to solve, in relation to above?
+***** Why are we doing it?
+***** Related work
+*** TODO High-speed packet forwarding
+*** TODO P4
+    this is a tool for solving above => relate this to that
+*** TODO NetFPGA
+    this is a tool for solving above => relate this to that
+* [0/4] Aims
+*** TODO Deployable SCION BR
+    - forwarding at line rate => with NetFPGA, that is 40Gbps
+    - usable with real traffic
+    - integrated with existing SCION infra (control plane, monitoring/metrics)
+*** TODO SCION as a library
+*** TODO Guidelines for high-speed P4
+    or gaining experience or whatevs
+    Listen to my advice and you too can process packets at high speeds, even if you are not a hardware person.
+*** TODO Optimising the SCION protocol for HW
+* [0/1] Design overview
+  this section is essentially just a diagram of the components
+
+  show pic with data plane + normal SCION SW router + my thin control plane
+
+  this is awesome because:
+  - simplicity: everything that doesn't have to happen at line rate, such as error packet generation, all control plane packet processing, even ARP and stuff, is handled transparently without any work on my side
+  - "upgradeability": if the control plane gets extended / changed, I don't care, as long as the forwarding path format (which isn't as likely to change) is the same
+  - enables incremental development of the HW design: start with just passing through everything, then add more and more features that don't have to go to CPU
+* [0/7] Implementation Challenges
+  # originally wanted to divide this into parser, validation, forwarding, etc... but
+  # I don't think that makes much sense, as e.g. timing or stupid compiler were a
+  # problem across the whole thing
+*** TODO Target independence
+*** TODO Incremental development
+***** fake network interfaces over DMA
+***** control plane
+      twisted => trivially composable => trivial to add new features, mix&match
+*** TODO Control plane
+    independent modules, often complementary to the P4 modules => something something modularity runs across the whole stack
+      Perhaps also TODO have a look at my P4 presentation. Maybe there's something good in it :D // plagiarising myself
+      Design decision: Using registers rather than digest packets so that I can do that transparent software router trick super easily.
+******* What was horrible:
+        existing Python control plane API sucked, so I rolled my own
+        - tables: bugs in interpretation of the values
+        - everything was hard-coded
+        - only 32-bit registers supported, but that goes all the way to the C API and the bus
+*** TODO Implementing the parser
+    Things that were horrible here (TODO write how I solved them!):
+    - var length shit
+    - reject behaving contrary to even the NetFPGA devs' expectation (TODO link to issue)
+    - timing
+***** the funny 5-stage story
+      (include deparser here, because this is the reason why deparser was interesting)
+
+      1. P4 has header stacks, gonna use header stacks.
+      2. Header stacks not supported. => Stick the parts of the path before and after the current HF into a varbit thing.
+      3. varbit not supported. => Skip the bits and use `XilinxStreamSwitch` to not lose them on the other end.  
+         * explain changing template?
+      4. Even skipping sizes that aren't compile-time constants not supported. => Loop in the parser (cycle in the state machine)
+      5. Weird compiler bug on cycles (generates invalid sdnet code) => Unroll the loop and create $K$ separate states for parsing paths long $1...K$.
+      5. Doesn't build for K > 16. => Do my $\sqrt{K}$ two-stage thing.
+         => Show spacetime before & after.
+***** the final design
+      parser state machine diagram
+*** TODO Hop field MAC validation
+***** MAC
+      adding extern (pipelined! <-- took forever to find out)
+
+      Specifically, SCION uses the AES-CMAC function as specified by RFC 4493. It needs to MAC at most 2 at most 256-bit blocks per packet, which translates to  AES-128-ECB computations per packet.
+***** timestamp
+      just write clock by control plane
+*** TODO Working around compiler/toolchain bugs
+    unfortunately, this was enough of an issue to warrant a separate section in this thesis
+
+*** TODO Meeting timing constraints
+      - TODO example of data dependency graph and how I optimised it
+* [0/4] Results
+  What am I supposed to put here here?
+  Ideally: It's effing fast and it's running in production :D And here are the pictures about how effing fast it is. Also about timing and utilisation and perhaps power consumption.
+  # > What happened (objectively)?
+  # > Do not interpret, simply state the facts.
+  # > Let's be honest: the first thing most of us do when skimming a paper is look at the figures. If your key results can be presented in figures, then start with that, and structure your paper around that.
+*** TODO Throughput
+    pretty much my magic dashboard
+    (include queue sizes)
+*** TODO Latency
+    if I can
+*** TODO Fraction of real traffic sent to CPU
+*** TODO Resource usage
+    ideally also per-component
+***** TODO FPGA area
+***** TODO Power consumption
+* [0/4] Discussion
+  # > Results are objective, but science isn't about listing data, it's about extracting meaning from what we observe.
+*** TODO Why do we see the results we see?
+    TODO what do we see? :D
+    Because this is "SCION as a library", I should talk not just about the BR's performance, but also about the characteristics of the parts on their own.
+*** TODO Guidelines for high-speed packet processing
+***** Intro to FPGAs for software people
+******* think in space, not time
+        - everything happens at the same time
+        - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
+******* resources / limiting factors
+        - Area instead of # of instructions
+        - Timing => path length + logic complexity
+******* [0/2] Concepts:
+        TODO but but but this should go way earlier because I'm referring to these all the time
+        I suppose they should go to [[*Background and Related Work]]?
+********* TODO FPGA area
+********* TODO Timing constraints
+
+***** insights about P4 => HDL translation
+******* Timing
+        - inout parameters correspond to long paths => timing problems
+        - CAM tables are kinda expensive (~0.1ns)
+        - TODO how to find the critical path?
+        - example of data dependency graph and optimising it
+*** TODO Implications for the SCION protocol
+    TODO this is a bit complicated... I am providing suggestions, but the actual
+    things that will make it to the next version of SCION aren't my work, they are
+    someone else's work that takes into account my suggestions. How do I put that
+    here?
+***** TODO What SCION does right
+******* Avoiding lookup tables
+        show area of a CAM table
+        and if I have too much free time, do a power consumption measurement
+***** TODO What should be improved
+******* TODO Defining maximum sizes
+        Currently, the maximum path length in the packet header is unreasonably
+        large (the 8-bit offset fields allow for up to 256*8 = 2kB offset), and
+        the hop field length is virtually unlimited (the continue flag signals
+        whether we need to keep reading, and there is no maximum length defined).
+        In hardware, in order to enable pipelining, we need to create buffers of
+        the "worst case" size.
+        This consumes FPGA area (thereby increasing costs and possibly energy
+        consumption) and, due to processing in fixed-size blocks, increases
+        latency.
+        Therefore, these should be limited. We propose the following:
+        - limiting the maximum number of hops to some "reasonable" value, such as 64
+        - limiting the maximum hop field size to e.g. 16 bytes
+******* TODO Avoiding variable lengths
+        - good: pad to a nice number (currently 8, in the future SCION will pad to 4)
+        - ATM HFs can be any multiple of 8 bytes, in the future (thanks to the
+          change to 4 bytes) SCION will have only 12-byte HFs
+******* TODO Avoiding implicit lengths
+        addr type
+******* TODO Consider re-thinking MAC chaning for peering paths
+        In the case of peering paths, bla TODO bla
+*** TODO what else have we learned?
+* [0/6] Future work
+*** TODO Completing the feature set
+*** TODO Higher throughput
+    terabit router
+*** TODO Running in production
+*** TODO Adding COLIBRI and EPIC
+*** TODO Power requirements optimisation
+*** TODO Other high-speed SCION applications
+    other potential uses for my "SCION as a library": e.g. smart NICs with P4 in them => very fast end hosts
+* [0/1] Conclusion
+  # Bring it back to the big picture. How do your results fit into the current body of knowledge?
+  # Most importantly, how can these results help you ask better questions?
+  - high-security Internet protocols, and especially SCION, can feasibly be forwarded at high speeds
+  - we see no major obstacles for implementing a very high throughput thingy
+    (order of Tbps), and the minor things are going to be cleared up with the
+    data plane redesign that incorporates my suggestions
+  - P4 is an adequate language and though not everything is perfect, it is a
+    useful tool that indeed helps achieve a quicker development cycle
+  - we are looking forward to having more mature HW targets and toolchains, and
+    we think there is much promise in continuing this work with those
