@@ -20,7 +20,7 @@ This enables target independence, a quicker development cycle, and a more
 modular approach.
 Based on this work, we suggest changes to the SCION data plane that allow for
 more efficient processing in hardware.
-* [0/3] Introduction
+* [1/3] Introduction
   What is SCION and why?
   What problems is SCION trying to solve?
   What problems is my thingy trying to solve?
@@ -32,17 +32,87 @@ more efficient processing in hardware.
   # Also, answer the harsh but important question: Who cares?
   #
   # In writing this, you can start general, but make sure you clearly define the “before” state of the world’s knowledge for the specific area this paper is addressing.
-*** TODO The Internet sucks
-  The problem is that current IP-based Internet wasn't designed for having a bunch of actors that don't all trust everyone else; and wasn't designed to be resilient, because nobody thought it would become this friggin important. Therefore, it:
-  - breaks all the time, and breaks globally
-  - requires global trust, which doesn't exist
-  - has not much in the way of security
-  - can't scale because routing tables don't fit
-  - eats a lot of energy
-*** TODO SCION wants to solve it, but
-    The problem is that there are no hardware implementations of SCION, so currently it is slow and expensive, and we don't even know whether it can be implemented in HW in a way that doesn't suck.
-    This is a problem because nobody is going to use SCION if it isn't fast and cheap and easy to scale.
-*** TODO We are going to solve this problem by...
+*** DONE Why SCION?
+    CLOSED: [2019-07-16 Tue 15:25]
+    Today's Internet, based on IP and BGP, was conceived in a very different
+    environment, with very different requirements and very different
+    assumptions. Meant to be a research network, it assumed that
+    access was not widespread (as only large institutions could afford a
+    connection), that all entities connected to it trusted each other (and had
+    out-of-band means to deal with misbehaviour),
+    and that it would not grow large enough for outages to become difficult to
+    manage.
+    Considering these facts, it has scaled surprisingly well, but nowadays we
+    are living in a very different world.
+
+    Today, everyone is connected and everyone has their data on the Internet.
+    With the huge number of connected entities, many of which have conflicting
+    interests, trust can no longer be global and implicit.
+    Users want control over their data, ISPs want control over their services,
+    and states want to protect their infrastructure from outside actors.
+    At this scale, convergence after path failure takes too long, and
+    large-scale outages due to BGP route leaks are happening almost weekly.
+    Furthermore, attacks on the Internet infrastructure, e.g. DDoS attack or BGP
+    route hijacks, are becoming more and more common.
+    In today's world, these issues can no longer be tolerated.
+
+    In the future, the Internet will become even more critical. Automation (such
+    as drones, self-driving cars, or remotely operated robots) will depend on
+    the availability and security of the Internet.
+    As more and more data moves online, trust will become even more of an issue.
+    We will need ways to satisfy new requirements such as geofencing, which
+    cannot be adequately fulfilled with the current Internet architecture.
+    And as malicious actors get more and more sophisticated and powerful, their
+    attacks will get even harder to stop.
+    Therefore, we will need to move to an Internet architecture that is
+    resilient to both unintentional failures and malicious attacks,
+    can provide explicit trust information to the end users,
+    and gives the end users as well as institutions control over whom they trust
+    and what happens with their data.
+
+    There have been may attempts to fix the IP+BGP-based Internet TODO[cite
+    something], but patching an architecture designed with entirely different
+    assumptions simply cannot solve all the problems TODO[cite something].
+    Additionally, the IP-based approach also has scalability issues due to
+    requiring very large routing tables, and this is bound to get worse in the
+    future.
+    Therefore, the SCION project chooses to build a clean-slate Internet
+    architecture, with the goals of scalability, route control, failure
+    isolation, and explicit trust information in the design.
+*** INPR SCION right now
+    Thanks to a well-thought-out design, as well as "real-life" considerations
+    such as deployment, transition strategy, and engagement with industry, SCION
+    is currently running in production in several locations TODO[cite].
+    Additionally, a planet-wide research network for testing SCION is running
+    thanks to SCIONLab TODO[cite SCIONLab paper].
+    These use cases have proven that SCION is in fact suitable for real-world
+    usage.
+    In the near future, several ISPs will start offering SCION connections to
+    their customers.
+    Therefore, considerations like throughput, cost-effectiveness, and energy
+    efficiency are of great interest to many in the SCION community.
+
+    The existing implementations of the SCION infrastructure, in particular the
+    routers, run as applications on standard servers. This has enabled rapid
+    development, as well as flexibility, and it will continue to be the primary
+    approach until the protocol stabilises.
+    However, with the current technologies, a software-based approach cannot
+    achieve throughput above several tens of gigabits per second.
+    Therefore, large-scale deployments would require many such routers, which is
+    not cost-effective.
+    Additionally, whether SCION can even in principle run at line rate is still
+    an open question.
+
+    Especially thanks to the real-world deployments, SCION is now
+    mature enough to start looking into implementing it in hardware.
+    Though the current version of the protocol is very unlikely to be the final
+    one, it would be useful to get an initial hardware-based implementation,
+    mainly in order to evaluate the protocol's suitability for hardware.
+    A successful hardware implementation would also be a good answer to the "can
+    it run at line rate?" question, which would further increase the probability
+    of deployment with commercial ISPs.
+*** Building a high-speed SCION router in hardware
+    We are going to solve this problem by...
     providing a high-speed, modular and extensible FPGA-based border router that can forward SCION really fast.
     TODO ^ This is the point of the introduction. Make it stand out.
 * [0/4] Background and Related Work
