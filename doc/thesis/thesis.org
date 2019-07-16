@@ -20,17 +20,11 @@ This enables target independence, a quicker development cycle, and a more
 modular approach.
 Based on this work, we suggest changes to the SCION data plane that allow for
 more efficient processing in hardware.
-* [1/3] Introduction
-  What is SCION and why?
-  What problems is SCION trying to solve?
-  What problems is my thingy trying to solve?
-  Why is it interesting?
+* [2/3] Introduction
   # [In field X, we still don’t understand Y & Z.]
-  #
   # Write a summary of the question(s) you are trying to answer.
   # What is the state of the world before your research came along?
   # Also, answer the harsh but important question: Who cares?
-  #
   # In writing this, you can start general, but make sure you clearly define the “before” state of the world’s knowledge for the specific area this paper is addressing.
 *** DONE Why SCION?
     CLOSED: [2019-07-16 Tue 15:25]
@@ -79,7 +73,8 @@ more efficient processing in hardware.
     Therefore, the SCION project chooses to build a clean-slate Internet
     architecture, with the goals of scalability, route control, failure
     isolation, and explicit trust information in the design.
-*** INPR SCION right now
+*** DONE SCION right now
+    CLOSED: [2019-07-16 Tue 17:16]
     Thanks to a well-thought-out design, as well as "real-life" considerations
     such as deployment, transition strategy, and engagement with industry, SCION
     is currently running in production in several locations TODO[cite].
@@ -87,8 +82,8 @@ more efficient processing in hardware.
     thanks to SCIONLab TODO[cite SCIONLab paper].
     These use cases have proven that SCION is in fact suitable for real-world
     usage.
-    In the near future, several ISPs will start offering SCION connections to
-    their customers.
+    In the near future, several ISPs are likely to start offering SCION
+    connections to their customers.
     Therefore, considerations like throughput, cost-effectiveness, and energy
     efficiency are of great interest to many in the SCION community.
 
@@ -100,21 +95,22 @@ more efficient processing in hardware.
     achieve throughput above several tens of gigabits per second.
     Therefore, large-scale deployments would require many such routers, which is
     not cost-effective.
-    Additionally, whether SCION can even in principle run at line rate is still
-    an open question.
+    From the research perspective, whether SCION can even in principle run at
+    line rate, and what hurdles must be overcome, are still open questions.
 
     Especially thanks to the real-world deployments, SCION is now
-    mature enough to start looking into implementing it in hardware.
+    mature enough to lend itself to implementing in hardware.
     Though the current version of the protocol is very unlikely to be the final
     one, it would be useful to get an initial hardware-based implementation,
     mainly in order to evaluate the protocol's suitability for hardware.
-    A successful hardware implementation would also be a good answer to the "can
-    it run at line rate?" question, which would further increase the probability
-    of deployment with commercial ISPs.
-*** Building a high-speed SCION router in hardware
-    We are going to solve this problem by...
-    providing a high-speed, modular and extensible FPGA-based border router that can forward SCION really fast.
-    TODO ^ This is the point of the introduction. Make it stand out.
+    A successful hardware-based implementation would also be a good answer to
+    the "can it run at line rate?" question, which would further increase the
+    probability of deployment with commercial ISPs.
+*** TODO Building a high-speed SCION router in hardware
+    What problems is my thingy trying to solve?
+    Why is it interesting?
+
+    providing a high-speed, modular and extensible FPGA-based border router that can forward SCION really fast
 * [0/4] Background and Related Work
 P4 and NetFPGA and SCION and what we’re working with and what we’re trying to achieve and related work and stuff.
 # [We have here method A, B, and our new method C.]
