@@ -135,6 +135,19 @@ P4 and NetFPGA and SCION and what we’re working with and what we’re trying t
 ***** Why are we doing it?
 ***** Related work
 *** TODO High-speed packet forwarding
+***** Intro to FPGAs for software people
+******* think in space, not time
+        - everything happens at the same time
+        - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
+******* resources / limiting factors
+        - Area instead of # of instructions
+        - Timing => path length + logic complexity
+******* [0/2] Concepts:
+        TODO but but but this should go way earlier because I'm referring to these all the time
+        I suppose they should go to [[*Background and Related Work]]?
+********* TODO FPGA area
+********* TODO Timing constraints
+
 *** TODO P4
     this is a tool for solving above => relate this to that
 *** TODO NetFPGA
@@ -228,19 +241,8 @@ P4 and NetFPGA and SCION and what we’re working with and what we’re trying t
     TODO what do we see? :D
     Because this is "SCION as a library", I should talk not just about the BR's performance, but also about the characteristics of the parts on their own.
 *** TODO Guidelines for high-speed packet processing
-***** Intro to FPGAs for software people
-******* think in space, not time
-        - everything happens at the same time
-        - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
-******* resources / limiting factors
-        - Area instead of # of instructions
-        - Timing => path length + logic complexity
-******* [0/2] Concepts:
-        TODO but but but this should go way earlier because I'm referring to these all the time
-        I suppose they should go to [[*Background and Related Work]]?
-********* TODO FPGA area
-********* TODO Timing constraints
-
+    see [something in [[*Background and Related Work]]] for general intro to FPGAs
+***** what's easy and what's hard from the "what you want to do" viewpoint
 ***** insights about P4 => HDL translation
 ******* Timing
         - inout parameters correspond to long paths => timing problems
