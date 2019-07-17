@@ -17,6 +17,11 @@ numbers=noenddot, bibliography=totoc]{scrbook}
 \newcommand{\thesisSemester}{Spring 2019}
 \newcommand{\thesisSubmission}{August 19, 2019}
 
+\usepackage{titling}
+\title{\thesisTitle}
+\author{\thesisAuthor}
+\date{\thesisSubmission}
+
 \include{format}
 
 \begin{document}
@@ -38,7 +43,7 @@ numbers=noenddot, bibliography=totoc]{scrbook}
 \bibliography{bibliography}
 
 \appendix
-\include{sections/appendix}
+\include{appendix}
 \parskip 0pt
 
 \end{document}

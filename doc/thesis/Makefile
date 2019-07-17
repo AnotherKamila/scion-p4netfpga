@@ -1,8 +1,8 @@
-MAIN_FILE=thesis-wrap.tex
+MAIN_FILE=thesis.tex
 
 all:
-	pdflatex -shell-escape $(MAIN_FILE)
-	pdflatex -shell-escape $(MAIN_FILE)
+	pdflatex -halt-on-error -shell-escape $(MAIN_FILE)
+	pdflatex -halt-on-error -shell-escape $(MAIN_FILE)
 
 clean:
 	rm -f *.log *.aux *.toc *.pdf

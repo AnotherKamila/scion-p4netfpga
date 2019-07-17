@@ -1,0 +1,10 @@
+.texpadtmp/
+auto/
+*.aux
+*.log
+*.toc
+*.out
+*.pdf
+
+# exported from thesis.org
+thesis.tex

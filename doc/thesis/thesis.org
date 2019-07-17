@@ -1,6 +1,7 @@
 #+TITLE:  Line-rate packet forwarding for the SCION future Internet architecture
 #+AUTHOR: Kamila Součková
 #+DATE:   August 19, 2019
+#+DESCRIPTION: Master Thesis
 #+INCLUDE: thesis-setup.org
 
 * [1/1] Abstract
@@ -20,6 +21,17 @@ This enables target independence, a quicker development cycle, and a more
 modular approach.
 Based on this work, we suggest changes to the SCION data plane that allow for
 more efficient processing in hardware.
+* [0/1] Acknowledgements
+  :PROPERTIES:
+  :UNNUMBERED: t
+  :END:
+  TODO write something
+
+#+TOC: headlines 2
+#+begin_export latex
+\mainmatter
+#+end_export
+
 * [2/3] Introduction
   # [In field X, we still don’t understand Y & Z.]
   # Write a summary of the question(s) you are trying to answer.
@@ -287,3 +299,14 @@ P4 and NetFPGA and SCION and what we’re working with and what we’re trying t
     useful tool that indeed helps achieve a quicker development cycle
   - we are looking forward to having more mature HW targets and toolchains, and
     we think there is much promise in continuing this work with those
+
+#+begin_export latex
+\bibliographystyle{abbrv}
+\bibliography{bibliography}
+
+\appendix
+#+end_export
+
+# Local Variables:
+# org-confirm-babel-evaluate: (lambda (lang body) (not (string= lang "emacs-lisp")))
+# End:
