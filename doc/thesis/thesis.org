@@ -100,9 +100,9 @@ more efficient processing in hardware.
     efficiency are of great interest to many in the SCION community.
 
     The existing implementations of the SCION infrastructure, in particular the
-    routers, run as applications on standard servers. This has enabled rapid
-    development, as well as flexibility, and it will continue to be the primary
-    approach until the protocol stabilises.
+    routers, run as applications on standard servers.
+    This has enabled rapid development, as well as flexibility, and it will
+    continue to be the primary approach until the protocol stabilises.
     However, with the current technologies, a software-based approach cannot
     achieve throughput above several tens of gigabits per second.
     Therefore, large-scale deployments would require many such routers, which is
@@ -119,10 +119,44 @@ more efficient processing in hardware.
     the "can it run at line rate?" question, which would further increase the
     probability of deployment with commercial ISPs.
 *** TODO Building a high-speed SCION router in hardware
-    What problems is my thingy trying to solve?
-    Why is it interesting?
+    The first aim of this project is implementing a border router capable of
+    forwarding SCION packets at line rate.
+    We will target a NetFPGA SUME board, which will (in the ideal case) allow us
+    to forward up to 40Gbps.
+    As the border router is the crucial building block of the SCION data plane,
+    having a high-speed prototype will open the doors to large-scale data
+    transfers, as well as prove that infrastructure providers (ISPs) will be
+    able to scale to meet the needs of many customers without incurring very
+    high costs.
 
-    providing a high-speed, modular and extensible FPGA-based border router that can forward SCION really fast
+    Additionally, we wish to keep the work target-independent (as much as
+    possible), and thereby create a "library" for implementing line-rate SCION
+    for a variety of targets and use-cases.
+
+    An FPGA[fn:1] implementation is a good first step for evaluating the
+    feasibility of building "SCION on chip": much of the design process is the
+    same with FPGAs as with ASICs[fn:2].
+    Therefore, the second aim of this work is to gain hardware design expertise,
+    and consider the possibility of building faster, more efficient designs in
+    the future.
+    The knowledge gained in the process of implementation on the NetFPGA will
+    allow us to better understand the requirements of running SCION in custom
+    hardware, and predict whether a very high-speed and energy-efficient ASIC
+    implementation could be built.
+    As being able to run in hardware is a hard requirement for the success of
+    any network-layer Internet protocol, knowing more about this question is
+    crucial to the development and deployment of SCION.
+
+    With the knowledge gained during the implementation, we will be able to
+    fulfill the third aim of this project: providing suggestions for the SCION
+    protocol that would result in more efficient hardware implementations.
+    Running in hardware has been a consideration in the design of SCION from the
+    beginning, but an actual implementation, rather than abstract reasoning, is
+    likely to uncover opportunities for further improvement.
+    Doing this early, before SCION has become widely deployed, allows us to
+    implement any changes needed without having to worry about
+    backwards-compatibility and enter the "real-life deployment" sphere with an
+    already optimised protocol.
 * [0/4] Background and Related Work
 P4 and NetFPGA and SCION and what we’re working with and what we’re trying to achieve and related work and stuff.
 # [We have here method A, B, and our new method C.]
@@ -241,7 +275,7 @@ P4 and NetFPGA and SCION and what we’re working with and what we’re trying t
     TODO what do we see? :D
     Because this is "SCION as a library", I should talk not just about the BR's performance, but also about the characteristics of the parts on their own.
 *** TODO Guidelines for high-speed packet processing
-    see [something in [[*Background and Related Work]]] for general intro to FPGAs
+    see TODO something in [[*Background and Related Work]] for general intro to FPGAs
 ***** what's easy and what's hard from the "what you want to do" viewpoint
 ***** insights about P4 => HDL translation
 ******* Timing
@@ -312,3 +346,12 @@ P4 and NetFPGA and SCION and what we’re working with and what we’re trying t
 # Local Variables:
 # org-confirm-babel-evaluate: (lambda (lang body) (not (string= lang "emacs-lisp")))
 # End:
+
+* Footnotes
+
+[fn:2] Application-specific integrated circuit: an integrated circuit customized
+for a particular use. Since ASICs are custom-built, they can be highly
+cost-effective and energy-efficient, assuming a sufficiently large deployment.
+
+[fn:1] Field-programmable gate array: a chip with many programmable logic blocks
+and programmable interconnects that can be used for hardware prototyping.
