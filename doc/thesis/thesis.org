@@ -130,8 +130,8 @@ more efficient processing in hardware.
     high costs.
 
     Additionally, we wish to keep the work target-independent (as much as
-    possible), and thereby create a "library" for implementing line-rate SCION
-    for a variety of targets and use-cases.
+    possible), and thereby create a "library for line-rate SCION" for a variety
+    of targets and use-cases.
 
     An FPGA[fn:1] implementation is a good first step for evaluating the
     feasibility of building "SCION on chip": much of the design process is the
