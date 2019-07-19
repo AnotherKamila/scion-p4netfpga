@@ -197,6 +197,9 @@ Therefore, the ISD is isolated from misconfiguration or misbehaviour by outside
 entites, which makes the network more stable and reliable.
 Furthermore, creating the hierarchy of separate ISDs instead of one global
 network helps with scalability, as described in TODO somewhere below.
+#+CAPTION: Multiple isolation domains (ISDs). Communication within each ISD is entirely handled within the ISD, and communication among different ISDs is facilitated by the ISD core. Note that while control plane communication always flows only among core ASes, inter-ISD data transfer is possible also over non-core links.
+#+NAME:   fig:isds
+[[./img/isds.png]]
 ******* Path discovery
 ******* Path selection
 ******* Packet forwarding
