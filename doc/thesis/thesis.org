@@ -118,28 +118,28 @@ more efficient processing in hardware.
     A successful hardware-based implementation would also be a good answer to
     the "can it run at line rate?" question, which would further increase the
     probability of deployment with commercial ISPs.
-*** DONE Building a high-speed SCION router in hardware
+*** DONE Aims of this project
     CLOSED: [2019-07-18 Thu 13:37]
-    The first aim of this project is implementing a border router capable of
-    forwarding SCION packets at line rate.
+    The first aim of this project is **implementing a border router capable of
+    forwarding SCION packets at line rate**.
     We will target a NetFPGA SUME board, which will (in the ideal case) allow us
     to forward up to 40Gbps.
-    As the border router is the crucial building block of the SCION data plane,
-    having a high-speed prototype will open the doors to large-scale data
-    transfers, as well as prove that infrastructure providers (ISPs) will be
-    able to scale to meet the needs of many customers without incurring very
-    high costs.
+    The border router is the crucial building block of the SCION data plane.
+    Therefore, having a high-speed prototype will open the doors to large-scale
+    data transfers, as well as prove that infrastructure providers (such as
+    ISPs) will be able to scale to meet the needs of many customers without
+    incurring very high costs.
 
     Additionally, we wish to keep the work target-independent (as much as
     possible), and thereby create a "library for line-rate SCION" for a variety
     of targets and use-cases.
 
-    An FPGA[fn:1] implementation is a good first step for evaluating the
-    feasibility of building "SCION on chip": much of the design process is the
-    same with FPGAs as with ASICs[fn:2].
-    Therefore, the second aim of this work is to gain hardware design expertise,
-    and consider the possibility of building faster, more efficient designs in
-    the future.
+    An implementation targeting an FPGA[fn:1] is a good first step for
+    evaluating the feasibility of building "SCION on chip": much of the design
+    process is the same with FPGAs as with ASICs[fn:2].
+    Therefore, the second aim of this work is to **confront SCION with hardware
+    design expertise, and consider the possibility of building faster, more
+    efficient designs in the future**.
     The knowledge gained in the process of implementation on the NetFPGA will
     allow us to better understand the requirements of running SCION in custom
     hardware, and predict whether a very high-speed and energy-efficient ASIC
@@ -149,8 +149,8 @@ more efficient processing in hardware.
     crucial to the development and deployment of SCION.
 
     With the knowledge gained during the implementation, we will be able to
-    fulfill the third aim of this project: providing suggestions for the SCION
-    protocol that would result in more efficient hardware implementations.
+    fulfill the third aim of this project: **providing suggestions for the SCION
+    protocol that would result in more efficient hardware implementations**.
     Running in hardware has been a consideration in the design of SCION from the
     beginning, but an actual implementation, rather than abstract reasoning, is
     likely to uncover opportunities for further improvement.
@@ -165,7 +165,42 @@ engineering, and hardware design.
 This chapter introduces what concerns us in each of the relevant areas, and the
 following chapters build on this information.
 *** TODO The SCION Internet architecture
+TODO this is terrible. But I have no idea how to make it less terrible.
+
+SCION is a clean-slate Internet architecture designed for
+route control,
+failure isolation, and
+explicit trust information
+for end-to-end communication.
+The name SCION stands for "scalability, control, and isolation on
+next-generation networks", which summarises the aims of SCION: we will discuss
+below how these aims are achieved. First, let us have a look at how SCION works.
 ***** Overview of the SCION architecture
+******* Isolation Domains
+At the core of SCION is the concept of **isolation domains** (ISDs): an ISD is
+an autonomous collection of ASes[fn:3] that manages its own routing
+infrastructure and root of trust (both for routing and PKI).
+Actors outside of the ISD are unable to influence either routing or trust within
+the ISD.
+The exact mapping of ISDs to physical world entities is a topic for further
+research, but for simplicity, we can imagine for the sake of this explanation
+that an ISD could map to a country or union of countries that share common
+jurisdiction and agreements.
+Multiple ASes within the ISDs run the **ISD core**, which is responsible for
+providing core routing infrastructure, as well as the PKI.
+These could be e.g. government-operated or large commercial ISPs.
+Non-core ASes then provide connectivity to end users, while relying on the
+services provided by the ISD core.
+The ISD is a self-contained entity, with everything needed for inter-ISD routing
+contained within the ISD.
+Therefore, the ISD is isolated from misconfiguration or misbehaviour by outside
+entites, which makes the network more stable and reliable.
+Furthermore, creating the hierarchy of separate ISDs instead of one global
+network helps with scalability, as described in TODO somewhere below.
+******* Path discovery
+******* Path selection
+******* Packet forwarding
+The data plane blablabla.
 ***** What exactly are we trying to solve, in relation to above?
 ***** Why are we doing it?
 ***** Related work
@@ -349,6 +384,8 @@ why did we pick what we picked?
 #+end_export
 
 * Footnotes
+
+[fn:3] Autonomous System: a network or collection of networks that managed and supervised by a single entity or organization. An ISP's network is an example of an AS.
 
 [fn:2] Application-specific integrated circuit: an integrated circuit customized
 for a particular use. Since ASICs are custom-built, they can be highly
