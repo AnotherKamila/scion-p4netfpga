@@ -42,3 +42,7 @@
 #+LATEX_HEADER: \newcommand{\thesisStudentID}{16-XX-XXX}
 #+LATEX_HEADER: \newcommand{\thesisEmail}{skamila@ethz.ch}
 #+LATEX_HEADER: \newcommand{\thesisSemester}{Spring 2019}
+#+LATEX_HEADER: \graphicspath{{./img/}}
+#+LATEX_HEADER: \usepackage{newunicodechar}
+#+LATEX_HEADER: \newunicodechar{→}{$\rightarrow$}
+#+LATEX_HEADER: \newunicodechar{⇒}{$\Rightarrow$}

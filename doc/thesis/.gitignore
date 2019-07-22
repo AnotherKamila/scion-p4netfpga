@@ -5,6 +5,7 @@ auto/
 *.toc
 *.out
 *.pdf
+*.pdf_tex
 
 # exported from thesis.org
 thesis.tex

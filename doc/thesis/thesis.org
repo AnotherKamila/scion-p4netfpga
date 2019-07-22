@@ -118,8 +118,10 @@
     probability of deployment with commercial ISPs.
 *** DONE Aims of this project
     CLOSED: [2019-07-18 Thu 13:37]
-    The first aim of this project is **implementing a border router capable of
-    forwarding SCION packets at line rate**.
+    TODO is this better inline like this, or in an item list?
+
+    The first aim of this project is *implementing a border router capable of
+    forwarding SCION packets at line rate*.
     We will target a NetFPGA SUME board, which will (in the ideal case) allow us
     to forward up to 40Gbps.
     The border router is the crucial building block of the SCION data plane.
@@ -135,9 +137,9 @@
     An implementation targeting an FPGA[fn:1] is a good first step for
     evaluating the feasibility of building "SCION on chip": much of the design
     process is the same with FPGAs as with ASICs[fn:2].
-    Therefore, the second aim of this work is to **confront SCION with hardware
-    design expertise, and consider the possibility of building faster, more
-    efficient designs in the future**.
+    Therefore, the second aim of this work is to
+    *confront SCION with hardware design expertise, and consider the possibility
+    of building faster, more efficient designs in the future*.
     The knowledge gained in the process of implementation on the NetFPGA will
     allow us to better understand the requirements of running SCION in custom
     hardware, and predict whether a very high-speed and energy-efficient ASIC
@@ -147,8 +149,8 @@
     crucial to the development and deployment of SCION.
 
     With the knowledge gained during the implementation, we will be able to
-    fulfill the third aim of this project: **providing suggestions for the SCION
-    protocol that would result in more efficient hardware implementations**.
+    fulfill the third aim of this project: *providing suggestions for the SCION
+    protocol that would result in more efficient hardware implementations*.
     Running in hardware has been a consideration in the design of SCION from the
     beginning, but an actual implementation, rather than abstract reasoning, is
     likely to uncover opportunities for further improvement.
@@ -178,7 +180,7 @@
 # below how these aims are achieved. First, let us have a look at how SCION works.
 # ***** Overview of the SCION architecture
 # ******* Isolation Domains
-# At the core of SCION is the concept of **isolation domains** (ISDs): an ISD is
+# At the core of SCION is the concept of *isolation domains* (ISDs): an ISD is
 # an autonomous collection of ASes[fn:3] that manages its own routing
 # infrastructure and root of trust (both for routing and PKI).
 # Actors outside of the ISD are unable to influence either routing or trust within
@@ -187,7 +189,7 @@
 # research, but for simplicity, we can imagine for the sake of this explanation
 # that an ISD could map to a country or union of countries that share common
 # jurisdiction and agreements.
-# Multiple ASes within the ISDs run the **ISD core**, which is responsible for
+# Multiple ASes within the ISDs run the *ISD core*, which is responsible for
 # providing core routing infrastructure, as well as the PKI.
 # These could be e.g. government-operated or large commercial ISPs.
 # Non-core ASes then provide connectivity to end users, while relying on the
@@ -273,14 +275,14 @@
       section :D]
 
       In accordance with the above, our border router must do the following:
-      1. extract and parse the current HF according to the offset information
-         in the offset header
-      2. verify the ingress interface and the incoming IP overlay
-      3. check that the HF is not expired
-      4. validate the HF MAC
-      6. update the HF offset information
-      5. update the IP overlay header (including recomputing checksums)
-      7. select the output port corresponding to the egress interface and send the packet out
+      1. Extract and parse the current HF according to the offset information
+         in the offset header.
+      2. Verify the ingress interface and the incoming IP overlay.
+      3. Check that the HF is not expired.
+      4. Validate the HF MAC.
+      6. Update the HF offset information.
+      5. Update the IP overlay header.
+      7. Select the output port corresponding to the egress interface and send the packet out.
 ***** TODO Related work
       TODO[Is there anything published about (one of) the SW BR or something?]
 *** TODO High-speed packet forwarding
@@ -322,11 +324,30 @@ Hi reviewers, your opinions on this matter are especially welcome :D
     Listen to my advice and you too can process packets at high speeds, even if you are not a hardware person.
 *** TODO Optimising the SCION protocol for HW
 * [0/1] Design overview
-  this section is essentially just a diagram of the components
+The border router's algorithm, as outlined in section [[*Putting it all together:
+Border router behaviour]], is as follows (more details have been added here):
 
+      1. Identify the packet as SCION and parse the SCION common header.\\
+         If the packet is not SCION, send it to software.\\
+         If the parsing fails, drop this and generate an SCMP[fn:5] error packet.
+      2. Extract and parse the current HF according to the offset information in the offset header.\\
+         If the extraction or parsing fails, drop this and generate an SCMP error packet.
+      3. Verify the ingress interface and the incoming IP overlay.\\
+         If incorrect, drop this and generate an SCMP error packet.
+      4. Check that the HF is not expired.\\
+         If incorrect, drop this and generate an SCMP error packet.
+      5. Validate the HF MAC.\\
+         If incorrect, drop this and generate an SCMP error packet.
+      6. Update the HF offset information.
+      7. Update the IP overlay header according to an egress interface ⇒ IP overlay data table,
+         including recomputing IP and UDP checksums
+      9. Select the output port corresponding to the egress interface and send the packet out.
+
+  TODO diagram of the components:
   show pic with data plane + normal SCION SW router + my thin control plane
 
   this is awesome because:
+  - modularity: blablabla
   - simplicity: everything that doesn't have to happen at line rate, such as error packet generation, all control plane packet processing, even ARP and stuff, is handled transparently without any work on my side
   - "upgradeability": if the control plane gets extended / changed, I don't care, as long as the forwarding path format (which isn't as likely to change) is the same
   - enables incremental development of the HW design: start with just passing through everything, then add more and more features that don't have to go to CPU
@@ -469,6 +490,8 @@ Hi reviewers, your opinions on this matter are especially welcome :D
 #+end_export
 
 * Footnotes
+
+[fn:5] SCION Control Message Protocol: the equivalent of ICMP in SCION. These packets should be rate-limited, and in future versions of SCION, they may become source-authenticated (i.e. require additional crypto).
 
 [fn:4] In addition to "standard SCION", SCION also supports packets with end-to-end bandwidth reservations, and source-authenticated packets. For these, the verification information is different. In this work, we only implement the normal mode, and will mention the other modes only very briefly.
 
