@@ -16,8 +16,7 @@
           ("\\paragraph{%s}" . "\\paragraph*{%s}")
           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 
-(setq org-latex-title-command (concat "\\frontmatter"
-                                      "\\include{title}"))
+(setq org-latex-title-command (concat "\\include{title}"))
 
 (setq org-latex-hyperref-template "\\usepackage[plainpages=false,pdfpagelabels,bookmarks=true,backref=false,pagebackref=false]{hyperref}
   \\hypersetup{
@@ -36,6 +35,7 @@
 #+LATEX_CLASS_OPTIONS: [a4paper, toc=index, 12pt, DIV=14, twoside, BCOR=2cm, headsepline, numbers=noenddot, bibliography=totoc]
 #+OPTIONS: toc:nil H:4 num:3 ':t
 #+LATEX_HEADER: \usepackage{titling}
+#+LATEX_HEADER: \usepackage{svg}
 #+LATEX_HEADER: \DeclareUnicodeCharacter{00A0}{~}   % replace non-breaking space
 #+LATEX_HEADER: \include{format}
 #+LATEX_HEADER: \newcommand{\thesisType}{Master Thesis}

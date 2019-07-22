@@ -4,23 +4,24 @@
 #+DESCRIPTION: Master Thesis
 #+INCLUDE: thesis-setup.org
 
+#+LATEX: \frontmatter
 * [1/1] Abstract
   CLOSED: [2019-07-15 Mon 15:45]
   :PROPERTIES:
   :UNNUMBERED: t
   :END:
-The SCION future Internet architecture is designed to provide route control,
-failure isolation, and explicit trust information for end-to-end communication.
-Its viability has already been demonstrated in production, but to work
-at Internet scale, it is necessary to make it perform at high speeds, reduce
-costs, and evaluate suitability for eventual implementation in hardware.
-This project implements a SCION border router capable of line-rate packet
-forwarding, currently running on an FPGA target.
-It uses P4: a new language for programming packet forwarding planes.
-This enables target independence, a quicker development cycle, and a more
-modular approach.
-Based on this work, we suggest changes to the SCION data plane that allow for
-more efficient processing in hardware.
+  The SCION future Internet architecture is designed to provide route control,
+  failure isolation, and explicit trust information for end-to-end communication.
+  Its viability has already been demonstrated in production, but to work
+  at Internet scale, it is necessary to make it perform at high speeds, reduce
+  costs, and evaluate suitability for eventual implementation in hardware.
+  This project implements a SCION border router capable of line-rate packet
+  forwarding, currently running on an FPGA target.
+  It uses P4: a new language for programming packet forwarding planes.
+  This enables target independence, a quicker development cycle, and a more
+  modular approach.
+  Based on this work, we suggest changes to the SCION data plane that allow for
+  more efficient processing in hardware.
 * [0/1] Acknowledgements
   :PROPERTIES:
   :UNNUMBERED: t
@@ -28,10 +29,7 @@ more efficient processing in hardware.
   TODO write something
 
 #+TOC: headlines 2
-#+begin_export latex
-\mainmatter
-#+end_export
-
+#+LATEX: \mainmatter
 * [3/3] Introduction
   # [In field X, we still don’t understand Y & Z.]
   # Write a summary of the question(s) you are trying to answer.
@@ -159,54 +157,132 @@ more efficient processing in hardware.
     backwards-compatibility and enter the "real-life deployment" sphere with an
     already optimised protocol.
 * [0/4] Background and Related Work
-In order to achieve this project's aims, we need to work in the intersection of
-several fields: among others network security, network protocols, software
-engineering, and hardware design.
-This chapter introduces what concerns us in each of the relevant areas, and the
-following chapters build on this information.
-*** TODO The SCION Internet architecture
-TODO this is terrible. But I have no idea how to make it less terrible.
+  In order to achieve this project's aims, we need to work in the intersection of
+  several fields: among others network security, network protocols, software
+  engineering, and hardware design.
+  This chapter introduces what concerns us in each of the relevant areas, and the
+  following chapters build on this information.
+*** TODO [3/5] SCION data plane
+    SCION is a clean-slate Internet architecture designed for
+    route control,
+    failure isolation, and
+    explicit trust information
+    for end-to-end communication.
+    For a comprehensive presentation of the SCION architecture, see TODO cite the
+    SCION book.
+    In this section, I will introduce the aspects of the SCION data plane relevant
+    for this work.
+#+begin_comment Ain't nobody got time for this stuff
+# The name SCION stands for "scalability, control, and isolation on
+# next-generation networks", which summarises the aims of SCION: we will discuss
+# below how these aims are achieved. First, let us have a look at how SCION works.
+# ***** Overview of the SCION architecture
+# ******* Isolation Domains
+# At the core of SCION is the concept of **isolation domains** (ISDs): an ISD is
+# an autonomous collection of ASes[fn:3] that manages its own routing
+# infrastructure and root of trust (both for routing and PKI).
+# Actors outside of the ISD are unable to influence either routing or trust within
+# the ISD.
+# The exact mapping of ISDs to physical world entities is a topic for further
+# research, but for simplicity, we can imagine for the sake of this explanation
+# that an ISD could map to a country or union of countries that share common
+# jurisdiction and agreements.
+# Multiple ASes within the ISDs run the **ISD core**, which is responsible for
+# providing core routing infrastructure, as well as the PKI.
+# These could be e.g. government-operated or large commercial ISPs.
+# Non-core ASes then provide connectivity to end users, while relying on the
+# services provided by the ISD core.
+# The ISD is a self-contained entity, with everything needed for inter-ISD routing
+# contained within the ISD.
+# Therefore, the ISD is isolated from misconfiguration or misbehaviour by outside
+# entites, which makes the network more stable and reliable.
+# Furthermore, creating the hierarchy of separate ISDs instead of one global
+# network helps with scalability, as described in TODO somewhere below.
+# #+CAPTION: Multiple isolation domains (ISDs). Communication within each ISD is entirely handled within the ISD, and communication among different ISDs is facilitated by the ISD core. Note that while control plane communication always flows only among core ASes, inter-ISD data transfer is possible also over non-core links.
+# #+NAME:   fig:isds
+# [[./img/isds.png]]
+# ******* Path discovery
+# ******* Path selection
+# ******* Packet forwarding
+# The data plane blablabla.
+#+end_comment
+***** DONE Packet-carried forwarding state
+      CLOSED: [2019-07-22 Mon 17:20]
+      In order to scale without the need for state on routers (specifically large
+      routing tables), SCION puts all information needed for packet forwarding into
+      the packet header.
+      In particular, the user-selected path that the packet needs to take through the
+      network is present in the header, as a stack of /hop fields/ (HFs).
+      This means that the packet headers are variable-size and can be somewhat large
+      -- this is the tradeoff SCION makes to avoid large and potentially inconsistent
+      routing tables in routers.
 
-SCION is a clean-slate Internet architecture designed for
-route control,
-failure isolation, and
-explicit trust information
-for end-to-end communication.
-The name SCION stands for "scalability, control, and isolation on
-next-generation networks", which summarises the aims of SCION: we will discuss
-below how these aims are achieved. First, let us have a look at how SCION works.
-***** Overview of the SCION architecture
-******* Isolation Domains
-At the core of SCION is the concept of **isolation domains** (ISDs): an ISD is
-an autonomous collection of ASes[fn:3] that manages its own routing
-infrastructure and root of trust (both for routing and PKI).
-Actors outside of the ISD are unable to influence either routing or trust within
-the ISD.
-The exact mapping of ISDs to physical world entities is a topic for further
-research, but for simplicity, we can imagine for the sake of this explanation
-that an ISD could map to a country or union of countries that share common
-jurisdiction and agreements.
-Multiple ASes within the ISDs run the **ISD core**, which is responsible for
-providing core routing infrastructure, as well as the PKI.
-These could be e.g. government-operated or large commercial ISPs.
-Non-core ASes then provide connectivity to end users, while relying on the
-services provided by the ISD core.
-The ISD is a self-contained entity, with everything needed for inter-ISD routing
-contained within the ISD.
-Therefore, the ISD is isolated from misconfiguration or misbehaviour by outside
-entites, which makes the network more stable and reliable.
-Furthermore, creating the hierarchy of separate ISDs instead of one global
-network helps with scalability, as described in TODO somewhere below.
-#+CAPTION: Multiple isolation domains (ISDs). Communication within each ISD is entirely handled within the ISD, and communication among different ISDs is facilitated by the ISD core. Note that while control plane communication always flows only among core ASes, inter-ISD data transfer is possible also over non-core links.
-#+NAME:   fig:isds
-[[./img/isds.png]]
-******* Path discovery
-******* Path selection
-******* Packet forwarding
-The data plane blablabla.
-***** What exactly are we trying to solve, in relation to above?
-***** Why are we doing it?
-***** Related work
+      Each HF in the path corresponds to an AS-level hop.
+      It encodes the ingress and egress interface in its AS,
+      verification information used by the AS to check that the end host is
+      allowed to use this hop,
+      the expiration time for this HF,
+      and some additional information.
+      The exact HF format is described in TODO[ref SCION book].
+      In order to forward the packet, the router only needs to look at the
+      "current" HF, i.e. the one meant for this AS.
+      Therefore, the SCION header contains a pointer to the current HF.
+      This is initially set to the first one in the path, and every egress
+      border router increments it after processing it, so that a router can find
+      its HF without parsing the whole path.
+***** DONE Hop field verification
+      CLOSED: [2019-07-22 Mon 17:20]
+      Allowing the end host to assemble the path is great for giving the end
+      host control, but for various reasons ASes may need to enforce routing
+      policies.
+      Therefore, end hosts must not be allowed to create "any" paths, only ones
+      compliant with the policies of the ASes involved.
+      In order to enforce this at line rate and without needing much state on
+      the routers, SCION requires the HFs to contain verification
+      information.
+      For standard SCION, this information is a cryptographic MAC keyed by an
+      AS-specific secret key.[fn:4]
+      The AS distributes the HFs including this pre-computed MAC during path
+      discovery, and therefore if a hop field in the end-host-created path
+      contains a valid MAC, it is proof that the end host got this HF from the
+      creator AS.
+      The MAC for a HF is computed over itself and the HF occuring
+      previously in the path (see figure [[fig:mac-chaining]]), so that the end host
+      cannot arbitrarily join multiple valid path segments into a single path if
+      it has not been explicitly allowed.
+      The MAC verification is based on AES-CMAC TODO[cite the RFC], because with
+      dedicated hardware, computing AES can be done very efficiently at line
+      rate. TODO[would be great to have something to cite here -- look for what
+      Adrian ended up citing when he asked me what to cite :D]
+      Because the forwarding is otherwise rather simple, achieving a
+      sufficiently fast HF verification routine will be one of the more
+      interesting aspects of our implementation.
+
+      #+NAME:   fig:mac-chaining
+      #+CAPTION: TODO somebody should write something here.
+      [[./img/mac-chaining.svg]]
+      # TODO somebody should make the outline of the HFs wider and should probably
+      # hardlink or what these images instead of copying from the presentation? But
+      # that's terrible. But copying them and fixing one and not the other is also
+      # terrible. Everything is terrible.
+***** TODO IP overlay
+***** DONE Putting it all together: Border router behaviour
+      CLOSED: [2019-07-22 Mon 17:20]
+      TODO[not sure if this should be here or later on in the implementation: it
+      makes sense to have it here, but what if someone isn't reading this
+      section :D]
+
+      In accordance with the above, our border router must do the following:
+      1. extract and parse the current HF according to the offset information
+         in the offset header
+      2. verify the ingress interface and the incoming IP overlay
+      3. check that the HF is not expired
+      4. validate the HF MAC
+      6. update the HF offset information
+      5. update the IP overlay header (including recomputing checksums)
+      7. select the output port corresponding to the egress interface and send the packet out
+***** TODO Related work
+      TODO[Is there anything published about (one of) the SW BR or something?]
 *** TODO High-speed packet forwarding
 ***** Intro to FPGAs for software people
 ******* think in space, not time
@@ -230,6 +306,12 @@ why did we pick what we picked?
 *** TODO NetFPGA
     this is a tool for solving above => relate this to that
 * [0/4] Aims
+TODO maybe I don't even want to have this chapter, but just have the "Aims"
+section in Introduction,
+because (contrary to the SDN-CH presentation) I am not selling this as "I'm
+going to enlighten you about P4" and then two of these things look less relevant
+and I suppose it makes sense to say this in Introduction anyway and blah.
+Hi reviewers, your opinions on this matter are especially welcome :D
 *** TODO Deployable SCION BR
     - forwarding at line rate => with NetFPGA, that is 40Gbps
     - usable with real traffic
@@ -387,6 +469,8 @@ why did we pick what we picked?
 #+end_export
 
 * Footnotes
+
+[fn:4] In addition to "standard SCION", SCION also supports packets with end-to-end bandwidth reservations, and source-authenticated packets. For these, the verification information is different. In this work, we only implement the normal mode, and will mention the other modes only very briefly.
 
 [fn:3] Autonomous System: a network or collection of networks that managed and supervised by a single entity or organization. An ISP's network is an example of an AS.
 
