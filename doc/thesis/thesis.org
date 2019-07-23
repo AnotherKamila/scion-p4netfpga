@@ -165,7 +165,7 @@
   engineering, and hardware design.
   This chapter introduces what concerns us in each of the relevant areas, and the
   following chapters build on this information.
-*** DONE [5/5] SCION data plane
+*** DONE SCION data plane
     CLOSED: [2019-07-23 Tue 17:47]
     SCION is a clean-slate Internet architecture designed for
     route control,
@@ -210,8 +210,7 @@
 # ******* Packet forwarding
 # The data plane blablabla.
 #+end_comment
-***** DONE Packet-carried forwarding state
-      CLOSED: [2019-07-22 Mon 17:20]
+***** Packet-carried forwarding state
       In order to scale without the need for state on routers (specifically large
       routing tables), SCION puts all information needed for packet forwarding into
       the packet header.
@@ -234,8 +233,7 @@
       This is initially set to the first one in the path, and every egress
       border router increments it after processing it, so that a router can find
       its HF without parsing the whole path.
-***** DONE Hop field verification
-      CLOSED: [2019-07-22 Mon 17:20]
+***** Hop field verification
       Allowing the end host to assemble the path is great for giving the end
       host control, but for various reasons ASes may need to enforce routing
       policies.
@@ -268,8 +266,7 @@
       # TODO somebody should change the colours so that the whole HF is coloured,
       # and should copy the fixed version back to the presentation.
       # (and then should change this picture to render correctly with pdf_tex)
-***** DONE IP overlay
-      CLOSED: [2019-07-23 Tue 17:47]
+***** IP overlay
       In order to enable inter-operability with existing networks, SCION packets
       may use an IP/UDP overlay.
       The software border router currently requires this, as it uses a UDP
@@ -281,8 +278,7 @@
       point-to-point link).
       Our implementation should therefore either support both, or make it easy
       to add direct SCION over Ethernet links in the future.
-***** DONE Putting it all together: Border router behaviour
-      CLOSED: [2019-07-22 Mon 17:20]
+***** Putting it all together: Border router behaviour
       TODO[not sure if this should be here or later on in the implementation: it
       makes sense to have it here, but what if someone isn't reading this
       section :D]
@@ -296,8 +292,7 @@
       6. Update the HF offset information.
       5. Update the IP overlay header.
       7. Select the output port corresponding to the egress interface and send the packet out.
-***** DONE Related work
-      CLOSED: [2019-07-23 Tue 09:45]
+***** Related work
       The reference software router is available at TODO cite scionproto github.
       Since this runs in software and is not optimised for performance, it can
       achieve a few Gbps on normal hardware.
@@ -415,6 +410,8 @@
     Due to hardware availability, the flexibility vs. performance tradeoff, as
     well as the insights that can be gained in the design process, we have
     chosen an FPGA for our work.
+*** TODO NetFPGA
+    this is a tool for solving above => relate this to that
 *** TODO Introduction to designing for FPGAs
     The design process for an FPGA is very different from software engineering.
     Though this is a difficult task, in this section we attempt to provide an
@@ -432,8 +429,6 @@
 ******* TODO Timing constraints
 
 *** TODO P4
-    this is a tool for solving above => relate this to that
-*** TODO NetFPGA
     this is a tool for solving above => relate this to that
 * [0/4] Aims
 TODO maybe I don't even want to have this chapter, but just have the "Aims"
