@@ -164,7 +164,7 @@
   engineering, and hardware design.
   This chapter introduces what concerns us in each of the relevant areas, and the
   following chapters build on this information.
-*** TODO [3/5] SCION data plane
+*** TODO [4/5] SCION data plane
     SCION is a clean-slate Internet architecture designed for
     route control,
     failure isolation, and
@@ -223,7 +223,7 @@
       It encodes the ingress and egress interface in its AS,
       verification information used by the AS to check that the end host is
       allowed to use this hop,
-      the expiration time for this HF,
+      the expiration time for this HF (which must be checked),
       and some additional information.
       The exact HF format is described in TODO[ref SCION book].
       In order to forward the packet, the router only needs to look at the
@@ -263,10 +263,9 @@
       #+NAME:   fig:mac-chaining
       #+CAPTION: TODO somebody should write something here.
       [[./img/mac-chaining.svg]]
-      # TODO somebody should make the outline of the HFs wider and should probably
-      # hardlink or what these images instead of copying from the presentation? But
-      # that's terrible. But copying them and fixing one and not the other is also
-      # terrible. Everything is terrible.
+      # TODO somebody should change the colours so that the whole HF is coloured,
+      # and should copy the fixed version back to the presentation.
+      # (and then should change this picture to render correctly with pdf_tex)
 ***** TODO IP overlay
 ***** DONE Putting it all together: Border router behaviour
       CLOSED: [2019-07-22 Mon 17:20]
@@ -283,8 +282,18 @@
       6. Update the HF offset information.
       5. Update the IP overlay header.
       7. Select the output port corresponding to the egress interface and send the packet out.
-***** TODO Related work
-      TODO[Is there anything published about (one of) the SW BR or something?]
+***** DONE Related work
+      CLOSED: [2019-07-23 Tue 09:45]
+      The reference software router is available at TODO cite scionproto github.
+      Since this runs in software and is not optimised for performance, it can
+      achieve a few Gbps on normal hardware.
+
+      We are aware of ongoing work by various groups: one creating a high-speed
+      software implementation (several tens of Gbps), and two hardware-based
+      implementations: one targeting an FPGA and programmed in Verilog, and one
+      targetting a programmable switch (due to the limitations of the hardware,
+      this one will support "SCION with caveats").
+      At the time of writing, none of this work has been published.
 *** TODO High-speed packet forwarding
 ***** Intro to FPGAs for software people
 ******* think in space, not time
@@ -323,25 +332,37 @@ Hi reviewers, your opinions on this matter are especially welcome :D
     or gaining experience or whatevs
     Listen to my advice and you too can process packets at high speeds, even if you are not a hardware person.
 *** TODO Optimising the SCION protocol for HW
-* [0/1] Design overview
-The border router's algorithm, as outlined in section [[*Putting it all together:
-Border router behaviour]], is as follows (more details have been added here):
+* [1/2] Design overview
+  The border router's algorithm, as outlined in section [[*Putting it all together:
+  Border router behaviour]], is as follows (more details have been added here):
 
-      1. Identify the packet as SCION and parse the SCION common header.\\
-         If the packet is not SCION, send it to software.\\
-         If the parsing fails, drop this and generate an SCMP[fn:5] error packet.
-      2. Extract and parse the current HF according to the offset information in the offset header.\\
-         If the extraction or parsing fails, drop this and generate an SCMP error packet.
-      3. Verify the ingress interface and the incoming IP overlay.\\
-         If incorrect, drop this and generate an SCMP error packet.
-      4. Check that the HF is not expired.\\
-         If incorrect, drop this and generate an SCMP error packet.
-      5. Validate the HF MAC.\\
-         If incorrect, drop this and generate an SCMP error packet.
-      6. Update the HF offset information.
-      7. Update the IP overlay header according to an egress interface ⇒ IP overlay data table,
-         including recomputing IP and UDP checksums
-      9. Select the output port corresponding to the egress interface and send the packet out.
+  1. Identify the packet as SCION and parse the SCION common header.\\
+     If the packet is not SCION, send it to software.\\
+     If the parsing fails, drop this and generate an SCMP[fn:5] error packet.
+  2. Extract and parse the current HF according to the offset information in the offset header.\\
+     If the extraction or parsing fails, drop this and generate an SCMP error packet.
+  3. Verify the ingress interface and the incoming IP overlay.\\
+     If incorrect, drop this and generate an SCMP error packet.
+  4. Check that the HF is not expired.\\
+     If incorrect, drop this and generate an SCMP error packet.
+  5. Validate the HF MAC.\\
+     If incorrect, drop this and generate an SCMP error packet.
+  6. If the packet destination is in this AS, forward it according to the intra-AS routing.\\
+     If the HF contains the FWD_ONLY flag, drop the packet instead and generate an SCMP error packet.[fn:6]
+  8. Update the HF offset information.
+  9. Update the IP overlay header according to an egress interface ⇒ IP overlay data table,
+     including recomputing IP and UDP checksums.
+  10. Select the output port corresponding to the egress interface and send the packet out.
+
+  TODO if I weren't lazy, this could be a fancy flow diagram.
+  Hi reviewers, should it be a fancy flow diagram? (Maybe additionally to this
+  text, because it's a lot of text.)
+
+  Note that the "everything is fine" path is quite simple, but the error
+  generation (which needs rate-limiting and may change significantly in the
+  future) and local delivery (which needs additional configuration and state on
+  the router for intra-AS routing) are more complicated.
+  Therefore, I have the awesome idea which is awesome TODO.
 
   TODO diagram of the components:
   show pic with data plane + normal SCION SW router + my thin control plane
@@ -491,9 +512,11 @@ Border router behaviour]], is as follows (more details have been added here):
 
 * Footnotes
 
+[fn:6] The FWD_ONLY FLAG can be used by the AS to indicate that this HF is only usable for forwarding to other ASes, not for local packet delivery.
+
 [fn:5] SCION Control Message Protocol: the equivalent of ICMP in SCION. These packets should be rate-limited, and in future versions of SCION, they may become source-authenticated (i.e. require additional crypto).
 
-[fn:4] In addition to "standard SCION", SCION also supports packets with end-to-end bandwidth reservations, and source-authenticated packets. For these, the verification information is different. In this work, we only implement the normal mode, and will mention the other modes only very briefly.
+[fn:4] In addition to "standard SCION", SCION also supports packets with end-to-end bandwidth reservations, and source-authenticated packets. For these, the verification information is different. In this work, we only implement the "standard SCION" mode, and will mention the other modes only very briefly.
 
 [fn:3] Autonomous System: a network or collection of networks that managed and supervised by a single entity or organization. An ISP's network is an example of an AS.
 
