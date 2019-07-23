@@ -28,8 +28,9 @@
   :END:
   TODO write something
 
-#+TOC: headlines 2
+#+TOC: headlines 1
 #+LATEX: \mainmatter
+
 * [3/3] Introduction
   # [In field X, we still don’t understand Y & Z.]
   # Write a summary of the question(s) you are trying to answer.
@@ -158,13 +159,14 @@
     implement any changes needed without having to worry about
     backwards-compatibility and enter the "real-life deployment" sphere with an
     already optimised protocol.
-* [0/4] Background and Related Work
+* [2/5] Background and Related Work
   In order to achieve this project's aims, we need to work in the intersection of
   several fields: among others network security, network protocols, software
   engineering, and hardware design.
   This chapter introduces what concerns us in each of the relevant areas, and the
   following chapters build on this information.
-*** TODO [4/5] SCION data plane
+*** DONE [5/5] SCION data plane
+    CLOSED: [2019-07-23 Tue 17:47]
     SCION is a clean-slate Internet architecture designed for
     route control,
     failure isolation, and
@@ -266,7 +268,19 @@
       # TODO somebody should change the colours so that the whole HF is coloured,
       # and should copy the fixed version back to the presentation.
       # (and then should change this picture to render correctly with pdf_tex)
-***** TODO IP overlay
+***** DONE IP overlay
+      CLOSED: [2019-07-23 Tue 17:47]
+      In order to enable inter-operability with existing networks, SCION packets
+      may use an IP/UDP overlay.
+      The software border router currently requires this, as it uses a UDP
+      socket to get SCION packets.
+      Therefore, our implementation must accept SCION within IP, and must send
+      out packets wrapped in the correct IP/UDP overlay, i.e. the next hop's IP
+      address and UDP port.
+      In the future, SCION will also run directly on top of L2 (when given a point
+      point-to-point link).
+      Our implementation should therefore either support both, or make it easy
+      to add direct SCION over Ethernet links in the future.
 ***** DONE Putting it all together: Border router behaviour
       CLOSED: [2019-07-22 Mon 17:20]
       TODO[not sure if this should be here or later on in the implementation: it
@@ -294,24 +308,129 @@
       targetting a programmable switch (due to the limitations of the hardware,
       this one will support "SCION with caveats").
       At the time of writing, none of this work has been published.
-*** TODO High-speed packet forwarding
-***** Intro to FPGAs for software people
-******* think in space, not time
-        - everything happens at the same time
-        - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
-******* resources / limiting factors
-        - Area instead of # of instructions
-        - Timing => path length + logic complexity
-******* [0/2] Concepts:
-        TODO but but but this should go way earlier because I'm referring to these all the time
-        I suppose they should go to [[*Background and Related Work]]?
-********* TODO FPGA area
-********* TODO Timing constraints
+*** DONE High-speed packet forwarding
+    CLOSED: [2019-07-23 Tue 22:28]
+    TODO this whole section could be replaced with a picture like this:
+    #+begin_src text
+      ^           : can do SCION to the right of this line
+      | * ASIC    :
+    p |      * programmable switch
+    e |           :
+    r |           :
+    f |           :
+    o |           :    * FPGAs
+    r |           :
+    m |           :
+    a |           :
+    n |           :
+    c |           :        * eBPF
+    e |           :         * DPDK
+      |           :            * "normal" SW
+      +-------------------------->
+           flexibility
+    #+end_src
+    Should I just do that and have significantly less text?
 
-***** existing approaches
-software: EBPF, DPDK
-programmable hardware: FPGAs, Barefoot Tofino-style things
-why did we pick what we picked?
+    # This section is kinda terrible, because there are too many words in it,
+    # but I'm afraid I don't have enough time to write less.
+
+    There are multiple approaches that enable high-speed packet processing.
+
+    On the software side, the main approaches are eBPF and DPDK.
+
+    eBPF is an open-source in-kernel user-programmable virtual machine,
+    originally introduced in BSD and later ported to GNU/Linux.
+    It allows the user to implement their own packet processing rules without
+    losing performance due to copying to userspace and back.
+    The performance of eBPF on modern hardware is on the order of
+    10 Gbps.
+
+    DPDK, the Data Plane Development Kit, is a set of data plane libraries
+    and network card drivers that enables fast packet processing in userspace.
+    It abstracts the hardware and software environment in order to enable
+    target-independent implementations.
+    Its performance on modern hardware is also on the order of 10 Gbps.
+
+    To achieve higher efficiency and cost-effectiveness, using a hardware
+    approach is often preferred.
+    For mature protocols (i.e. ones that are very unlikely to change), it is
+    preferred to build a custom ASIC, i.e. a chip with the exact circuitry
+    required to perform the function.
+    Examples of ASICs used in networking are Ethernet controllers (also on
+    network cards in PCs) or IP prefix matching tables in dedicated router
+    hardware.
+
+    ASICs have very good performance characteristics and they are
+    cost-effective at large quantities, but the one-time development costs of
+    ASICs are extremely high and if the protocol changes, an ASIC cannot be
+    reprogrammed.
+    Therefore, for new protocols such as SCION, we need to look at
+    programmable hardware.
+    One flavour is programmable network switches: a fixed structure with some
+    programmable elements.
+    An OpenFlow switch is one example: the processing pipeline is fixed, but
+    one can to an extent choose which fields are matched and what action is
+    performed based on the match.
+    Recently, more flexible programmable switches based on the P4 language
+    (see [[*P4]]) have become available.
+    These have a fixed architecture, i.e. the general "shape" of the
+    processing pipeline: an example would be
+    "parser → checksum verification → match-action pipeline →
+    checksum calculation → deparser".
+    The functionality within each of these blocks is programmable to an
+    extent, but still limited by the capabilities of the underlying hardware.
+    In exchange for these limitations, the hardware can be optimised and can
+    achieve throughput up to several Tbps.
+    Unfortunately, currently available programmable switches do not have all
+    capabilities required for SCION: notably, the high-performance switches
+    miss a cryptographic functions module, without which we cannot efficiently
+    implement the AES-based HF MAC.
+    Further, programmable switches do not provide much insight into the
+    internals of the execution (and any such insight would anyway be limited
+    to the specific switch), so with these, we would not be able to discover
+    the bottlenecks and find opportunities for optimising the SCION protocol
+    for hardware in general.
+
+    A good tradeoff between flexibility and performance, which additionally
+    shows more of the hardware design process, are FPGAs.
+    Designing for an FPGA gives us the full power (and responsibility) of
+    designing fully custom hardware: 
+    we are not limited to whatever the manufacturer included, and
+    if we need an AES module, we can add an AES module.
+    The full programmability of the circuit comes at the cost of performance:
+    assuming a good design, a single FPGA can handle on the order of 100 Gbps
+    (which is about an order of magnitude above software, and about an order
+    of magnitude below programmable switches and ASICs).
+
+    When designing for an FPGA, we have visibility into the various parts of
+    the system, and can see which parts are "difficult" to implement
+    efficiently.
+    Because the design process for FPGAs is the same as the first steps for
+    creating an ASIC, it is reasonable to assume that things problematic on
+    FPGAs would also be problematic on an ASIC.
+    This allows us to make good guesses about the difficulties in hardware in
+    general, and therefore propose generally useful changes to the SCION
+    protocol.
+
+    Due to hardware availability, the flexibility vs. performance tradeoff, as
+    well as the insights that can be gained in the design process, we have
+    chosen an FPGA for our work.
+*** TODO Introduction to designing for FPGAs
+    The design process for an FPGA is very different from software engineering.
+    Though this is a difficult task, in this section we attempt to provide an
+    overview of it from the perspective of a "converted" software engineer.
+***** think in space, not time
+      - everything happens at the same time
+      - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
+***** resources / limiting factors
+      - Area instead of # of instructions
+      - Timing => path length + logic complexity
+***** [0/2] Concepts:
+      TODO but but but this should go way earlier because I'm referring to these all the time
+      I suppose they should go to [[*Background and Related Work]]?
+******* TODO FPGA area
+******* TODO Timing constraints
+
 *** TODO P4
     this is a tool for solving above => relate this to that
 *** TODO NetFPGA
