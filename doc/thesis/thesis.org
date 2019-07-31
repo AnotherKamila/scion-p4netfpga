@@ -339,15 +339,15 @@
 
     On the software side, the main approaches are eBPF and DPDK.
 
-    eBPF is an open-source in-kernel user-programmable virtual machine,
+    *eBPF* is an open-source in-kernel user-programmable virtual machine,
     originally introduced in BSD and later ported to GNU/Linux.
     It allows the user to implement their own packet processing rules without
     losing performance due to copying to userspace and back.
     The performance of eBPF on modern hardware is on the order of
     10 Gbps.
 
-    DPDK, the Data Plane Development Kit, is a set of data plane libraries
-    and network card drivers that enables fast packet processing in userspace.
+    *DPDK*, the Data Plane Development Kit, is a set of data plane libraries
+    and network interface card (NIC) drivers that enables fast packet processing in userspace.
     It abstracts the hardware and software environment in order to enable
     target-independent implementations.
     Its performance on modern hardware is also on the order of 10 Gbps.
@@ -358,10 +358,10 @@
     preferred to build a custom ASIC, i.e. a chip with the exact circuitry
     required to perform the function.
     Examples of ASICs used in networking are Ethernet controllers (also on
-    network cards in PCs) or IP prefix matching tables in dedicated router
+    NICs in PCs) or IP prefix matching tables in dedicated router
     hardware.
 
-    ASICs have very good performance characteristics and they are
+    *ASICs* have very good performance characteristics and they are
     cost-effective at large quantities, but the one-time development costs of
     ASICs are extremely high and if the protocol changes, an ASIC cannot be
     reprogrammed.
@@ -382,6 +382,7 @@
     extent, but still limited by the capabilities of the underlying hardware.
     In exchange for these limitations, the hardware can be optimised and can
     achieve throughput up to several Tbps.
+
     Unfortunately, currently available programmable switches do not have all
     capabilities required for SCION: notably, the high-performance switches
     miss a cryptographic functions module, without which we cannot efficiently
@@ -393,7 +394,7 @@
     for hardware in general.
 
     A good tradeoff between flexibility and performance, which additionally
-    shows more of the hardware design process, are FPGAs.
+    shows more of the hardware design process, are *FPGAs*.
     Designing for an FPGA gives us the full power (and responsibility) of
     designing fully custom hardware: 
     we are not limited to whatever the manufacturer included, and
@@ -496,7 +497,24 @@ Hi reviewers, your opinions on this matter are especially welcome :D
   generation (which needs rate-limiting and may change significantly in the
   future) and local delivery (which needs additional configuration and state on
   the router for intra-AS routing) are more complicated.
-  Therefore, I have the awesome idea which is awesome TODO.
+  Therefore, a key design decision is to structure this project as a "really
+  smart NIC": all packets which can be completely processed in the FPGA will be
+  processed in the FPGA, and any packets which cannot be completely processed
+  (for any reason) will be sent to the OS unmodified, through what looks like a
+  normal network interface to the OS.
+  The OS-visible interface will, further, pass through any packets sent to it by
+  the OS, so that our implementation does not need to know anything about the
+  unprocessable packets and any replies.
+  This, together with SCION's stateless design, enables us to run the software
+  SCION router unmodified and completely unaware of the fact that the FPGA
+  taking care of most of the traffic.
+  Thus the code running on the FPGA can be kept relatively simple, as it does
+  not need to handle any of these special cases.
+  Additionally, with this approach, we can start with the very simple "pass
+  everything through to the OS" program, and incrementally move more and more
+  functionality into the FPGA, which greatly helps with development speed.
+
+  Figure TODO shows the components of our design.
 
   TODO diagram of the components:
   show pic with data plane + normal SCION SW router + my thin control plane
@@ -683,7 +701,7 @@ Hi reviewers, your opinions on this matter are especially welcome :D
     The only thing that needs to scale vertically is the switching itself, which
     can be done with speeds of several hundred Gbps with relatively affordable
     hardware (as long as we don't require the hardware to be programmable).
-    Therefore, using several higher-throughput FPGA-enabled network cards for
+    Therefore, using several higher-throughput FPGA-enabled NICs for
     the packet verification and update, plus a non-programmable MPLS or IP
     switch for the switching (i.e. to handle buffering/queueing at high speeds),
     we could in principle scale to very high rates even without creating an ASIC.
