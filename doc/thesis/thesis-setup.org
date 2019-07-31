@@ -39,7 +39,7 @@
 #+LATEX_HEADER: \DeclareUnicodeCharacter{00A0}{~}   % replace non-breaking space
 #+LATEX_HEADER: \include{format}
 #+LATEX_HEADER: \newcommand{\thesisType}{Master Thesis}
-#+LATEX_HEADER: \newcommand{\thesisStudentID}{16-XX-XXX}
+#+LATEX_HEADER: \newcommand{\thesisStudentID}{16-932-584}
 #+LATEX_HEADER: \newcommand{\thesisEmail}{skamila@ethz.ch}
 #+LATEX_HEADER: \newcommand{\thesisSemester}{Spring 2019}
 #+LATEX_HEADER: \graphicspath{{./img/}}

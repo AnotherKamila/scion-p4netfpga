@@ -1,11 +1,16 @@
 .texpadtmp/
 auto/
 *.aux
+*.bbl
+*.blg
 *.log
-*.toc
 *.out
-*.pdf
+*.toc
 *.pdf_tex
 
 # exported from thesis.org
 thesis.tex
+
+# results
+img/*.pdf
+thesis.pdf

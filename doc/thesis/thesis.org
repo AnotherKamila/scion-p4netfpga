@@ -26,8 +26,15 @@
   :PROPERTIES:
   :UNNUMBERED: t
   :END:
-  TODO write something
+  I would like to thank my advisors Prof. Dr. Adrian Perrig and Benjamin
+  Rothenberger for both their guidance and their trust in my self-directed work.
+  Their advice and help with connecting me with various experts were invaluable,
+  and necessary for the success of this project.
 
+  This work would not be possible without Prof. Nele Mentens and Jo Vliegen of
+  KU Leuven, who provided us with an optimised pipelined AES module,
+  and without David Sidler of the Systems Group at ETH Zurich, who helped to
+  integrate it.
 #+TOC: headlines 1
 #+LATEX: \mainmatter
 
@@ -65,7 +72,7 @@
     as drones, self-driving cars, or remotely operated robots) will depend on
     the availability and security of the Internet.
     As more and more data moves online, trust will become even more of an issue.
-    We will need ways to satisfy new requirements such as geofencing, which
+    We will need ways to satisfy new requirements such as geo-fencing, which
     cannot be adequately fulfilled with the current Internet architecture.
     And as malicious actors get more and more sophisticated and powerful, their
     attacks will get even harder to stop.
@@ -159,7 +166,7 @@
     implement any changes needed without having to worry about
     backwards-compatibility and enter the "real-life deployment" sphere with an
     already optimised protocol.
-* [2/5] Background and Related Work
+* [3/5] Background and Related Work
   In order to achieve this project's aims, we need to work in the intersection of
   several fields: among others network security, network protocols, software
   engineering, and hardware design.
@@ -172,8 +179,7 @@
     failure isolation, and
     explicit trust information
     for end-to-end communication.
-    For a comprehensive presentation of the SCION architecture, see TODO cite the
-    SCION book.
+    For a comprehensive presentation of the SCION architecture, see cite:scion-book.
     In this section, I will introduce the aspects of the SCION data plane relevant
     for this work.
 #+begin_comment Ain't nobody got time for this stuff
@@ -410,7 +416,23 @@
     Due to hardware availability, the flexibility vs. performance tradeoff, as
     well as the insights that can be gained in the design process, we have
     chosen an FPGA for our work.
-*** TODO NetFPGA
+*** DONE NetFPGA
+    CLOSED: [2019-07-29 Mon 10:29]
+    The NetFPGA is a family of open-source hardware and software for prototyping
+    of network devices.
+    They are FPGA-based devices with several high-speed Ethernet ports.
+    Being FPGA-based implies that these devices are fully programmable.
+    Therefore, we will be able to include all the required functionality, such
+    as parsing of SCION packets, AES-based MAC computation, timestamp
+    validation, and communication with the control plane.
+
+    Their newest (as of 2019) product, the NetFPGA SUME cite:sume, has 4 ports
+    with 10G Ethernet, thus enabling a total throughput of 40 Gbps.
+    It incorporates Xilinx's Virtex-7 690T FPGA, which is a high-end FPGA
+    suitable for large projects.
+    Due to this, and the availability of a P4 toolchain (see [[*P4]]) targeting
+    the NetFPGA SUME, we have chosen to use this hardware for our project.
+*** TODO P4
     this is a tool for solving above => relate this to that
 *** TODO Introduction to designing for FPGAs
     The design process for an FPGA is very different from software engineering.
@@ -428,8 +450,6 @@
 ******* TODO FPGA area
 ******* TODO Timing constraints
 
-*** TODO P4
-    this is a tool for solving above => relate this to that
 * [0/4] Aims
 TODO maybe I don't even want to have this chapter, but just have the "Aims"
 section in Introduction,
@@ -533,13 +553,35 @@ Hi reviewers, your opinions on this matter are especially welcome :D
     unfortunately, this was enough of an issue to warrant a separate section in this thesis
 
 *** TODO Meeting timing constraints
-      - TODO example of data dependency graph and how I optimised it
+    The various costly workarounds as explained in the previous sections of this
+    chapter, together with some questionable design choices in the P4-NetFPGA
+    base design[fn:7], take up almost all of the FPGA area.[fn:8]
+    Due to this, the place and route step of the design process has difficulty
+    satisfying timing constraints.
+
+    Even after more than a month of optimisation, the full design has a negative
+    slack of about 0.08ns: running on a 200MHz clock requires all paths to take no
+    longer than 5.0ns, and in the full design the longest path requires 5.08ns.
+    At this point, the FPGA is too full for any optimisations to help: all of our
+    attempts just shifted the problem from one place to another, but did not solve
+    it.
+
+    Nevertheless, during the optimisation process, we have learned a great deal:
+     - TODO example of data dependency graph and how I optimised it
 * [0/4] Results
-  What am I supposed to put here here?
+
+  What am I supposed to put here?
   Ideally: It's effing fast and it's running in production :D And here are the pictures about how effing fast it is. Also about timing and utilisation and perhaps power consumption.
   # > What happened (objectively)?
   # > Do not interpret, simply state the facts.
   # > Let's be honest: the first thing most of us do when skimming a paper is look at the figures. If your key results can be presented in figures, then start with that, and structure your paper around that.
+
+  Due to inadequacies in the P4-NetFPGA toolchain as explained in [[*Meeting
+  timing constraints]], we have not been able to test the full system.
+  Therefore, we do not present results for the full design: instead, we show the
+  data for the various components of the design, and we draw conclusions based
+  on these and our knowledge of how composing systems in FPGAs changes
+  performance.
 *** TODO Throughput
     pretty much my magic dashboard
     (include queue sizes)
@@ -596,13 +638,86 @@ Hi reviewers, your opinions on this matter are especially welcome :D
 ******* TODO Consider re-thinking MAC chaning for peering paths
         In the case of peering paths, bla TODO bla
 *** TODO what else have we learned?
-* [0/6] Future work
-*** TODO Completing the feature set
-*** TODO Higher throughput
-    terabit router
+* [3/6] Future work
+  TODO it may or may not be a good idea to re-order these
+*** DONE Completing the feature set / Adjusting for newer SCION versions
+    CLOSED: [2019-07-24 Wed 14:28]
+    Due to difficulties with the NetFPGA's P4 toolchain, we currently do not
+    implement everything in the current version of SCION, which means that a
+    larger than necessary fraction of traffic must be handled by the CPU.
+    Therefore, an obvious avenue for improvement would be to implement the
+    missing parts of SCION, namely handling UP segments, shortcuts and peering
+    paths.
+    However, the handling of shortcuts and peering links may be simplified in
+    the next version of the protocol, which will require modifications to this
+    project's code anyway.
+    Therefore, it is better to first accomodate the new protocol version (once
+    it is finalised), and add support for all link types afterwards.
+
+    Further, the current version of the project only supports overlays using
+    IPv4, because unlike in IPv4, IPv6 checksums are computed over the whole
+    packet, not just the headers.
+    The P4-NetFPGA toolchain currently does not provide any way to compute with
+    the packet body, so IPv6 checksums would require an unreasonable amount of
+    effort to implement.
+    The P4 code does contain support for IPv6 overlays and the checksum is the
+    only missing piece.
+    Therefore, enabling IPv6 overlays will be an easy improvement if the
+    checksum becomes available (e.g. by targetting hardware with a different
+    toolchain).
+*** INPR Higher throughput
+    With the NetFPGA as our hardware target, we are limited to 40 Gbps by its 4
+    10G ports.
+    If not for that limitation, our design could achieve up to 51
+    Gbps without any change (it processes 256 bits per cycle at 200MHz clock ⇒
+    256*200e6 = 51e9).
+    If not for the numerous costly workarounds, our design could run at a higher
+    frequency, and with greater paralellism.
+    Therefore, with a better toolchain, we may be able to achieve several
+    hundred Gbps with a single FPGA of similar parameters as what we are using
+    now.
+
+    A SCION border router does not require any state other than static
+    configuration, so the packet processing can be easily parallelised using
+    multiple FPGAs.
+    The only thing that needs to scale vertically is the switching itself, which
+    can be done with speeds of several hundred Gbps with relatively affordable
+    hardware (as long as we don't require the hardware to be programmable).
+    Therefore, using several higher-throughput FPGA-enabled network cards for
+    the packet verification and update, plus a non-programmable MPLS or IP
+    switch for the switching (i.e. to handle buffering/queueing at high speeds),
+    we could in principle scale to very high rates even without creating an ASIC.
+
+    TODO The previous paragraph should actually go somewhere into [[*Discussion]]
+    and just be referenced here.
 *** TODO Running in production
-*** TODO Adding COLIBRI and EPIC
-*** TODO Power requirements optimisation
+    Due to the 
+*** DONE Adding COLIBRI and EPIC
+    CLOSED: [2019-07-24 Wed 16:11]
+    While "plain SCION" is already a significant improvement over today's
+    Internet, features built on top of it could provide even more benefits.
+    Examples of such systems are COLIBRI, a system for bandwidth reservation
+    that guarantees bandwidth even in the face of network overload and DDoS
+    attacks, and EPIC, a source authentication mechanism that can run at line
+    rate.
+
+    It would be interesting to see how it would go to implement these more
+    complex schemes in hardware, and whether line rate can still be achieved
+    without unreasonable costs.
+*** DONE Power requirements optimisation
+    CLOSED: [2019-07-24 Wed 16:12]
+    In theory, not requiring large tables decreases the chip area and therefore
+    its power consumption.
+    However, the added cryptographic verification of every packet is a complex
+    operation that may increase it.
+    It has been theoretically predicted TODO citation that SCION may be able to
+    use overall less energy per packet, but measuring it and seeing it in
+    practice would be much more tangible.
+    Moreover, with a hardware design, we may be able to look for opportunities
+    for further energy requirements optimisation.
+    Costs of running network equipment are nowadays largely due to electricity,
+    plus there are environmental concerns to consider, and therefore an
+    exploration of SCION's power requirements would be very valuable.
 *** TODO Other high-speed SCION applications
     other potential uses for my "SCION as a library": e.g. smart NICs with P4 in them => very fast end hosts
 * [0/1] Conclusion
@@ -617,14 +732,17 @@ Hi reviewers, your opinions on this matter are especially welcome :D
   - we are looking forward to having more mature HW targets and toolchains, and
     we think there is much promise in continuing this work with those
 
-#+begin_export latex
-\bibliographystyle{abbrv}
-\bibliography{bibliography}
 
-\appendix
-#+end_export
+#+LATEX: \bibliographystyle{abbrv}
+bibliography:bibliography.bib
+
+#+LATEX: \appendix
 
 * Footnotes
+
+[fn:8] For context, the Virtex 7 FPGA present in the NetFPGA is often used for prototyping CPUs. To fill it up is a rather unexpected feat.
+
+[fn:7] The P4-NetFPGA design includes a full Microblaze microprocessor in the FPGA. This alone takes up about 30% of the FPGA area.
 
 [fn:6] The FWD_ONLY FLAG can be used by the AS to indicate that this HF is only usable for forwarding to other ASes, not for local packet delivery.
 
