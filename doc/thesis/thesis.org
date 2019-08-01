@@ -785,7 +785,7 @@ would drastically increase my FPGA area usage.
 ******* TODO Consider re-thinking MAC chaning for peering paths
         In the case of peering paths, bla TODO bla
 *** TODO what else have we learned?
-* [3/6] Future work
+* [4/6] Future work
   TODO it may or may not be a good idea to re-order these
 *** DONE Completing the feature set / Adjusting for newer SCION versions
     CLOSED: [2019-07-24 Wed 14:28]
@@ -837,8 +837,15 @@ would drastically increase my FPGA area usage.
 
     TODO The previous paragraph should actually go somewhere into [[*Discussion]]
     and just be referenced here.
-*** TODO Running in production
-    Due to the 
+*** DONE Running in production
+    CLOSED: [2019-08-01 Thu 13:01]
+    Due to the problems explained in [[*Implementation Challenges]], and especially
+    in [[*Meeting timing constraints]], we have not been able to deploy our router
+    to routinely handle real traffic.
+    Solving those problems, or porting our implementation to a target with a
+    less broken toolchain, would let us do that, and therefore be the ultimate
+    test for our implementation, as well as enable us to reap the benefits of
+    the high-speed router in production.
 *** DONE Adding COLIBRI and EPIC
     CLOSED: [2019-07-24 Wed 16:11]
     While "plain SCION" is already a significant improvement over today's
