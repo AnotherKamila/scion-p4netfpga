@@ -166,7 +166,7 @@
     implement any changes needed without having to worry about
     backwards-compatibility and enter the "real-life deployment" sphere with an
     already optimised protocol.
-* [3/5] Background and Related Work
+* [4/5] Background and Related Work
   In order to achieve this project's aims, we need to work in the intersection of
   several fields: among others network security, network protocols, software
   engineering, and hardware design.
@@ -433,24 +433,60 @@
     suitable for large projects.
     Due to this, and the availability of a P4 toolchain (see [[*P4]]) targeting
     the NetFPGA SUME, we have chosen to use this hardware for our project.
-*** TODO P4
-    this is a tool for solving above => relate this to that
-*** TODO Introduction to designing for FPGAs
+*** DONE P4
+    CLOSED: [2019-08-01 Thu 12:02]
+    P4 is a programming language for specifying packet processing pipelines.
+    Building on previous software-defined networking efforts, it allows switches
+    to be reprogrammed by the end user.
+    It is target-independent, and therefore can in principle be used for
+    programming anything from software switches to high-performance ASICs with
+    minimal changes to the program.
+    It is general enough to express the processing of almost any reasonable
+    network protocol, including SCION, and high-level enough to spare us from
+    target-dependent implementation details such as manually managing
+    pipelining.
+
+    For programming FPGAs, P4 enables a much more high-level approach compared
+    to traditional hardware description languages (HDLs) such as VHDL or Verilog.
+    While the traditional HDLs are more general and give the user far more
+    control, P4's focus on a single purpose (packet processing) enables it to
+    abstract away many common features of packet processing pipelines, and lets
+    the programmer focus on the interesting features.
+    Further, its choices about which features are not supported (such as
+    unbounded loops or arbitrary array access) enable the P4 compiler to
+    guarantee line rate processing ("if it compiles, it will run fast").
+    Our initial examination of P4 suggests that it provides appropriate
+    abstractions, and that the benefits of a faster development cycle,
+    maintainability for software engineers, and target independence
+    outweigh the loss of fine control for the use case of building a SCION
+    router prototype.
+
+    P4 is a relatively new language (P4_16, the version we use, was released in
+    May 2017).
+    Therefore, the first interesting question is P4's suitability for describing
+    non-traditional network protocols such as SCION.
+    Beyond those concerns, the toolchains for targeting specific hardware, and
+    especially the NetFPGA, are at this point experimental and not well tested
+    (as we will see in chapter [[*Implementation Challenges]]).
+    Nevertheless, the abstractions offered by P4 may be worth it, especially
+    because the "new, untested technology" problems will likely get less severe
+    in the future, and therefore having a P4 implementation for SCION will become
+    more and more useful over time.
+*** TODO [0/4] Introduction to designing for FPGAs
+    TODO is this a good name for this chapter?
     The design process for an FPGA is very different from software engineering.
     Though this is a difficult task, in this section we attempt to provide an
     overview of it from the perspective of a "converted" software engineer.
-***** think in space, not time
-      - everything happens at the same time
-      - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
-***** resources / limiting factors
-      - Area instead of # of instructions
-      - Timing => path length + logic complexity
-***** [0/2] Concepts:
-      TODO but but but this should go way earlier because I'm referring to these all the time
-      I suppose they should go to [[*Background and Related Work]]?
+***** TODO [0/2] Concepts:
 ******* TODO FPGA area
 ******* TODO Timing constraints
-
+***** TODO Overview of the process
+***** TODO think in space, not time
+      - everything happens at the same time
+      - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
+***** TODO resources / limiting factors
+      - Area instead of # of instructions
+      - Timing => path length + logic complexity
 * [0/4] Aims
 TODO maybe I don't even want to have this chapter, but just have the "Aims"
 section in Introduction,
@@ -544,9 +580,8 @@ Hi reviewers, your opinions on this matter are especially welcome :D
         - only 32-bit registers supported, but that goes all the way to the C API and the bus
 *** TODO Implementing the parser
     Things that were horrible here (TODO write how I solved them!):
-    - var length shit
-    - reject behaving contrary to even the NetFPGA devs' expectation (TODO link to issue)
-    - timing
+***** reject behaving contrary to even the NetFPGA devs' expectation (TODO link to issue)
+***** timing
 ***** the funny 5-stage story
       (include deparser here, because this is the reason why deparser was interesting)
 
@@ -558,6 +593,98 @@ Hi reviewers, your opinions on this matter are especially welcome :D
       5. Weird compiler bug on cycles (generates invalid sdnet code) => Unroll the loop and create $K$ separate states for parsing paths long $1...K$.
       5. Doesn't build for K > 16. => Do my $\sqrt{K}$ two-stage thing.
          => Show spacetime before & after.
+******* TODO var length shit
+Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
+created unexpected challenges when implementing SCION.
+The biggest issue [HOPEFULLY :D] was that at the time of writing, with P4-SDNet
+the parser cannot work with any variable-length data: this includes not only
+=varbit<n>= types, but also header unions, and -- most importantly -- header
+stacks.
+Furthermore, it is unable to even skip over variable-length parts of the packet.
+Simply put, all packet offsets must be compile-time constants.
+This poses a problem for SCION: the path in the packet is variable length (it
+can contain any number of hops).[fn:varlen]
+Therefore, the parser cannot easily deal with the path in the SCION
+packet.[fn:cantparse]
+
+To get around this problem, we employed the following steps:
+
+First of all, we opted to design the parser so that it parses only the actually
+needed data: while the path can be arbitrarily long, any single BR only needs to
+process $O(1)$ hop fields (usually one, or two in case of a shortcut path).
+This not only makes it possible to compile for the NetFPGA, but also improves
+performance on other targets.
+
+Next, we needed to solve the problem of emitting headers we have skipped:
+using only the standard features
+of P4, it is impossible to deparse parts of the header which have not been
+parsed. (The payload is copied without being parsed, but the payload is defined
+as anything *after* the last thing we parsed -- so if we skip parsing something
+in the header, it is lost and we are unable to emit it on the output interface.)
+
+The solution on the NetFPGA is to use the non-standard ~packet_mod~ feature of
+P4-SDNet, as this (unlike the standard deparsers) allows to modify the existing
+header instead of creating it anew, thereby allowing me to not lose the skipped
+parts of the header.
+
+Using the ~packet_mod~ feature is not straightforward, either: we needed to
+switch to the ~XilinxStreamSwitch~ architecture, as this feature is not
+available in the ~SimpleSumeSwitch~ architecture that is the default on the
+NetFPGA.
+This required modifying the Verilog wrappers provided by the NetFPGA developers.
+
+Obviously, using a non-standard SDNet-only feature means that with this
+approach, the program would not compile on a standard P4 compiler.
+However, standard P4 compilers (unlike the P4-SDNet compiler) tend to implement
+parsing variable-length headers.
+Therefore, we are able to emulate ~packet_mod~ for standard compilers by adding
+an extra struct to keep track of the "skipped" parts of the headers, and instead
+of skipping them, we parse them into the (variable-length) fields of this extra
+struct.
+
+We can use the C preprocessor to hide this difference, thereby keeping our
+code portable while being able to use ~packet_mod~ where available.
+This not only allows us to parse the variable-length SCION packet on the
+currently incomplete P4-SDNet compiler, but also allows us to harness the
+performance benefits of the ~packet_mod~ feature on any target where it is
+available.
+
+To make this approach work, the last step is to turn all packet offsets,
+including the ones used only for skipping, into compile-time constants.
+Fortunately, SCION hop fields are constant length.
+Therefore, if we assume a maximum path length $K$, let's say $K = 50$, there are
+only $O(K)$ many options for how many different sizes we might need to skip.
+Therefore, we can use the C preprocessor to "unroll" the parser and create
+separate states for skipping $1$, $2$, $...$ hop fields.
+This causes an $O(K)$ increase in FPGA area usage, but no latency increase --
+our logic becomes wider, but not deeper.
+
+The same tricks must then be applied in the ~packet_mod~ deparser.
+
+The maximum path length $K$ that our BR can handle then becomes a linear
+function of the NetFPGA's area (after subtracting the area we use for the rest
+of the design): the largest $K$ we can use is determined by what we can fit.
+Since our implementation uses the area quite efficiently (TODO number/reference)
+and the NetFPGA is rather large, we are able to fit a $K = TODO$ on the NetFPGA
+SUME.
+
+
+[fn:varlen] The SCION host addresses are also variable-length, as the address
+type tag in the common header defines what kind of address it is.
+For this case, we opted to use the C preprocessor to conditionally replace the
+union with a struct with three fixed-length fields (one for each possible type
+of address), only one of which is parsed and made valid for a given packet.
+(This causes a small increase in FPGA area usage, but any other solution would
+be significantly more complex, so this is a good tradeoff.)
+
+[fn:cantparse] In fact, it would be possible to parse the whole SCION packet by
+using the C preprocessor to "unroll" the parser at compile time, and parse the
+path segments into ~struct~'s with fields such as =hop1=, =hop2=, ... (size
+fixed at compile time).
+However, this would make actually using the fields very difficult, as I would
+need more preprocessor magic to index into such a struct; and additionally it
+would drastically increase my FPGA area usage.
+
 ***** the final design
       parser state machine diagram
 *** TODO Hop field MAC validation
@@ -569,7 +696,9 @@ Hi reviewers, your opinions on this matter are especially welcome :D
       just write clock by control plane
 *** TODO Working around compiler/toolchain bugs
     unfortunately, this was enough of an issue to warrant a separate section in this thesis
-
+    see [[*Implementing the parser]]
+***** HW is silly
+******* sometimes DMA may need an extra reboot?
 *** TODO Meeting timing constraints
     The various costly workarounds as explained in the previous sections of this
     chapter, together with some questionable design choices in the P4-NetFPGA
