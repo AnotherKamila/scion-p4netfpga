@@ -4,6 +4,8 @@
 #+DESCRIPTION: Master Thesis
 #+INCLUDE: thesis-setup.org
 
+# TODO somebody should do something so that my TOC fits on one page
+
 #+LATEX: \frontmatter
 * [1/1] Abstract
   CLOSED: [2019-07-15 Mon 15:45]
@@ -26,15 +28,7 @@
   :PROPERTIES:
   :UNNUMBERED: t
   :END:
-  I would like to thank my advisors Prof. Dr. Adrian Perrig and Benjamin
-  Rothenberger for both their guidance and their trust in my self-directed work.
-  Their advice and help with connecting me with various experts were invaluable,
-  and necessary for the success of this project.
-
-  This work would not be possible without Prof. Nele Mentens and Jo Vliegen of
-  KU Leuven, who provided us with an optimised pipelined AES module,
-  and without David Sidler of the Systems Group at ETH Zurich, who helped to
-  integrate it.
+  TODO
 #+TOC: headlines 1
 #+LATEX: \mainmatter
 
@@ -461,8 +455,8 @@
     outweigh the loss of fine control for the use case of building a SCION
     router prototype.
 
-    P4 is a relatively new language (P4_16, the version we use, was released in
-    May 2017).
+    P4 is a relatively new language (the specification for P4_16, the version we
+    use, was published in May 2017).
     Therefore, the first interesting question is P4's suitability for describing
     non-traditional network protocols such as SCION.
     Beyond those concerns, the toolchains for targeting specific hardware, and
@@ -488,21 +482,27 @@
       - Area instead of # of instructions
       - Timing => path length + logic complexity
 * [0/4] Aims
+  :PROPERTIES:
+  :UNNUMBERED: t
+  :END:
 TODO maybe I don't even want to have this chapter, but just have the "Aims"
 section in Introduction,
 because (contrary to the SDN-CH presentation) I am not selling this as "I'm
 going to enlighten you about P4" and then two of these things look less relevant
 and I suppose it makes sense to say this in Introduction anyway and blah.
 Hi reviewers, your opinions on this matter are especially welcome :D
-*** TODO Deployable SCION BR
-    - forwarding at line rate => with NetFPGA, that is 40Gbps
-    - usable with real traffic
-    - integrated with existing SCION infra (control plane, monitoring/metrics)
-*** TODO SCION as a library
-*** TODO Guidelines for high-speed P4
-    or gaining experience or whatevs
-    Listen to my advice and you too can process packets at high speeds, even if you are not a hardware person.
-*** TODO Optimising the SCION protocol for HW
+#+begin_comment Ain't nobody got time for this
+# *** TODO Deployable SCION BR
+#     - forwarding at line rate => with NetFPGA, that is 40Gbps
+#     - usable with real traffic
+#     - integrated with existing SCION infra (control plane, monitoring/metrics)
+# *** TODO SCION as a library
+# *** TODO Guidelines for high-speed P4
+#     or gaining experience or whatevs
+#     Listen to my advice and you too can process packets at high speeds, even if you are not a hardware person.
+# *** TODO Optimising the SCION protocol for HW
+#+end_comment
+
 * [1/2] Design overview
   The border router's algorithm, as outlined in section [[*Putting it all together:
   Border router behaviour]], is as follows (more details have been added here):
@@ -789,6 +789,9 @@ would drastically increase my FPGA area usage.
   TODO it may or may not be a good idea to re-order these
 *** DONE Completing the feature set / Adjusting for newer SCION versions
     CLOSED: [2019-07-24 Wed 14:28]
+    :PROPERTIES:
+    :UNNUMBERED: t
+    :END:
     Due to difficulties with the NetFPGA's P4 toolchain, we currently do not
     implement everything in the current version of SCION, which means that a
     larger than necessary fraction of traffic must be handled by the CPU.
@@ -813,6 +816,9 @@ would drastically increase my FPGA area usage.
     checksum becomes available (e.g. by targetting hardware with a different
     toolchain).
 *** INPR Higher throughput
+    :PROPERTIES:
+    :UNNUMBERED: t
+    :END:
     With the NetFPGA as our hardware target, we are limited to 40 Gbps by its 4
     10G ports.
     If not for that limitation, our design could achieve up to 51
@@ -839,6 +845,9 @@ would drastically increase my FPGA area usage.
     and just be referenced here.
 *** DONE Running in production
     CLOSED: [2019-08-01 Thu 13:01]
+    :PROPERTIES:
+    :UNNUMBERED: t
+    :END:
     Due to the problems explained in [[*Implementation Challenges]], and especially
     in [[*Meeting timing constraints]], we have not been able to deploy our router
     to routinely handle real traffic.
@@ -848,6 +857,9 @@ would drastically increase my FPGA area usage.
     the high-speed router in production.
 *** DONE Adding COLIBRI and EPIC
     CLOSED: [2019-07-24 Wed 16:11]
+    :PROPERTIES:
+    :UNNUMBERED: t
+    :END:
     While "plain SCION" is already a significant improvement over today's
     Internet, features built on top of it could provide even more benefits.
     Examples of such systems are COLIBRI, a system for bandwidth reservation
@@ -860,6 +872,9 @@ would drastically increase my FPGA area usage.
     without unreasonable costs.
 *** DONE Power requirements optimisation
     CLOSED: [2019-07-24 Wed 16:12]
+    :PROPERTIES:
+    :UNNUMBERED: t
+    :END:
     In theory, not requiring large tables decreases the chip area and therefore
     its power consumption.
     However, the added cryptographic verification of every packet is a complex
@@ -873,6 +888,9 @@ would drastically increase my FPGA area usage.
     plus there are environmental concerns to consider, and therefore an
     exploration of SCION's power requirements would be very valuable.
 *** TODO Other high-speed SCION applications
+    :PROPERTIES:
+    :UNNUMBERED: t
+    :END:
     other potential uses for my "SCION as a library": e.g. smart NICs with P4 in them => very fast end hosts
 * [0/1] Conclusion
   # Bring it back to the big picture. How do your results fit into the current body of knowledge?

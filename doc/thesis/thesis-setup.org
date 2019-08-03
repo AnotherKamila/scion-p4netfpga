@@ -23,7 +23,10 @@
     pdfauthor={%a},
     pdftitle={%t},
     pdfsubject={%d},
-    colorlinks=false,
+    colorlinks=true,
+    linkcolor={blue!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
     breaklinks=true,
     pdfhighlight=/I,
     bookmarksopen=false,
