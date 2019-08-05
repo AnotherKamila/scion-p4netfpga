@@ -58,12 +58,49 @@ parser TopParser(packet_in packet, out local_t d) {
     }
 }
 
+const bit<128> HF_MAC_KEY = 128w0x47;
+
+// Writes from the control plane only work with 32-bit registers (and supposedly
+// it is not easy to fix), so I have 4 32-bit registers here instead of 1
+// 128-bit one.
 @Xilinx_MaxLatency(1)
 @Xilinx_ControlWidth(1)
-extern void as_key_reg_rw(in bit<1> index,
-                          in bit<128> newVal,
-                          in bit<8> opCode,
-                          out bit<128> result);
+extern void as_key_0_reg_rw(in bit<1> index,
+                            in bit<32> newVal,
+                            in bit<8> opCode,
+                            out bit<32> result);
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(1)
+extern void as_key_1_reg_rw(in bit<1> index,
+                            in bit<32> newVal,
+                            in bit<8> opCode,
+                            out bit<32> result);
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(1)
+extern void as_key_2_reg_rw(in bit<1> index,
+                            in bit<32> newVal,
+                            in bit<8> opCode,
+                            out bit<32> result);
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(1)
+extern void as_key_3_reg_rw(in bit<1> index,
+                            in bit<32> newVal,
+                            in bit<8> opCode,
+                            out bit<32> result);
+
+control GetASKey(out bit<128> key) {
+    bit<32> key0;
+    bit<32> key1;
+    bit<32> key2;
+    bit<32> key3;
+    apply {
+        as_key_0_reg_rw(0, 0, REG_READ, key0);
+        as_key_1_reg_rw(0, 0, REG_READ, key1);
+        as_key_2_reg_rw(0, 0, REG_READ, key2);
+        as_key_3_reg_rw(0, 0, REG_READ, key3);
+        key = key3 ++ key2 ++ key1 ++ key0;
+    }
+}
 
 @brief("The 'main' of the switch.")
 @description("Processes the parsed data and modifies and forwards the packet.")
@@ -88,6 +125,7 @@ control TopPipe(inout local_t d,
     bit<128>     hf_mac_key;
     ReadWallClock()      read_wall_clock;
     CheckHFExpiry()      check_hf_expiry;
+    // GetASKey()           get_as_key;
     VerifyHF()           verify_current_hf;
     UpdateIPv4Checksum() update_ipv4_checksum;
     UpdateUDPChecksum()  update_udp_checksum;
@@ -190,12 +228,13 @@ control TopPipe(inout local_t d,
                                      ipv4_addr_t remote_addr,
                                      udp_port_t remote_port,
                                      eth_addr_t remote_mac) {
+        egress_if_match_err.error_flag = ERROR.NoError;
         set_dst_port(dst_port);
         set_overlay_udp_v4(my_addr, my_port, remote_addr, remote_port, remote_mac);
         set_src_mac(my_mac);
     }
     table squished {
-        key =  {
+        key = {
             d.hdr.scion.path.current_hf.egress_if: exact;
         }
         actions = {
@@ -263,11 +302,12 @@ control TopPipe(inout local_t d,
                                       hf_expiry_err);
 
                 // TODO test whether it is better to have a table or a reg for the AS key
-                as_key_reg_rw(0, 0, REG_READ, hf_mac_key);
+
+                // get_as_key.apply(hf_mac_key);
                 // TODO remove once we can write 128-bit registers (+ sim)
                 // hf_mac_key = 128w289747456937680922868865545818481690095; // *shrug*
-                hf_mac_key = 128w0x47;
-                verify_current_hf.apply(hf_mac_key,
+                // hf_mac_key = 128w0x47;
+                verify_current_hf.apply(HF_MAC_KEY,
                                         d.hdr.scion.path.current_inf.timestamp,
                                         d.hdr.scion.path.current_hf,
                                         d.hdr.scion.path.prev_hf,
