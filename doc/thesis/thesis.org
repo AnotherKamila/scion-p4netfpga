@@ -503,7 +503,7 @@ Hi reviewers, your opinions on this matter are especially welcome :D
 # *** TODO Optimising the SCION protocol for HW
 #+end_comment
 
-* [1/2] Design overview
+* [2/2] Design overview
   The border router's algorithm, as outlined in section [[*Putting it all together:
   Border router behaviour]], is as follows (more details have been added here):
 
@@ -529,7 +529,7 @@ Hi reviewers, your opinions on this matter are especially welcome :D
   Hi reviewers, should it be a fancy flow diagram? (Maybe additionally to this
   text, because it's a lot of text.)
 
-  Note that the "everything is fine" path is quite simple, but the error
+  Note that the fast path is quite simple, but the error
   generation (which needs rate-limiting and may change significantly in the
   future) and local delivery (which needs additional configuration and state on
   the router for intra-AS routing) are more complicated.
@@ -544,59 +544,97 @@ Hi reviewers, your opinions on this matter are especially welcome :D
   This, together with SCION's stateless design, enables us to run the software
   SCION router unmodified and completely unaware of the fact that the FPGA
   taking care of most of the traffic.
-  Thus the code running on the FPGA can be kept relatively simple, as it does
-  not need to handle any of these special cases.
+  Thus the code running on the FPGA can be kept relatively simple, as it only
+  needs to handle things that must happen at line rate:
+  any SCION control plane messages, error handling, or any of the intra-AS L3
+  packets such as ARP will transparently "just work".
   Additionally, with this approach, we can start with the very simple "pass
   everything through to the OS" program, and incrementally move more and more
   functionality into the FPGA, which greatly helps with development speed.
 
-  Figure TODO shows the components of our design.
+  #+NAME:   fig:design-overview
+  #+CAPTION: TODO somebody should write something here.
+  [[./img/design-overview.svg]]
 
-  TODO diagram of the components:
-  show pic with data plane + normal SCION SW router + my thin control plane
+  Figure [[fig:design-overview]] shows the components of our design.
 
-  this is awesome because:
-  - modularity: blablabla
-  - simplicity: everything that doesn't have to happen at line rate, such as error packet generation, all control plane packet processing, even ARP and stuff, is handled transparently without any work on my side
-  - "upgradeability": if the control plane gets extended / changed, I don't care, as long as the forwarding path format (which isn't as likely to change) is the same
-  - enables incremental development of the HW design: start with just passing through everything, then add more and more features that don't have to go to CPU
-* [0/7] Implementation Challenges
+  All the highlighted modules in the figure are loosely coupled in order to ease
+  maintaining, extending, and building on top of this project.
+  Thanks to the idea of transparently passing unprocessed packets to the OS, the
+  processing pipeline can stay simple, and the control plane software can be
+  just a thin wrapper running alongside the unmodified SCION router.
+  Furthermore, if the control plane gets extended or changed, it is sufficient
+  to upgrade the software router and none of this project's code needs to be
+  changed, as long as there are no changes in the forwarding logic (which
+  isn't likely to change as often).
+* [0/8] Implementation Challenges
+  The problems we encountered during the implementation were too numerous to
+  list completely.
+  Therefore, in this section, we present a select few particularly interesting,
+  challenging, or instructive issues, and our solutions for them.
   # originally wanted to divide this into parser, validation, forwarding, etc... but
   # I don't think that makes much sense, as e.g. timing or stupid compiler were a
   # problem across the whole thing
-*** TODO Target independence
-*** TODO Incremental development
-***** fake network interfaces over DMA
-***** control plane
-      twisted => trivially composable => trivial to add new features, mix&match
-*** TODO Control plane
-    independent modules, often complementary to the P4 modules => something something modularity runs across the whole stack
-      Perhaps also TODO have a look at my P4 presentation. Maybe there's something good in it :D // plagiarising myself
-      Design decision: Using registers rather than digest packets so that I can do that transparent software router trick super easily.
-******* What was horrible:
-        existing Python control plane API sucked, so I rolled my own
-        - tables: bugs in interpretation of the values
-        - everything was hard-coded
-        - only 32-bit registers supported, but that goes all the way to the C API and the bus
-*** TODO Implementing the parser
-    Things that were horrible here (TODO write how I solved them!):
-***** reject behaving contrary to even the NetFPGA devs' expectation (TODO link to issue)
-***** timing
-***** the funny 5-stage story
-      (include deparser here, because this is the reason why deparser was interesting)
 
-      1. P4 has header stacks, gonna use header stacks.
-      2. Header stacks not supported. => Stick the parts of the path before and after the current HF into a varbit thing.
-      3. varbit not supported. => Skip the bits and use `XilinxStreamSwitch` to not lose them on the other end.  
-         * explain changing template?
-      4. Even skipping sizes that aren't compile-time constants not supported. => Loop in the parser (cycle in the state machine)
-      5. Weird compiler bug on cycles (generates invalid sdnet code) => Unroll the loop and create $K$ separate states for parsing paths long $1...K$.
-      5. Doesn't build for K > 16. => Do my $\sqrt{K}$ two-stage thing.
-         => Show spacetime before & after.
-******* TODO var length shit
+  TODO order of sections?
+
+*** TODO Software engineering aspects
+    TODO do I group this like this, or do I just promote the subsections here to separate sections?
+
+    From the software engineering perspective, this project is somewhat on the
+    larger side given the modest time and personnel assignment of a single
+    Master thesis.
+    Therefore, in order to speed up development, we needed to come up with a few clever ideas.
+    This section introduces those.
+***** TODO Modularity and incremental development
+******* fake network interfaces over DMA
+******* control plane
+        twisted => trivially composable => trivial to add new features, mix&match
+***** INPR Target independence
+      Writing portable software is a non-trivial task with no general solutions,
+      as every project faces different challenges in this area depending on the
+      project's aims, and the number and diversity of the targeted platforms.
+      In our case, P4 is in theory a target-independent language, and the same
+      code can be compiled for many different targets, from software targets
+      such as a user-space switch or a DPDK application, to hardware targets
+      such as FPGAs and programmable switches.
+      However, in practice, every target has different limitations, supports a
+      different subset of the P4 language, and requires different extra
+      resources (i.e. files needed to build the P4 program for this target).
+
+      For this project, we chose to support the open-source reference software
+      switch and the NetFPGA SUME board, and keep the door open for easily
+      adding other targets in the future.
+      In the ideal case, we would be able to work within the intersection of the
+      P4 features supported by all the intended targets, and write unified code
+      for the vast majority of the functionality.
+      However, unfortunately (though not surprisingly), in the case of the NetFPGA's
+      proof-of-concept toolchain, the limitations and unsupported P4 features
+      turned out to be significant.
+      Therefore, confining ourselves to the subset of P4 supported by both the
+      reference compiler and the NetFPGA compiler would not allow us to
+      implement SCION.
+      As such, a single, unified codebase could not be achieved and we
+      frequently needed to write different code for each target.
+      
+      In order to 
+      bla features, not targets
+      
+***** TODO Control plane
+      independent modules, often complementary to the P4 modules => something something modularity runs across the whole stack
+        Perhaps also TODO have a look at my P4 presentation. Maybe there's something good in it :D // plagiarising myself
+        Design decision: Using registers rather than digest packets so that I can do that transparent software router trick super easily.
+********* What was horrible:
+          existing Python control plane API sucked, so I rolled my own
+          - tables: bugs in interpretation of the values
+          - everything was hard-coded
+          - only 32-bit registers supported, but that goes all the way to the C API and the bus
+*** TODO [1/4] Implementing the parser
+***** DONE Handling the variable-length SCION path
+      CLOSED: [2019-08-05 Mon 11:51]
 Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
-created unexpected challenges when implementing SCION.
-The biggest issue [HOPEFULLY :D] was that at the time of writing, with P4-SDNet
+created unexpected challenges when implementing the SCION packet parser.
+The biggest issue was that at the time of writing, with P4-SDNet
 the parser cannot work with any variable-length data: this includes not only
 =varbit<n>= types, but also header unions, and -- most importantly -- header
 stacks.
@@ -624,14 +662,21 @@ in the header, it is lost and we are unable to emit it on the output interface.)
 
 The solution on the NetFPGA is to use the non-standard ~packet_mod~ feature of
 P4-SDNet, as this (unlike the standard deparsers) allows to modify the existing
-header instead of creating it anew, thereby allowing me to not lose the skipped
+header instead of creating it anew, thereby allowing us to not lose the skipped
 parts of the header.
+The ~packet_mod~ feature mirrors the structure of the parser in the deparser: it
+allows us to define a state machine that produces the output header by skipping
+over or updating the input header as needed.
 
 Using the ~packet_mod~ feature is not straightforward, either: we needed to
 switch to the ~XilinxStreamSwitch~ architecture, as this feature is not
 available in the ~SimpleSumeSwitch~ architecture that is the default on the
 NetFPGA.
-This required modifying the Verilog wrappers provided by the NetFPGA developers.
+This required modifying the Verilog wrappers provided by the NetFPGA developers,
+which was not trivial: the P4-SDNet compiler is closed-source and the few lines of
+documentation in the wrappers were actively misleading.
+Therefore, much trial and error was required to understand what was going on and
+how to change it.
 
 Obviously, using a non-standard SDNet-only feature means that with this
 approach, the program would not compile on a standard P4 compiler.
@@ -650,24 +695,44 @@ performance benefits of the ~packet_mod~ feature on any target where it is
 available.
 
 To make this approach work, the last step is to turn all packet offsets,
-including the ones used only for skipping, into compile-time constants.
-Fortunately, SCION hop fields are constant length.
-Therefore, if we assume a maximum path length $K$, let's say $K = 50$, there are
+including the ones used only for skipping, into compile-time constants, so that
+P4-SDNet is willing to compile the code.
+
+Fortunately, SCION hop fields are always multiples of 8 bytes.
+Therefore, the obvious approach is to add a parser loop that skips over 8-byte
+chunks until it gets to the needed place.
+Unfortunately, when attempting to compile this, the P4-SDNet compiler exhibited
+a rather curious behaviour: due to what we assume to be an off by one error in
+the compiler, the loop compiled into invalid SDNet code and was not accepted by
+the later stages of the build process.
+We attempted to isolate the problem to get a better understanding of it, but the
+compiler bug manifested only in very specific conditions, and thus we were
+unable to find a workaround for it.
+Therefore, the loop approach did not work.
+
+The final approach (which did work, though at a cost) was as follows:
+
+If we assume a maximum path length $K$, there are
 only $O(K)$ many options for how many different sizes we might need to skip.
 Therefore, we can use the C preprocessor to "unroll" the parser and create
-separate states for skipping $1$, $2$, $...$ hop fields.
+separate states for skipping $1, 2, ..., K-1$ hop fields.
 This causes an $O(K)$ increase in FPGA area usage, but no latency increase --
 our logic becomes wider, but not deeper.
 
-The same tricks must then be applied in the ~packet_mod~ deparser.
-
-The maximum path length $K$ that our BR can handle then becomes a linear
-function of the NetFPGA's area (after subtracting the area we use for the rest
-of the design): the largest $K$ we can use is determined by what we can fit.
-Since our implementation uses the area quite efficiently (TODO number/reference)
-and the NetFPGA is rather large, we are able to fit a $K = TODO$ on the NetFPGA
-SUME.
-
+Unfortunately, the FPGA area usage increase comes with an additional problem:
+the amount of RAM needed to build the design increases with area, and for this
+case, we were unable to build the parser for paths larger than 16 with 32GB of RAM.
+While "get more RAM" would be a viable approach, it is not very elegant, and the
+FPGA area usage is also a cost that is worth bringing down.
+Therefore, we came up with a two stage skip idea to reduce these:
+if we want to support a max path length $K$ blocks (let's say $K = 64$), we create two
+skips: the first one will skip over "big" blocks of size $\sqrt{K}$ at a time, and
+the second one will skip over normal-sized blocks.
+This way, we can skip over any number of blocks $N, 0 \leq N < K$ by first
+skipping over $\sqrt{K} * \left\lfloor \frac{N}{\sqrt{K}} \right\rfloor$ "big" blocks
+and then skipping over $N \mod \sqrt{K}$ "normal-sized" blocks.
+Instead of requiring $O(K)$ FPGA area (and therefore RAM), this requires only
+$O(\sqrt{K})$ and thus enables much longer paths at reasonable costs.
 
 [fn:varlen] The SCION host addresses are also variable-length, as the address
 type tag in the common header defines what kind of address it is.
@@ -685,19 +750,33 @@ However, this would make actually using the fields very difficult, as I would
 need more preprocessor magic to index into such a struct; and additionally it
 would drastically increase my FPGA area usage.
 
-***** the final design
+***** TODO reject behaving contrary to even the NetFPGA devs' expectation (TODO link to issue)
+***** TODO timing
+***** TODO the final design
       parser state machine diagram
 *** TODO Hop field MAC validation
 ***** MAC
       adding extern (pipelined! <-- took forever to find out)
 
-      Specifically, SCION uses the AES-CMAC function as specified by RFC 4493. It needs to MAC at most 2 at most 256-bit blocks per packet, which translates to  AES-128-ECB computations per packet.
+      Specifically, SCION uses the AES-CMAC function as specified by RFC 4493.
+      It needs to MAC at most 2 at most 256-bit blocks per packet, which
+      translates to TODO AES-128-ECB computations per packet.
+
+      I currently don't support long HFs or VRFY_ONLY, so I am doing
+      single-block CMAC. For that, I need 1 AES for key derivation + 1 AES for
+      the MAC computation. Currently I do the key derivation per packet, because
+      it's easier to implement in P4, so I need 2 AES cores. But key derivation
+      could happen when setting AS key, as there is just one, which would lead
+      to needing only 1 AES core.
 ***** timestamp
       just write clock by control plane
 *** TODO Working around compiler/toolchain bugs
     unfortunately, this was enough of an issue to warrant a separate section in this thesis
     see [[*Implementing the parser]]
-***** HW is silly
+***** TODO the whole thing is extremely fragile, randomly stops working, and then requires on average 2-3 days to debug
+      had a working implementation where I could measure throughput 2 months ago, now I can't make the same thing work
+***** TODO had to write my own reg_write and stuff
+***** TODO HW is silly
 ******* sometimes DMA may need an extra reboot?
 *** TODO Meeting timing constraints
     The various costly workarounds as explained in the previous sections of this
@@ -712,9 +791,12 @@ would drastically increase my FPGA area usage.
     At this point, the FPGA is too full for any optimisations to help: all of our
     attempts just shifted the problem from one place to another, but did not solve
     it.
-
     Nevertheless, during the optimisation process, we have learned a great deal:
-     - TODO example of data dependency graph and how I optimised it
+       - TODO example of data dependency graph and how I optimised it
+
+***** TODO Tables
+      squishing => but then large table => helps with timing but fills the FPGA
+
 * [0/4] Results
 
   What am I supposed to put here?
@@ -784,8 +866,8 @@ would drastically increase my FPGA area usage.
         addr type
 ******* TODO Consider re-thinking MAC chaning for peering paths
         In the case of peering paths, bla TODO bla
-*** TODO what else have we learned?
-* [4/6] Future work
+# *** TODO what else have we learned?
+* [3/7] Future work
   TODO it may or may not be a good idea to re-order these
 *** DONE Completing the feature set / Adjusting for newer SCION versions
     CLOSED: [2019-07-24 Wed 14:28]
@@ -815,6 +897,43 @@ would drastically increase my FPGA area usage.
     Therefore, enabling IPv6 overlays will be an easy improvement if the
     checksum becomes available (e.g. by targetting hardware with a different
     toolchain).
+*** TODO [2/2] Researching the resource consumption
+    TODO umm the two things below are perhaps a bit too related to be two things :D
+***** DONE Relative costs of crypto vs. routing tables
+      CLOSED: [2019-08-13 Tue 17:33]
+      A core part of the design of SCION is the assumption that per-packet
+      cryptography is cheaper than state on routers (e.g. in the form of routing
+      tables), especially as the Internet continues to scale up.
+      While this is very likely true for configuration and therefore also
+      personnel costs, it is less obvious for hardware manufacuring costs, as
+      well as energy consumption.
+      The initial results of this project indicate that performing the AES
+      operations may mildly increase in-device packet processing latency (by the
+      order of nanoseconds, which is negligible), but is cheaper in terms of
+      FPGA area and thereby also energy requirements.
+      However, due to issues with the NetFPGA toolchain, we have not been able
+      to look into the details.
+      It would be of great interest to find concrete numbers and show the exact
+      improvements that can be obtained by using SCION's approach.
+      More precise knowledge of the tradeoffs would also be useful in further
+      optimisation of the SCION protocol.
+***** DONE Energy requirements optimisation
+      CLOSED: [2019-07-24 Wed 16:12]
+      :PROPERTIES:
+      :UNNUMBERED: t
+      :END:
+      In theory, not requiring large tables decreases the chip area and therefore
+      its power consumption.
+      However, the added cryptographic verification of every packet is a complex
+      operation that may increase it.
+      It has been theoretically predicted TODO citation that SCION may be able to
+      use overall less energy per packet, but measuring it and seeing it in
+      practice would be much more tangible.
+      Moreover, with a hardware design, we may be able to look for opportunities
+      for further energy requirements optimisation.
+      Costs of running network equipment are nowadays largely due to electricity,
+      plus there are environmental concerns to consider, and therefore an
+      exploration of SCION's power requirements would be very valuable.
 *** INPR Higher throughput
     :PROPERTIES:
     :UNNUMBERED: t
@@ -870,23 +989,6 @@ would drastically increase my FPGA area usage.
     It would be interesting to see how it would go to implement these more
     complex schemes in hardware, and whether line rate can still be achieved
     without unreasonable costs.
-*** DONE Power requirements optimisation
-    CLOSED: [2019-07-24 Wed 16:12]
-    :PROPERTIES:
-    :UNNUMBERED: t
-    :END:
-    In theory, not requiring large tables decreases the chip area and therefore
-    its power consumption.
-    However, the added cryptographic verification of every packet is a complex
-    operation that may increase it.
-    It has been theoretically predicted TODO citation that SCION may be able to
-    use overall less energy per packet, but measuring it and seeing it in
-    practice would be much more tangible.
-    Moreover, with a hardware design, we may be able to look for opportunities
-    for further energy requirements optimisation.
-    Costs of running network equipment are nowadays largely due to electricity,
-    plus there are environmental concerns to consider, and therefore an
-    exploration of SCION's power requirements would be very valuable.
 *** TODO Other high-speed SCION applications
     :PROPERTIES:
     :UNNUMBERED: t
