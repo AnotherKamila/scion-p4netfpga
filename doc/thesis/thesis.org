@@ -4,8 +4,6 @@
 #+DESCRIPTION: Master Thesis
 #+INCLUDE: thesis-setup.org
 
-# TODO somebody should do something so that my TOC fits on one page
-
 #+LATEX: \frontmatter
 * [1/1] Abstract
   CLOSED: [2019-07-15 Mon 15:45]
@@ -567,7 +565,7 @@ Hi reviewers, your opinions on this matter are especially welcome :D
   to upgrade the software router and none of this project's code needs to be
   changed, as long as there are no changes in the forwarding logic (which
   isn't likely to change as often).
-* [0/8] Implementation Challenges
+* [0/5] Implementation Challenges
   The problems we encountered during the implementation were too numerous to
   list completely.
   Therefore, in this section, we present a select few particularly interesting,
@@ -578,7 +576,7 @@ Hi reviewers, your opinions on this matter are especially welcome :D
 
   TODO order of sections?
 
-*** TODO Software engineering aspects
+*** INPR [0/3] Software engineering aspects
     TODO do I group this like this, or do I just promote the subsections here to separate sections?
 
     From the software engineering perspective, this project is somewhat on the
@@ -754,7 +752,7 @@ would drastically increase my FPGA area usage.
 ***** TODO timing
 ***** TODO the final design
       parser state machine diagram
-*** TODO Hop field MAC validation
+*** TODO Hop field validation
 ***** MAC
       adding extern (pipelined! <-- took forever to find out)
 
@@ -867,7 +865,7 @@ would drastically increase my FPGA area usage.
 ******* TODO Consider re-thinking MAC chaning for peering paths
         In the case of peering paths, bla TODO bla
 # *** TODO what else have we learned?
-* [3/7] Future work
+* [4/6] Future work
   TODO it may or may not be a good idea to re-order these
 *** DONE Completing the feature set / Adjusting for newer SCION versions
     CLOSED: [2019-07-24 Wed 14:28]
@@ -898,6 +896,9 @@ would drastically increase my FPGA area usage.
     checksum becomes available (e.g. by targetting hardware with a different
     toolchain).
 *** TODO [2/2] Researching the resource consumption
+    :PROPERTIES:
+    :UNNUMBERED: t
+    :END:
     TODO umm the two things below are perhaps a bit too related to be two things :D
 ***** DONE Relative costs of crypto vs. routing tables
       CLOSED: [2019-08-13 Tue 17:33]
@@ -989,11 +990,31 @@ would drastically increase my FPGA area usage.
     It would be interesting to see how it would go to implement these more
     complex schemes in hardware, and whether line rate can still be achieved
     without unreasonable costs.
-*** TODO Other high-speed SCION applications
+*** DONE Other targets, other high-speed SCION applications
+    CLOSED: [2019-08-15 Thu 21:34]
     :PROPERTIES:
     :UNNUMBERED: t
     :END:
-    other potential uses for my "SCION as a library": e.g. smart NICs with P4 in them => very fast end hosts
+    Due to keeping portability in mind during the development, we anticipate
+    that porting our border router to other targets should not be too difficult.
+    Having a single SCION implementation usable in multiple scenarios could be
+    very useful in the future.
+    Some targets of interest are for example future FPGA-based NICs,
+    programmable switches, or the P4 to DPDK compiler.
+    Especially the last one would be a useful direction to go in, as DPDK runs
+    on standard PCs, and therefore porting for the P4 to DPDK compiler would
+    give us a high-speed switch that does not require special hardware.
+
+    Thanks to the emphasis on modularity, our "SCION as a library" code could
+    also be used in many applications different from the border router.
+    Examples include a SCION-enabled network monitoring system / in-band network
+    telemetry (parse SCION packets, collect metrics, and pass packets through),
+    or a special-purpose end host with a P4-capable smart NIC, which could, by
+    offloading SCION to the NIC, transfer data at otherwise unattainable speeds
+    (both in terms of throughput and latency).
+    Apart from the end results themselves, working on these applications would
+    also help us improve the code base by challenging our assumptions about
+    modularity and generality.
 * [0/1] Conclusion
   # Bring it back to the big picture. How do your results fit into the current body of knowledge?
   # Most importantly, how can these results help you ask better questions?
