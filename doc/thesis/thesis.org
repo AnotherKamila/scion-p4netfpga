@@ -1,6 +1,6 @@
 #+TITLE:  Line-rate packet forwarding for the SCION future Internet architecture
 #+AUTHOR: Kamila Součková
-#+DATE:   August 19, 2019
+#+DATE:   August 31, 2019
 #+DESCRIPTION: Master Thesis
 #+INCLUDE: thesis-setup.org
 
@@ -35,7 +35,9 @@
   # Write a summary of the question(s) you are trying to answer.
   # What is the state of the world before your research came along?
   # Also, answer the harsh but important question: Who cares?
-  # In writing this, you can start general, but make sure you clearly define the “before” state of the world’s knowledge for the specific area this paper is addressing.
+  # In writing this, you can start general, but make sure you clearly
+  # define the “before” state of the world’s knowledge for the specific
+  # area this paper is addressing.
 *** DONE Why SCION?
     CLOSED: [2019-07-16 Tue 15:25]
     Today's Internet, based on IP and BGP, was conceived in a very different
@@ -339,7 +341,8 @@
     10 Gbps.
 
     *DPDK*, the Data Plane Development Kit, is a set of data plane libraries
-    and network interface card (NIC) drivers that enables fast packet processing in userspace.
+    and network interface card (NIC) drivers that enables fast packet processing
+    in userspace.
     It abstracts the hardware and software environment in order to enable
     target-independent implementations.
     Its performance on modern hardware is also on the order of 10 Gbps.
@@ -517,11 +520,11 @@ Hi reviewers, your opinions on this matter are especially welcome :D
   5. Validate the HF MAC.\\
      If incorrect, drop this and generate an SCMP error packet.
   6. If the packet destination is in this AS, forward it according to the intra-AS routing.\\
-     If the HF contains the FWD_ONLY flag, drop the packet instead and generate an SCMP error packet.[fn:6]
-  8. Update the HF offset information.
-  9. Update the IP overlay header according to an egress interface ⇒ IP overlay data table,
+     If the HF contains the =FWD_ONLY= flag, drop the packet instead and generate an SCMP error packet.[fn:6]
+  7. Update the HF offset information.
+  8. Update the IP overlay header according to an egress interface ⇒ IP overlay data table,
      including recomputing IP and UDP checksums.
-  10. Select the output port corresponding to the egress interface and send the packet out.
+  9. Select the output port corresponding to the egress interface and send the packet out.
 
   TODO if I weren't lazy, this could be a fancy flow diagram.
   Hi reviewers, should it be a fancy flow diagram? (Maybe additionally to this
@@ -576,7 +579,7 @@ Hi reviewers, your opinions on this matter are especially welcome :D
 
   TODO order of sections?
 
-*** INPR [0/3] Software engineering aspects
+*** INPR [2/4] Software engineering aspects
     TODO do I group this like this, or do I just promote the subsections here to separate sections?
 
     From the software engineering perspective, this project is somewhat on the
@@ -584,23 +587,57 @@ Hi reviewers, your opinions on this matter are especially welcome :D
     Master thesis.
     Therefore, in order to speed up development, we needed to come up with a few clever ideas.
     This section introduces those.
+***** DONE Project building workflow
+      CLOSED: [2019-08-16 Fri 14:17]
+      The standard workflow for building a project for FPGAs is very
+      time-consuming, complicated, inconvenient, impossible to perform without
+      training or lengthy documentation, and requires manual interaction in
+      multiple steps.
+      In the case of this project, it takes over 6 hours to go from source code
+      to a binary that can be flashed onto the hardware.
+      Originally, these 6 hours were interleaved with frequent manual checks
+      that required opening the FPGA development environment GUI and running
+      multiple long commands with input manually copied from previous steps.
+      We do not consider that to be a sensible workflow, and if we had kept it
+      that way, we would not be able to make progress fast enough to get
+      anywhere with a project as complex as this.
+      Therefore, one of the first things we worked on, before delving into the
+      project-specific issues, was to improve the workflow.
+
+      Due to this, as well as due to supporting multiple targets as described in
+      [[*Target independence/portability]], a lot of thought went into organising
+      the project's source code repository, and into scripting the build process.
+      This required vastly more effort than anticipated, because the
+      numerous NetFPGA scripts make unnecessary and often unsatisfiable
+      assumptions about the project's structure.
+      However, it was worth it:
+      at the moment, the project can be built simply with ~make build~, which
+      requires no manual interaction (nor lengthy documentation).
+      This frees the programmer from frequently checking in on the build,
+      allowing them to spend those 6 hours more productively.
+      Further, running ~make~ in the project directory lists (automatically
+      generated, and therefore always up-to-date) tasks and build settings that
+      the programmer may need, thereby reducing the need for out-of-band and
+      thus inevitably out-of-date workflow documentation.
 ***** TODO Modularity and incremental development
 ******* fake network interfaces over DMA
 ******* control plane
         twisted => trivially composable => trivial to add new features, mix&match
-***** INPR Target independence
-      Writing portable software is a non-trivial task with no general solutions,
-      as every project faces different challenges in this area depending on the
-      project's aims, and the number and diversity of the targeted platforms.
+***** DONE Target independence/portability
+      CLOSED: [2019-08-16 Fri 15:56]
+      Writing portable bare-metal software is a non-trivial task with no general
+      solutions, as every project faces different challenges in this area
+      depending on the project's aims, and the number and diversity of the
+      targeted platforms.
       In our case, P4 is in theory a target-independent language, and the same
       code can be compiled for many different targets, from software targets
       such as a user-space switch or a DPDK application, to hardware targets
       such as FPGAs and programmable switches.
       However, in practice, every target has different limitations, supports a
       different subset of the P4 language, and requires different extra
-      resources (i.e. files needed to build the P4 program for this target).
+      resources (i.e. files needed to build the program for this target).
 
-      For this project, we chose to support the open-source reference software
+      For this project, we chose to support the open-source reference P4 software
       switch and the NetFPGA SUME board, and keep the door open for easily
       adding other targets in the future.
       In the ideal case, we would be able to work within the intersection of the
@@ -608,26 +645,59 @@ Hi reviewers, your opinions on this matter are especially welcome :D
       for the vast majority of the functionality.
       However, unfortunately (though not surprisingly), in the case of the NetFPGA's
       proof-of-concept toolchain, the limitations and unsupported P4 features
-      turned out to be significant.
+      turned out to be significant
+      (see sections [[*Working around compiler/toolchain bugs]] and
+      [[*Implementing the parser]]).
       Therefore, confining ourselves to the subset of P4 supported by both the
       reference compiler and the NetFPGA compiler would not allow us to
       implement SCION.
       As such, a single, unified codebase could not be achieved and we
       frequently needed to write different code for each target.
       
-      In order to 
-      bla features, not targets
-      
+      In order to avoid a combinatorial explosion of different implementations,
+      we chose to not depend on targets in our code, but on features.
+      In other words, our code's ~#ifdef#~ statements (which conditionally enable
+      or disable code) were not of the form ~#ifdef TARGET_NETFPGA#~, but e.g.
+      ~#ifdef TARGET_SUPPORTS_VAR_LEN_PARSING~.
+      This means that we will not necessarily need to modify existing code when
+      we add a new target, we will just need to define the features it supports.
+      We provide an easy way to check for features required by the project's
+      code, so that adding a new platform requires as little effort as possible:
+      running `make find-all-target-supports` prints all ~TARGET_SUPPORTS_*~
+      features that the code uses.
+
+      In order to accomodate for diverse build processes and supporting files,
+      while avoiding duplication where possible, we have created a
+      two-level structure in our repository that captures the various types of
+      differences among targets that we anticipate.
+      The supporting files, as well as Makefiles that define the build process,
+      live under either ~platforms/PLATFORM~ if architecture-independent, or
+      ~platforms/PLATFORM/ARCHITECTURE~ if architecture-specific.
+
+      The differences between the software switch and the NetFPGA can be handled
+      cleanly with our approach, which proves that it does indeed work in
+      reality.
 ***** TODO Control plane
-      independent modules, often complementary to the P4 modules => something something modularity runs across the whole stack
-        Perhaps also TODO have a look at my P4 presentation. Maybe there's something good in it :D // plagiarising myself
-        Design decision: Using registers rather than digest packets so that I can do that transparent software router trick super easily.
+      While the focus of this project is on the data plane, we needed to create
+      a minimal control plane, so that we could test the full functionality
+      required of the data plane.
+      The design of the control plane is also interesting from the modularity
+      viewpoint.
+      Therefore, this chapter presents a brief overview of 
+
+      independent modules, often complementary to the P4 modules => something
+        something modularity runs across the whole stack
+        Perhaps also TODO have a look at my P4 presentation. Maybe there's
+        something good in it :D // plagiarising myself
+        Design decision: Using registers rather than digest packets so that I
+        can do that transparent software router trick super easily.
 ********* What was horrible:
           existing Python control plane API sucked, so I rolled my own
           - tables: bugs in interpretation of the values
           - everything was hard-coded
           - only 32-bit registers supported, but that goes all the way to the C API and the bus
 *** TODO [1/4] Implementing the parser
+    TODO should this be a sub-section of [[*Working around compiler/toolchain bugs]]?
 ***** DONE Handling the variable-length SCION path
       CLOSED: [2019-08-05 Mon 11:51]
 Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
@@ -748,11 +818,18 @@ However, this would make actually using the fields very difficult, as I would
 need more preprocessor magic to index into such a struct; and additionally it
 would drastically increase my FPGA area usage.
 
-***** TODO reject behaving contrary to even the NetFPGA devs' expectation (TODO link to issue)
+***** TODO reject behaving contrary to even the NetFPGA devs' expectation
+      can't link to issue because not public :-/
 ***** TODO timing
 ***** TODO the final design
       parser state machine diagram
 *** TODO Hop field validation
+    Before a SCION packet can be forwarded, we need to validate that this path
+    (specifically, this hop) is allowed.
+    There are two parts to that: we need to check that the hop field used in the
+    path is not expired, and we need to check that it was in fact created (and
+    thereby enabled) by our AS, not a malicious party by checking the HF MAC.
+    Here we briefly discuss each of those steps.
 ***** MAC
       adding extern (pipelined! <-- took forever to find out)
 
@@ -769,10 +846,35 @@ would drastically increase my FPGA area usage.
 ***** timestamp
       just write clock by control plane
 *** TODO Working around compiler/toolchain bugs
-    unfortunately, this was enough of an issue to warrant a separate section in this thesis
-    see [[*Implementing the parser]]
-***** TODO the whole thing is extremely fragile, randomly stops working, and then requires on average 2-3 days to debug
-      had a working implementation where I could measure throughput 2 months ago, now I can't make the same thing work
+    Some hurdles are expected when working with cutting-edge technology.
+    However, the state of the NetFPGA's P4 toolchain was enough of
+    an issue to warrant a separate section in this thesis.
+    Therefore, in this section we unfortunately present a subset of the problems
+    encountered.
+
+    Note that the parser-related problems (and their solutions, and the problems
+    in the solutions) were interesting enough that we discuss them separately in
+    [[*Implementing the parser]].
+    We do not re-iterate those issues here, so see also that section for a
+    complete picture.
+
+    TODO reorder the sections
+***** INPR Table matching broken under unclear circumstances
+      We use a table to match the SCION interface ID with the physical port and
+      the IP overlay settings.
+      We had tested table matching previously, when getting to know the
+      toolchain, so we did not expect any problems with it.
+      However, during the development, table matching suddenly stopped working.
+      As a sanity check, we went back to the known working code, and made sure
+      that it still works there, which it did.
+
+
+      TODO WTF table + externs thing
+      can't link to issue because not public :-/
+***** TODO the whole thing is stupidly complex
+***** TODO extremely fragile, randomly stops working, and then requires on average 2-3 days to debug
+      had a working implementation where I could measure throughput 2 months
+      ago, now I can't make the same thing work
 ***** TODO had to write my own reg_write and stuff
 ***** TODO HW is silly
 ******* sometimes DMA may need an extra reboot?
@@ -798,16 +900,20 @@ would drastically increase my FPGA area usage.
 * [0/4] Results
 
   What am I supposed to put here?
-  Ideally: It's effing fast and it's running in production :D And here are the pictures about how effing fast it is. Also about timing and utilisation and perhaps power consumption.
+  Ideally: here are the pictures about how effing fast it is. Also about timing
+  and utilisation and perhaps power consumption.
   # > What happened (objectively)?
   # > Do not interpret, simply state the facts.
-  # > Let's be honest: the first thing most of us do when skimming a paper is look at the figures. If your key results can be presented in figures, then start with that, and structure your paper around that.
+  # > Let's be honest: the first thing most of us do when skimming a paper is look
+  # at the figures. If your key results can be presented in figures, then start
+  # with that, and structure your paper around that.
 
-  Due to inadequacies in the P4-NetFPGA toolchain as explained in [[*Meeting
-  timing constraints]], we have not been able to test the full system.
+  Due to inadequacies in the P4-NetFPGA toolchain as explained in
+  [[*Implementation Challenges]] and especially in [[*Meeting timing constraints]], we
+  have not been able to test the full system.
   Therefore, we do not present results for the full design: instead, we show the
   data for the various components of the design, and we draw conclusions based
-  on these and our knowledge of how composing systems in FPGAs changes
+  on these and our knowledge of how composing systems in FPGAs affects
   performance.
 *** TODO Throughput
     pretty much my magic dashboard
@@ -820,10 +926,12 @@ would drastically increase my FPGA area usage.
 ***** TODO FPGA area
 ***** TODO Power consumption
 * [0/4] Discussion
-  # > Results are objective, but science isn't about listing data, it's about extracting meaning from what we observe.
+  # > Results are objective, but science isn't about listing data, it's about
+  #   extracting meaning from what we observe.
 *** TODO Why do we see the results we see?
     TODO what do we see? :D
-    Because this is "SCION as a library", I should talk not just about the BR's performance, but also about the characteristics of the parts on their own.
+    Because this is "SCION as a library", I should talk not just about the BR's
+    performance, but also about the characteristics of the parts on their own.
 *** TODO Guidelines for high-speed packet processing
     see TODO something in [[*Background and Related Work]] for general intro to FPGAs
 ***** what's easy and what's hard from the "what you want to do" viewpoint
@@ -1035,17 +1143,27 @@ bibliography:bibliography.bib
 
 * Footnotes
 
-[fn:8] For context, the Virtex 7 FPGA present in the NetFPGA is often used for prototyping CPUs. To fill it up is a rather unexpected feat.
+[fn:8] For context, the Virtex 7 FPGA present in the NetFPGA is often used for
+prototyping CPUs. To fill it up is a rather unexpected feat.
 
-[fn:7] The P4-NetFPGA design includes a full Microblaze microprocessor in the FPGA. This alone takes up about 30% of the FPGA area.
+[fn:7] The P4-NetFPGA design includes a full Microblaze microprocessor in the FPGA.
+This alone takes up about 30% of the FPGA area.
 
-[fn:6] The FWD_ONLY FLAG can be used by the AS to indicate that this HF is only usable for forwarding to other ASes, not for local packet delivery.
+[fn:6] The =FWD_ONLY= flag can be used by the AS to indicate that this HF is
+only usable for forwarding to other ASes, not for local packet delivery.
 
-[fn:5] SCION Control Message Protocol: the equivalent of ICMP in SCION. These packets should be rate-limited, and in future versions of SCION, they may become source-authenticated (i.e. require additional crypto).
+[fn:5] SCION Control Message Protocol: the equivalent of ICMP in SCION.
+These packets should be rate-limited, and in future versions of SCION, they may
+become source-authenticated (i.e. require additional crypto).
 
-[fn:4] In addition to "standard SCION", SCION also supports packets with end-to-end bandwidth reservations, and source-authenticated packets. For these, the verification information is different. In this work, we only implement the "standard SCION" mode, and will mention the other modes only very briefly.
+[fn:4] In addition to "standard SCION", SCION also supports packets with
+end-to-end bandwidth reservations, and source-authenticated packets. For these,
+the verification information is different. In this work, we only implement the
+"standard SCION" mode, and will mention the other modes only very briefly.
 
-[fn:3] Autonomous System: a network or collection of networks that managed and supervised by a single entity or organization. An ISP's network is an example of an AS.
+[fn:3] Autonomous System: a network or collection of networks that managed and
+supervised by a single entity or organization. An ISP's network is an example of
+an AS.
 
 [fn:2] Application-specific integrated circuit: an integrated circuit customized
 for a particular use. Since ASICs are custom-built, they can be highly
@@ -1054,7 +1172,20 @@ cost-effective and energy-efficient, assuming a sufficiently large deployment.
 [fn:1] Field-programmable gate array: a chip with many programmable logic blocks
 and programmable interconnects that can be used for hardware prototyping.
 
+* [1/3] Glossary
+  meep, do I really need this? and if yes, where do I put it? TODO
+*** TODO FPGA
+
 # Local Variables:
 # org-confirm-babel-evaluate: (lambda (lang body) (not (string= lang "emacs-lisp")))
 # after-save-hook: org-latex-export-to-latex
 # End:
+*** TODO NIC
+*** DONE target
+    CLOSED: [2019-08-16 Fri 15:45]
+    A hardware or software platform on which to run a program, for example a
+    software switch or an FPGA.
+    In the context of P4, a target is a platform and /switch architecture/ pair,
+    as the same platform may support more than one architecture: for example,
+    the NetFPGA SUME platform supports the =SimpleSumeSwitch= and
+    =XilinxStreamSwitch= architectures.
