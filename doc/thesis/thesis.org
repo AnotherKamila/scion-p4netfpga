@@ -845,7 +845,7 @@ would drastically increase my FPGA area usage.
       to needing only 1 AES core.
 ***** timestamp
       just write clock by control plane
-*** TODO Working around compiler/toolchain bugs
+*** TODO [1/5] Working around compiler/toolchain bugs
     Some hurdles are expected when working with cutting-edge technology.
     However, the state of the NetFPGA's P4 toolchain was enough of
     an issue to warrant a separate section in this thesis.
@@ -859,24 +859,78 @@ would drastically increase my FPGA area usage.
     complete picture.
 
     TODO reorder the sections
-***** INPR Table matching broken under unclear circumstances
-      We use a table to match the SCION interface ID with the physical port and
-      the IP overlay settings.
-      We had tested table matching previously, when getting to know the
-      toolchain, so we did not expect any problems with it.
-      However, during the development, table matching suddenly stopped working.
-      As a sanity check, we went back to the known working code, and made sure
-      that it still works there, which it did.
-
-
-      TODO WTF table + externs thing
-      can't link to issue because not public :-/
 ***** TODO the whole thing is stupidly complex
 ***** TODO extremely fragile, randomly stops working, and then requires on average 2-3 days to debug
       had a working implementation where I could measure throughput 2 months
       ago, now I can't make the same thing work
+***** DONE Table matching broken under unclear circumstances
+      CLOSED: [2019-08-19 Mon 15:42]
+      We use a table to match the SCION interface ID with the physical port and
+      the IP overlay settings.
+      We had tested table matching previously in a toy project when getting to
+      know the toolchain, so we did not expect any problems with it.
+      However, during the development, table matching suddenly stopped working.
+      We triple-checked that the keys in the table and in the packet data were
+      correct, but that was not the problem.
+      As a sanity check, we went back to the known working toy project, and made
+      sure that tables still worked there, which they did.
+      Having no indication of what was wrong, we proceeded to copy over parts of
+      our code between the two projects in order to narrow down the possibilities.
+      It was largely by accident that we discovered that if we include an extra
+      dummy table at the beginning of the program, the actually relevant table
+      would magically start working again.
+      In the end we discovered that only the "first" table match was broken:
+      if we included two tables, the one that was accessed first in the control
+      flow of the program would fail to match, and the second one would work.
+
+      We reported this problem to the NetFPGA developers, and worked with them
+      to find out what was going on and why this was only happening in our
+      project.
+
+      Finally, we found out what was going on:
+      it turns out that calling an extern function (i.e.~escaping from P4 into
+      a Verilog/VHDL module) corrupts some state in the P4 module and breaks the
+      following table.
+      Our guess is that the use of the table then restores the corrupted state,
+      and after that the execution proceeds as expected.
+      This behaviour is rather concerning, as the P4 module should in theory be
+      completely independent from other modules, and not even the NetFPGA
+      developers know why this is happening.
+
+      In our case we need to call extern functions in order to validate the HF:
+      as described in section [[*Hop field validation]], we need an extern function
+      to get the current time (needed to validate the timestamp) and to compute
+      AES-128 (in order to check the HF MAC).
+      As we want to send the unmodified packet to the SW if any errors are
+      encountered, these checks should happen as soon as possible.
+      Specifically, we would like to do them before the use of the table, as
+      using the table modifies the packet (in P4, the "match-action", i.e.
+      looking up a key in a table and performing an associated action based on
+      the match, is an atomic operation).
+      Therefore, our first idea was to add the dummy table, so that we could
+      keep the control flow of "first call externs, then fix the corruption
+      using the dummy table, then access the actually relevant table".
+
+      However, the extra table costs about 0.1 ns of time, which is a
+      non-negligible amount (see section [[*Meeting timing constraints]] for a detailed
+      discussion).
+      Thus, when optimising timing, we switched to a different approach:
+      because we are using the ~packet_mod~ deparser described in [[*Implementing
+      the parser]], we are able to choose very late in the program (specifically,
+      in the deparser) to either commit to the packet modifications or keep the
+      old data.
+      As such, we are able to use the following approach:
+      First, we access the table (which may modify the in-program representation
+      of the packet, but does not affect the result of the checks).
+      Then we call the externs and depending on the results of the checks, we
+      may or may not set a "can modify" flag.
+      We then check this flag in the deparser before committing to the
+      in-program packet modifications in the real packet on the wire.
+      This way we are able to use tables together with externs without using the
+      somewhat expensive dummy table workaround.
 ***** TODO had to write my own reg_write and stuff
 ***** TODO HW is silly
+      and we can't debug it
 ******* sometimes DMA may need an extra reboot?
 *** TODO Meeting timing constraints
     The various costly workarounds as explained in the previous sections of this
@@ -1175,11 +1229,6 @@ and programmable interconnects that can be used for hardware prototyping.
 * [1/3] Glossary
   meep, do I really need this? and if yes, where do I put it? TODO
 *** TODO FPGA
-
-# Local Variables:
-# org-confirm-babel-evaluate: (lambda (lang body) (not (string= lang "emacs-lisp")))
-# after-save-hook: org-latex-export-to-latex
-# End:
 *** TODO NIC
 *** DONE target
     CLOSED: [2019-08-16 Fri 15:45]
@@ -1189,3 +1238,8 @@ and programmable interconnects that can be used for hardware prototyping.
     as the same platform may support more than one architecture: for example,
     the NetFPGA SUME platform supports the =SimpleSumeSwitch= and
     =XilinxStreamSwitch= architectures.
+    
+# Local Variables:
+# org-confirm-babel-evaluate: (lambda (lang body) (not (string= lang "emacs-lisp")))
+# after-save-hook: org-latex-export-to-latex
+# End:
