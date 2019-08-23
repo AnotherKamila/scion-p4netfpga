@@ -1,4 +1,4 @@
-#+TITLE:  Line-rate packet forwarding for the SCION future Internet architecture
+#+TITLE:  FPGA-based line-rate packet forwarding for the SCION future Internet architecture
 #+AUTHOR: Kamila Součková
 #+DATE:   August 31, 2019
 #+DESCRIPTION: Master Thesis
@@ -13,11 +13,13 @@
   The SCION future Internet architecture is designed to provide route control,
   failure isolation, and explicit trust information for end-to-end communication.
   Its viability has already been demonstrated in production, but to work
-  at Internet scale, it is necessary to make it perform at high speeds, reduce
-  costs, and evaluate suitability for eventual implementation in hardware.
+  at Internet scale, it is necessary to make it
+  perform at high bandwidth,
+  reduce costs,
+  and evaluate its suitability for eventual implementation in hardware.
   This project implements a SCION border router capable of line-rate packet
-  forwarding, currently running on an FPGA target.
-  It uses P4: a new language for programming packet forwarding planes.
+  forwarding, running on an FPGA target.
+  We utilise P4, an emerging language for programming packet forwarding planes.
   This enables target independence, a quicker development cycle, and a more
   modular approach.
   Based on this work, we suggest changes to the SCION data plane that allow for
@@ -51,16 +53,17 @@
     Considering these facts, it has scaled surprisingly well, but nowadays we
     are living in a very different world.
 
-    Today, everyone is connected and everyone has their data on the Internet.
+    Today, everyone is connected to the Internet and everyone has their data
+    online.
     With the huge number of connected entities, many of which have conflicting
     interests, trust can no longer be global and implicit.
     Users want control over their data, ISPs want control over their services,
     and states want to protect their infrastructure from outside actors.
     At this scale, convergence after path failure takes too long, and
-    large-scale outages due to BGP route leaks are happening almost weekly.
-    Furthermore, attacks on the Internet infrastructure, e.g. DDoS attack or BGP
-    route hijacks, are becoming more and more common.
-    In today's world, these issues can no longer be tolerated.
+    large-scale outages due to BGP route leaks are happening almost weekly TODO cite.
+    Furthermore, attacks on the Internet infrastructure, e.g. DDoS attacks or
+    BGP route hijacks, are becoming more and more common.
+    # In today's world, these issues can no longer be tolerated.
 
     In the future, the Internet will become even more critical. Automation (such
     as drones, self-driving cars, or remotely operated robots) will depend on
@@ -77,11 +80,11 @@
     and what happens with their data.
 
     There have been may attempts to fix the IP+BGP-based Internet TODO[cite
-    something], but patching an architecture designed with entirely different
-    assumptions simply cannot solve all the problems TODO[cite something].
+    RPKI, BGPsec], but patching an architecture designed with entirely different
+    assumptions cannot solve all the problems cite:why-u-no-secure-routing.
     Additionally, the IP-based approach also has scalability issues due to
-    requiring very large routing tables, and this is bound to get worse in the
-    future.
+    requiring very large routing tables, and this is bound to get worse with
+    future growth.
     Therefore, the SCION project chooses to build a clean-slate Internet
     architecture, with the goals of scalability, route control, failure
     isolation, and explicit trust information in the design.
@@ -118,13 +121,11 @@
     A successful hardware-based implementation would also be a good answer to
     the "can it run at line rate?" question, which would further increase the
     probability of deployment with commercial ISPs.
-*** DONE Aims of this project
-    CLOSED: [2019-07-18 Thu 13:37]
-    TODO is this better inline like this, or in an item list?
-
-    The first aim of this project is *implementing a border router capable of
-    forwarding SCION packets at line rate*.
-    We will target a NetFPGA SUME board, which will (in the ideal case) allow us
+*** DONE Contributions of this project
+    CLOSED: [2019-08-23 Fri 12:15]
+    The first contribution of this project is *implementing a proof-of-concept
+    border router capable of forwarding SCION packets at line rate*.
+    We target a NetFPGA SUME board, which (in the ideal case) allow us
     to forward up to 40Gbps.
     The border router is the crucial building block of the SCION data plane.
     Therefore, having a high-speed prototype will open the doors to large-scale
@@ -132,32 +133,32 @@
     ISPs) will be able to scale to meet the needs of many customers without
     incurring very high costs.
 
-    Additionally, we wish to keep the work target-independent (as much as
+    Additionally, we keep the work target-independent (as much as
     possible), and thereby create a "library for line-rate SCION" for a variety
     of targets and use-cases.
 
     An implementation targeting an FPGA[fn:1] is a good first step for
-    evaluating the feasibility of building "SCION on chip": much of the design
-    process is the same with FPGAs as with ASICs[fn:2].
-    Therefore, the second aim of this work is to
-    *confront SCION with hardware design expertise, and consider the possibility
-    of building faster, more efficient designs in the future*.
-    The knowledge gained in the process of implementation on the NetFPGA will
-    allow us to better understand the requirements of running SCION in custom
+    evaluating the feasibility of building "SCION on chip", as much of the
+    design process is the same with FPGAs as with ASICs[fn:2].
+    Therefore, the second contribution of this work is
+    *confronting SCION with hardware design expertise, and opening the doors for
+    building faster, more efficient designs in the future*.
+    The knowledge gained in the process of implementation on the NetFPGA
+    allows us to better understand the requirements of running SCION in custom
     hardware, and predict whether a very high-speed and energy-efficient ASIC
     implementation could be built.
     As being able to run in hardware is a hard requirement for the success of
     any network-layer Internet protocol, knowing more about this question is
     crucial to the development and deployment of SCION.
 
-    With the knowledge gained during the implementation, we will be able to
-    fulfill the third aim of this project: *providing suggestions for the SCION
-    protocol that would result in more efficient hardware implementations*.
+    Last but not least, with the knowledge gained during the implementation, we
+    have been able to *provide suggestions for the SCION protocol that would
+    result in more efficient hardware implementations*.
     Running in hardware has been a consideration in the design of SCION from the
     beginning, but an actual implementation, rather than abstract reasoning, is
     likely to uncover opportunities for further improvement.
     Doing this early, before SCION has become widely deployed, allows us to
-    implement any changes needed without having to worry about
+    implement any changes needed without having to worry too much about
     backwards-compatibility and enter the "real-life deployment" sphere with an
     already optimised protocol.
 * [4/5] Background and Related Work
@@ -486,11 +487,8 @@
   :PROPERTIES:
   :UNNUMBERED: t
   :END:
-TODO maybe I don't even want to have this chapter, but just have the "Aims"
-section in Introduction,
-because (contrary to the SDN-CH presentation) I am not selling this as "I'm
-going to enlighten you about P4" and then two of these things look less relevant
-and I suppose it makes sense to say this in Introduction anyway and blah.
+TODO maybe I don't even want to have this chapter, but just have the "Contributions"
+section in Introduction.
 Hi reviewers, your opinions on this matter are especially welcome :D
 #+begin_comment Ain't nobody got time for this
 # *** TODO Deployable SCION BR
@@ -951,7 +949,7 @@ would drastically increase my FPGA area usage.
 ***** TODO Tables
       squishing => but then large table => helps with timing but fills the FPGA
 
-* [0/4] Results
+* [0/5] Evaluation
 
   What am I supposed to put here?
   Ideally: here are the pictures about how effing fast it is. Also about timing
@@ -972,14 +970,82 @@ would drastically increase my FPGA area usage.
 *** TODO Throughput
     pretty much my magic dashboard
     (include queue sizes)
-*** TODO Latency
-    if I can
-*** TODO Fraction of real traffic sent to CPU
+*** TODO Packet loss
+***** Large packets (1500B):
+      | Load |  time | Avg queue size | Max queue size | Tx frames | Rx frames | Loss |
+      |------+-------+----------------+----------------+-----------+-----------+------|
+      |  20% | 16:18 |                |                |  39094558 |  39094558 |    0 |
+      |  40% | 16:22 |                |                |  79240424 |  79240424 |    0 |
+      |  60% | 16:23 |                |                | 122369587 | 122369587 |    0 |
+      |  80% | 16:16 |                |                | 157131302 | 157131302 |    0 |
+      | 100% | 16:25 |                |                | 198083742 | 198083742 |    0 |
+      #+TBLFM: $7=$6 - $5
+
+      seriously though
+      would you believe me if I told you I have zero packet loss?
+      I'm surprised
+      I am willing to believe that maybe it isn't wrong
+      because hardware, and usually you get packet loss because something takes too long, and here nothing takes too long because everything is constant time
+      and because I ensured equal distribution on all output ports, so queues weren't getting full
+
+******* source data                                                :noexport:
+********* 20%: 16:18
+    | Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Total Tx Count (bits) | Total Rx Count (bits) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | Port //1/1 |                 9772055 |                 9774091 |          113668543760 |          113692226512 |       115232072560 |       115256081072 |                  9772055 |
+    | Port //1/2 |                 9777867 |                 9772055 |          113736148944 |          113668543760 |       115300607664 |       115232072560 |                  9777867 |
+    | Port //1/3 |                 9770545 |                 9777867 |          113650979440 |          113736148944 |       115214266640 |       115300607664 |                  9770545 |
+    | Port //1/4 |                 9774091 |                 9770545 |          113692226512 |          113650979440 |       115256081072 |       115214266640 |                  9774091 |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | sum        |                39094558 |                39094558 |          454747898656 |          454747898656 |       461003027936 |       461003027936 |                 39094558 |
+    #+TBLFM: @>$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)::@6$7=vsum(@I..@II)::@6$8=vsum(@I..@II)
+********* 40%: 16:22
+    | Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Total Tx Count (bits) | Total Rx Count (bits) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | Port //1/1 |                19805758 |                19820695 |          230380577056 |          230554324240 |       233549498336 |       233725635440 |                 19805758 |
+    | Port //1/2 |                19789305 |                19805758 |          230189195760 |          230380577056 |       233355484560 |       233549498336 |                 19789305 |
+    | Port //1/3 |                19824666 |                19789305 |          230600514912 |          230189195760 |       233772461472 |       233355484560 |                 19824666 |
+    | Port //1/4 |                19820695 |                19824666 |          230554324240 |          230600514912 |       233725635440 |       233772461472 |                 19820695 |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | sum        |                79240424 |                79240424 |          921724611968 |          921724611968 |       934403079808 |       934403079808 |                 79240424 |
+    #+TBLFM: @>$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)::@6$7=vsum(@I..@II)::@6$8=vsum(@I..@II)
+********* 60%: 16:23
+    | Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Total Tx Count (bits) | Total Rx Count (bits) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | Port //1/1 |                30566274 |                30583083 |          355546899168 |          355742421456 |       360437503008 |       360635714736 |                 30566274 |
+    | Port //1/2 |                30614917 |                30566274 |          356112714544 |          355546899168 |       361011101264 |       360437503008 |                 30614917 |
+    | Port //1/3 |                30605313 |                30614917 |          356001000816 |          356112714544 |       360897850896 |       361011101264 |                 30605313 |
+    | Port //1/4 |                30583083 |                30605313 |          355742421456 |          356001000816 |       360635714736 |       360897850896 |                 30583083 |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | sum        |               122369587 |               122369587 |         1423403035984 |         1423403035984 |      1442982169904 |      1442982169904 |                122369587 |
+    #+TBLFM: @>$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)::@6$7=vsum(@I..@II)::@6$8=vsum(@I..@II)
+********* 80%: 16:16
+    | Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Total Tx Count (bits) | Total Rx Count (bits) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | Port //1/1 |                39321280 |                39295944 |          457385128960 |          457090420608 |       463676533760 |       463377771648 |                 39321280 |
+    | Port //1/2 |                39254902 |                39321280 |          456613020064 |          457385128960 |       462893804384 |       463676533760 |                 39254902 |
+    | Port //1/3 |                39259176 |                39254902 |          456662735232 |          456613020064 |       462944203392 |       462893804384 |                 39259176 |
+    | Port //1/4 |                39295944 |                39259176 |          457090420608 |          456662735232 |       463377771648 |       462944203392 |                 39295944 |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | sum        |               157131302 |               157131302 |         1827751304864 |         1827751304864 |      1852892313184 |      1852892313184 |                157131302 |
+    #+TBLFM: @>$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)::@6$7=vsum(@I..@II)::@6$8=vsum(@I..@II)
+********* 100%: 16:25
+    | Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Total Tx Count (bits) | Total Rx Count (bits) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | Port //1/1 |                49583185 |                49451255 |          576751607920 |          575216998160 |       584684917520 |       583129198960 |                 49583185 |
+    | Port //1/2 |                49560171 |                49583185 |          576483909072 |          576751607920 |       584413536432 |       584684917520 |                 49560171 |
+    | Port //1/3 |                49489131 |                49560171 |          575657571792 |          576483909072 |       583575832752 |       584413536432 |                 49489131 |
+    | Port //1/4 |                49451255 |                49489131 |          575216998160 |          575657571792 |       583129198960 |       583575832752 |                 49451255 |
+    |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
+    | sum        |               198083742 |               198083742 |         2304110086944 |         2304110086944 |      2335803485664 |      2335803485664 |                198083742 |
+    #+TBLFM: @>$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)::@6$7=vsum(@I..@II)::@6$8=vsum(@I..@II)
+***** TODO Latency ???
+      if I can
 *** TODO Resource usage
     ideally also per-component
 ***** TODO FPGA area
 ***** TODO Power consumption
-* [0/4] Discussion
+* [0/4] Analysis
   # > Results are objective, but science isn't about listing data, it's about
   #   extracting meaning from what we observe.
 *** TODO Why do we see the results we see?
@@ -1028,6 +1094,8 @@ would drastically increase my FPGA area usage.
         In the case of peering paths, bla TODO bla
 # *** TODO what else have we learned?
 * [4/6] Future work
+  TODO: 3 points are enough, otherwise your work might look "negligible"
+
   TODO it may or may not be a good idea to re-order these
 *** DONE Completing the feature set / Adjusting for newer SCION versions
     CLOSED: [2019-07-24 Wed 14:28]
@@ -1123,7 +1191,7 @@ would drastically increase my FPGA area usage.
     switch for the switching (i.e. to handle buffering/queueing at high speeds),
     we could in principle scale to very high rates even without creating an ASIC.
 
-    TODO The previous paragraph should actually go somewhere into [[*Discussion]]
+    TODO The previous paragraph should actually go somewhere into [[*Analysis]]
     and just be referenced here.
 *** DONE Running in production
     CLOSED: [2019-08-01 Thu 13:01]
@@ -1219,11 +1287,13 @@ the verification information is different. In this work, we only implement the
 supervised by a single entity or organization. An ISP's network is an example of
 an AS.
 
-[fn:2] Application-specific integrated circuit: an integrated circuit customized
+[fn:2] Application-Specific Integrated Circuit: an integrated circuit customized
 for a particular use. Since ASICs are custom-built, they can be highly
-cost-effective and energy-efficient, assuming a sufficiently large deployment.
+cost-effective and energy-efficient.
+The initial development costs of ASICs are very high, so a sufficiently large
+deployment is needed to offset those.
 
-[fn:1] Field-programmable gate array: a chip with many programmable logic blocks
+[fn:1] Field-Programmable Gate Array: a chip with many programmable logic blocks
 and programmable interconnects that can be used for hardware prototyping.
 
 * [1/3] Glossary
