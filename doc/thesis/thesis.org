@@ -161,7 +161,7 @@
     implement any changes needed without having to worry too much about
     backwards-compatibility and enter the "real-life deployment" sphere with an
     already optimised protocol.
-* [4/5] Background and Related Work
+* [5/5] Background and Related Work
   In order to achieve this project's aims, we need to work in the intersection of
   several fields: among others network security, network protocols, software
   engineering, and hardware design.
@@ -468,41 +468,136 @@
     because the "new, untested technology" problems will likely get less severe
     in the future, and therefore having a P4 implementation for SCION will become
     more and more useful over time.
-*** TODO [0/4] Introduction to designing for FPGAs
-    TODO is this a good name for this chapter?
+*** DONE [2/2] Introduction to designing for FPGAs
+    CLOSED: [2019-08-25 Sun 19:27]
     The design process for an FPGA is very different from software engineering.
-    Though this is a difficult task, in this section we attempt to provide an
-    overview of it from the perspective of a "converted" software engineer.
-***** TODO [0/2] Concepts:
-******* TODO FPGA area
-******* TODO Timing constraints
-***** TODO Overview of the process
-***** TODO think in space, not time
-      - everything happens at the same time
-      - TODO didn't I start writing this down somewhere else? either tiddlywiki or website :D -- find it!
-***** TODO resources / limiting factors
-      - Area instead of # of instructions
-      - Timing => path length + logic complexity
-* [0/4] Aims
-  :PROPERTIES:
-  :UNNUMBERED: t
-  :END:
-TODO maybe I don't even want to have this chapter, but just have the "Contributions"
-section in Introduction.
-Hi reviewers, your opinions on this matter are especially welcome :D
-#+begin_comment Ain't nobody got time for this
-# *** TODO Deployable SCION BR
-#     - forwarding at line rate => with NetFPGA, that is 40Gbps
-#     - usable with real traffic
-#     - integrated with existing SCION infra (control plane, monitoring/metrics)
-# *** TODO SCION as a library
-# *** TODO Guidelines for high-speed P4
-#     or gaining experience or whatevs
-#     Listen to my advice and you too can process packets at high speeds, even if you are not a hardware person.
-# *** TODO Optimising the SCION protocol for HW
-#+end_comment
+    Though this is a difficult task, in this section we attempt to provide a
+    *brief* overview of it from the perspective of a software engineer.
+***** DONE How to think about programming FPGAs
+      CLOSED: [2019-08-25 Sun 19:18]
+      In software, the fundamental unit of a program is the instruction: one
+      creates programs by describing the instructions, or steps, that happen one
+      after another and transform the data as desired.
+      Therefore, in software engineering, data is processed serially, and it
+      "stays in one place, while the operations performed on it change in time".
+      The programmer thinks in terms of events: data arrives, then we do
+      something with it.
+      In this way, software engineering is reactive and adaptive to the data:
+      the CPU performs different functions depending on the runtime data.
+      The typical limiting factor in software engineering is also time: we want
+      our programs to run fast, and therefore need to limit the number of
+      instructions.[fn:12]
+      This is a useful way to think about software, because a PC has one (or a
+      few) general-purpose CPUs, which execute different and data-dependent
+      instructions in every step.
 
-* [2/2] Design overview
+      In contrast, in FPGAs (and hardware design in general), the circuit always
+      stays the same.
+      One cannot perform an addition and then a multiplication without
+      moving the data, because an addition circuit always adds, and cannot
+      multiply.
+      The function of each part of the circuit is fixed when programming
+      the FPGA, and stays the same during the execution, unable to react to what
+      the data might "need".
+      Thus, in order to perform more than just the simplest functions, data
+      must move to a different part of the circuit in order to proceed to the
+      next step of processing.
+      However, in contrast to CPUs performing only one instruction at a time,
+      all the different parts of a circuit are available all the
+      time, and many different (or the same!) tasks can be performed at
+      the same time without competing for CPU time.
+
+      This leads to the idea of /pipelining/: if the data has to move through
+      different parts of the circuit for each processing step, it would be a
+      waste to keep the rest of the circuit idle.
+      Therefore, in order to process more data, we should start processing the
+      second item before we're done processing the first one.
+      For example, if the processing has 2 stages, we can feed new data to the
+      first stage on every cycle, even though each item spends 2 cycles in the
+      system.
+      Thus, pipelining can be used to cheaply increase throughput (and has no
+      effect on latency).
+      Further, when there are complex steps in the processing, the circuit can
+      often be simply duplicated, so that (with some buffering) the pipeline can
+      keep moving despite the slow step.
+      
+      From this, it follows that the limiting resource in FPGA design is circuit
+      area: more complex processing does not cost us throughput (and thus, for
+      most practical purposes, is not "slower"), but adds area.
+      FPGAs have limited area directly proportional to the cost of the FPGA, and
+      thus we need to limit ourselves in area usage.
+      Furthermore, large circuit area brings forth issues with signal propagation:
+      the speed of signal propagation is finite, and thus depending on the
+      physical layout of the circuit, synchronisation and signal timing
+      requirements may become difficult to satisfy.
+      Problems with satisfying timing requirements require design optimisation
+      and, if that is not enough, increasing the allotted time for each step and
+      therefore decreasing throughput.
+      
+      In summary, unlike with software, where programmers "think in time and make
+      things happen",
+      hardware designers need to "think in space and put things where they need
+      to be".
+      The layout and connections of the circuit determine the paths of the data,
+      and thereby the operations performed on it.
+      Data locality becomes an important concern, operations that take an
+      unpredictable amount of time are to be avoided, and the pipeline needs to
+      keep going at all costs.
+      In return, for many high-performance applications, the flexibility and
+      parallel processing power available through wise use of the available
+      area is well worth it.
+***** DONE Overview of the process
+      CLOSED: [2019-08-25 Sun 17:35]
+      In software engineering, going from source code to a running program is
+      usually a one-step process: one compiles the code and gets a runnable
+      binary.
+      For FPGAs, this is quite a bit more involved.
+      This is the outline of the process:
+
+      1. Logic description: writing the source code of your project.
+         The logic of the program is described using a hardware description
+         language, such as Verilog or VHDL.
+         Compiling from a higher-level language, such as Bluespec TODO cite or,
+         in our case, P4, is also an option.
+         One can also link various self-contained modules (similarly to using
+         libraries in software development) into their logic.
+         An example of that in this project is our usage of a generic AES module
+         (the "library"), which we then employ to check SCION HF MACs (the
+         "business logic").
+         After writing the logic of the program, a /behavioural simulation/ should
+         be run to check logic correctness: this simulates the program on a high
+         level, with logical inputs and outputs.
+      2. Describing the full design: taking the various modules (including the one/ones
+         written in step 1) and connecting them to form the complete system. This
+         includes connecting standard components for interacting with "the real
+         world" outside of the FPGA.
+         In our case, the router code from step 1 handles L1 and up, but connects
+         (over a simple standardised bus) with a module for Ethernet that
+         handles the physical layer, as well as with modules for PCI
+         and other communication with control plane.
+         The description of modules and connections from this step is usually
+         called the "netlist".
+      3. Synthesis: Taking the high-level description of the system from step 2 and
+         "compiling" it into gate-level logic. This step includes optimisation
+         of the logic. The programmer may set options/hints for the synthetiser,
+         but does not fully control the process -- it is similar to how a C
+         compiler produces optimised assembly not meant for human eyes.
+      4. Implementation: placing and routing the gate-level logic onto the FPGA.
+         In this step, physical placement of the various parts is decided, and
+         routes for signals are created.
+         Thus, this is where the final design, and the exact resource
+         consumption, become apparent.
+         Because this is a difficult optimisation problem, this step usually
+         takes a rather long time (for our project, it is about 3-4 hours).
+         When we have the final design from this step, signal propagation
+         issues, especially timing, can (and should) be checked.
+         Once one has the full design, it is a good idea to run a full low-level
+         simulation, which simulates the execution on the level of signals and
+         circuits.
+      5. Generating the bitfile and flashing it to the FPGA: Creating a binary
+         file in a format specific for the FPGA, and loading it onto the FPGA.
+         This file configures the FPGA's cells to the desired circuitry.
+* [1/1] Design overview
   The border router's algorithm, as outlined in section [[*Putting it all together:
   Border router behaviour]], is as follows (more details have been added here):
 
@@ -566,7 +661,7 @@ Hi reviewers, your opinions on this matter are especially welcome :D
   to upgrade the software router and none of this project's code needs to be
   changed, as long as there are no changes in the forwarding logic (which
   isn't likely to change as often).
-* [0/5] Implementation Challenges
+* [1/5] Implementation Challenges
   The problems we encountered during the implementation were too numerous to
   list completely.
   Therefore, in this section, we present a select few particularly interesting,
@@ -574,12 +669,7 @@ Hi reviewers, your opinions on this matter are especially welcome :D
   # originally wanted to divide this into parser, validation, forwarding, etc... but
   # I don't think that makes much sense, as e.g. timing or stupid compiler were a
   # problem across the whole thing
-
-  TODO order of sections?
-
 *** INPR [2/4] Software engineering aspects
-    TODO do I group this like this, or do I just promote the subsections here to separate sections?
-
     From the software engineering perspective, this project is somewhat on the
     larger side given the modest time and personnel assignment of a single
     Master thesis.
@@ -675,13 +765,13 @@ Hi reviewers, your opinions on this matter are especially welcome :D
       The differences between the software switch and the NetFPGA can be handled
       cleanly with our approach, which proves that it does indeed work in
       reality.
-***** TODO Control plane
+***** NEXT Control plane
       While the focus of this project is on the data plane, we needed to create
       a minimal control plane, so that we could test the full functionality
       required of the data plane.
       The design of the control plane is also interesting from the modularity
       viewpoint.
-      Therefore, this chapter presents a brief overview of 
+      Therefore, this section presents a brief overview of
 
       independent modules, often complementary to the P4 modules => something
         something modularity runs across the whole stack
@@ -695,7 +785,6 @@ Hi reviewers, your opinions on this matter are especially welcome :D
           - everything was hard-coded
           - only 32-bit registers supported, but that goes all the way to the C API and the bus
 *** TODO [1/4] Implementing the parser
-    TODO should this be a sub-section of [[*Working around compiler/toolchain bugs]]?
 ***** DONE Handling the variable-length SCION path
       CLOSED: [2019-08-05 Mon 11:51]
 Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
@@ -821,28 +910,90 @@ would drastically increase my FPGA area usage.
 ***** TODO timing
 ***** TODO the final design
       parser state machine diagram
-*** TODO Hop field validation
+*** DONE Hop field validation
+    CLOSED: [2019-08-25 Sun 15:48]
     Before a SCION packet can be forwarded, we need to validate that this path
     (specifically, this hop) is allowed.
     There are two parts to that: we need to check that the hop field used in the
     path is not expired, and we need to check that it was in fact created (and
     thereby enabled) by our AS, not a malicious party by checking the HF MAC.
     Here we briefly discuss each of those steps.
-***** MAC
-      adding extern (pipelined! <-- took forever to find out)
+***** MAC verification
+      The MAC in SCION HFs is an AES-based MAC over the hop field and the
+      previous hop field (excluding some flags), as outlined in section
+      [[*SCION data plane]] and detailed in cite:scion-book.
+      Therefore, to check the MAC, we need to add AES functionality to our P4 program.
+******* Adding the AES extern
+        While implementing AES in P4 would in theory be feasible, in practice such
+        an implementation would have severe performance problems.
+        Therefore, we instead chose to include an external module in our FPGA
+        design, and give access to it to our P4 code.
+        Giving P4 access to external features is done via /externs/: an extern is
+        a P4 function interface without implementation, and the compiler uses it
+        to plug in an external module.
+      
+        The first step was to find out how externs work: since the
+        NetFPGA's documentation is rather scarce, the interface required for
+        extern modules to work correctly with the P4 compiler was unclear and we
+        needed to learn about it by trial and error.
+        We did this by implementing a simple no-op module, which we then switched
+        for a simple proof-of-concept AES-128 implementation.[fn:9]
+        This appeared to work -- the AES encryption result was correct, and
+        everything worked in the behavioural simulation.
+        However, when deployed on real hardware, the NetFPGA would process the
+        first packet (and successfully use AES), and then it would get "stuck" and
+        not output any more packets.
+        After long hours of debugging, we decided to invest the time to learn to
+        debug using waveforms, i.e. the low-level simulation of the FPGA logic.
+        Here, we found out that the AES module (which required 5 cycles to compute
+        the AES) was occasionally being called every 4 cycles, despite indicating
+        to P4 (via an output bit) that it was not done yet.
+        We therefore concluded that although this was not mentioned anywhere in the
+        NetFPGA docs, P4 may input data in any cycle, not only after the previous
+        computation has finished.
 
-      Specifically, SCION uses the AES-CMAC function as specified by RFC 4493.
-      It needs to MAC at most 2 at most 256-bit blocks per packet, which
-      translates to TODO AES-128-ECB computations per packet.
+        As such, the externs must be pipelined:
+        in addition to the reset, clock, input data,
+        and output data signals, externs must keep track of the signal indicating
+        input validity, and output the result for every valid input in a FIFO manner.
+        An "output valid" bit should be set whenever the result of a valid input
+        is ready -- this bit signals to P4 that it can take the data and resume
+        execution of the caller pipeline.
+        We confirmed this conclusion with the NetFPGA developers and sent a patch
+        to the documentation.[fn:10]
+      
+******* Checking the MAC
+        Once our AES extern was working, we were able to implement the MAC checking.     
+        Because we currently do not support shortcut paths with ~VRFY_ONLY~ HFs,
+        or "long" HFs[fn:11], we always need to calculate the MAC of one HF + previous HF chain per
+        packet, which is at most one 128-bit block.
 
-      I currently don't support long HFs or VRFY_ONLY, so I am doing
-      single-block CMAC. For that, I need 1 AES for key derivation + 1 AES for
-      the MAC computation. Currently I do the key derivation per packet, because
-      it's easier to implement in P4, so I need 2 AES cores. But key derivation
-      could happen when setting AS key, as there is just one, which would lead
-      to needing only 1 AES core.
-***** timestamp
-      just write clock by control plane
+        SCION uses the AES-CMAC function as specified by RFC 4493.
+        The unconstrained version of AES-CMAC requires two AES-128-ECB
+        operations for subkey derivation, plus one per block of data.
+        In the special case of a single block, we only use the first subkey, so
+        single-block AES-CMAC requires only two AES operations.
+        Therefore, my implementation uses two AES cores.
+
+        Because SCION uses the same key for all HFs of a given AS, it would be
+        possible to do the subkey derivation only when updating the key (which
+        could be done by the control plane).
+        With this optimisation, we would only need a single AES core per block.
+        Thus, with the current HF size of 8 bytes, SCION can be forwarded with a
+        single AES operation per packet.
+***** Timestamp validation
+      In addition to checking that the HF MAC is valid, we also need to check
+      that this HF is still current, and not expired.
+      As the NetFPGA does not have an easily accessible clock, our
+      implementation uses a register accessible from the control plane, and
+      simply assumes that the control plane writes the current time into it
+      often enough.
+      SCION requires only second-level precision, so this is sufficiently
+      precise.
+      Real-world implementations should include an internal clock, so that the
+      router behaves correctly even if the control plane is disconnected for a
+      short time.
+
 *** TODO [1/5] Working around compiler/toolchain bugs
     Some hurdles are expected when working with cutting-edge technology.
     However, the state of the NetFPGA's P4 toolchain was enough of
@@ -950,8 +1101,6 @@ would drastically increase my FPGA area usage.
       squishing => but then large table => helps with timing but fills the FPGA
 
 * [0/5] Evaluation
-
-  What am I supposed to put here?
   Ideally: here are the pictures about how effing fast it is. Also about timing
   and utilisation and perhaps power consumption.
   # > What happened (objectively)?
@@ -1039,8 +1188,126 @@ would drastically increase my FPGA area usage.
     |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
     | sum        |               198083742 |               198083742 |         2304110086944 |         2304110086944 |      2335803485664 |      2335803485664 |                198083742 |
     #+TBLFM: @>$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)::@6$7=vsum(@I..@II)::@6$8=vsum(@I..@II)
-***** TODO Latency ???
-      if I can
+***** Small packets (115B):
+start August 23 17:00, doing packet loss and queue sizes depending on amount of data
+at least 45s per measurement
+115B packets
+      | Load |  time | Avg queue size | Max queue size |  Tx frames |  Rx frames | Loss |
+      |------+-------+----------------+----------------+------------+------------+------|
+      |  20% | 17:04 |                |                |  334798373 |  334798373 |    0 |
+      |  40% | 17:05 |                |                |  674862021 |  674862021 |    0 |
+      |  60% | 17:07 |                |                |  990142312 |  990142312 |    0 |
+      |  80% | 17:08 |                |                | 2125564720 | 2125564720 |    0 |
+      | 100% | 17:01 |                |                | 1631918616 | 1631918616 |    0 |
+      #+TBLFM: $7=$6 - $5
+******* raw data:
+********* 20%: 17:04
+| Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+| Port //1/1 |                83823589 |                83600222 |        93211830968 |        92963446864 |                 83823589 |
+| Port //1/2 |                83646700 |                83823588 |        93015130400 |        93211829856 |                 83646700 |
+| Port //1/3 |                83727862 |                83646701 |        93105382544 |        93015131512 |                 83727862 |
+| Port //1/4 |                83600222 |                83727862 |        92963446864 |        93105382544 |                 83600222 |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+|            |               334798373 |               334798373 |       372295790776 |       372295790776 |                334798373 |
+#+TBLFM: @6$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)
+********* 40%: 17:05
+| Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+| Port //1/1 |               168853622 |               168706968 |       187765227664 |       187602148416 |                168853622 |
+| Port //1/2 |               168499388 |               168853622 |       187371319456 |       187765227664 |                168499388 |
+| Port //1/3 |               168802042 |               168499388 |       187707870704 |       187371319456 |                168802042 |
+| Port //1/4 |               168706969 |               168802043 |       187602149528 |       187707871816 |                168706969 |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+|            |               674862021 |               674862021 |       750446567352 |       750446567352 |                674862021 |
+#+TBLFM: @6$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)
+********* 60%: 17:07
+| Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+| Port //1/1 |               247294860 |               247822431 |       274991884320 |       275578543272 |                247294860 |
+| Port //1/2 |               247525451 |               247294860 |       275248301512 |       274991884320 |                247525451 |
+| Port //1/3 |               247499570 |               247525451 |       275219521840 |       275248301512 |                247499570 |
+| Port //1/4 |               247822431 |               247499570 |       275578543272 |       275219521840 |                247822431 |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+|            |               990142312 |               990142312 |      1101038250944 |      1101038250944 |                990142312 |
+#+TBLFM: @6$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)
+********* 80%: 17:08
+| Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+| Port //1/1 |               531239168 |               531593452 |       590737954816 |       591131918624 |                531239168 |
+| Port //1/2 |               531232550 |               531239168 |       590730595600 |       590737954816 |                531232550 |
+| Port //1/3 |               531499551 |               531232549 |       591027500712 |       590730594488 |                531499551 |
+| Port //1/4 |               531593451 |               531499551 |       591131917512 |       591027500712 |                531593451 |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+|            |              2125564720 |              2125564720 |      2363627968640 |      2363627968640 |               2125564720 |
+#+TBLFM: @6$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)
+********* 100%: 17:01
+| Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+| Port //1/1 |               408070628 |               408254705 |       453774538336 |       453979231960 |                408070628 |
+| Port //1/2 |               408210351 |               408070628 |       453929910312 |       453774538336 |                408210351 |
+| Port //1/3 |               407382933 |               408210350 |       453009821496 |       453929909200 |                407382933 |
+| Port //1/4 |               408254704 |               407382933 |       453979230848 |       453009821496 |                408254704 |
+|------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
+|            |              1631918616 |              1631918616 |      1814693500992 |      1814693500992 |               1631918616 |
+#+TBLFM: @6$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)
+-----
+
+
+rates:
+
+100% load:
+also you have pps in prometheus and you know the packet size
+
+"Port Name";"Total Tx Count (Frames)";"Total Rx Count (Frames)";"Total Tx Count (bits)";"Total Rx Count (bits)";"Total Tx Rate (bps)";"Total Rx Rate (bps)";"Tx L1 Count (bits)";"Rx L1 Count (bits)";"Tx L1 Rate (bps)";"Rx L1 Rate (bps)";"Tx L1 Rate (Percent)";"Rx L1 Rate (Percent)";"Generator Count (Frames)";"Generator Sig Count (Frames)";"Rx Sig Count (Frames)";"Total Tx Rate (fps)";"Total Rx Rate (fps)";"Generator Rate (fps)";"Generator Rate (Bps)";"Generator Rate (bps)";"Generator Sig Rate (fps)";"Rx Sig Rate (fps)";
+"Port //1/1";"532.093.590";"536.761.012";"506.553.097.680";"510.996.483.424";"813.410.312";"4.917.226.120";"591.688.072.080";"596.878.245.344";"950.117.929";"5.743.650.681";"9.501";"57.437";"532.093.590";"0";"0";"854.423";"5.165.153";"854.423";"101.676.289";"813.410.312";"0";"0";
+"Port //1/2";"536.963.254";"534.450.157";"511.189.017.808";"508.796.549.464";"5.457.096.752";"3.055.516.104";"597.103.138.448";"594.308.574.584";"6.374.255.866";"3.569.048.218";"63.743";"35.69";"536.963.254";"0";"0";"5.732.244";"3.209.576";"5.732.244";"682.137.094";"5.457.096.752";"0";"0";
+"Port //1/3";"531.506.125";"535.240.801";"505.993.831.000";"509.549.242.552";"5.713.256";"3.814.398.152";"591.034.811.000";"595.187.770.712";"6.673.465";"4.455.473.476";"0.067";"44.555";"531.506.125";"0";"0";"6.001";"4.006.721";"6.001";"714.157";"5.713.256";"0";"0";
+"Port //1/4";"536.904.161";"532.407.846";"511.132.761.272";"506.852.269.392";"5.040.593.440";"861.656.264";"597.037.427.032";"592.037.524.752";"5.887.752.001";"1.006.472.440";"58.878";"10.065";"536.904.161";"0";"0";"5.294.741";"905.101";"5.294.741";"630.074.180";"5.040.593.440";"0";"0";
+
+"Port Name";"Total Tx Count (Frames)";"Total Rx Count (Frames)";"Total Tx Count (bits)";"Total Rx Count (bits)";"Total Tx Rate (bps)";"Total Rx Rate (bps)";"Tx L1 Count (bits)";"Rx L1 Count (bits)";"Tx L1 Rate (bps)";"Rx L1 Rate (bps)";"Tx L1 Rate (Percent)";"Rx L1 Rate (Percent)";"Generator Count (Frames)";"Generator Sig Count (Frames)";"Rx Sig Count (Frames)";"Total Tx Rate (fps)";"Total Rx Rate (fps)";"Generator Rate (fps)";"Generator Rate (Bps)";"Generator Rate (bps)";"Generator Sig Rate (fps)";"Rx Sig Rate (fps)";
+"Port //1/1";"603.537.795";"608.187.027";"574.567.980.840";"578.994.049.704";"8.499.999.848";"8.499.999.928";"671.134.028.040";"676.303.974.024";"9.928.571.250";"9.928.571.341";"99.286";"99.286";"603.537.795";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.499.981";"8.499.999.848";"0";"0";
+"Port //1/2";"608.398.510";"605.876.574";"579.195.381.520";"576.794.498.448";"8.499.999.832";"8.499.999.968";"676.539.143.120";"673.734.750.288";"9.928.571.230";"9.928.571.393";"99.286";"99.286";"608.398.510";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.499.979";"8.499.999.832";"0";"0";
+"Port //1/3";"602.084.094";"606.666.310";"573.184.057.488";"577.546.327.120";"8.499.999.952";"8.499.999.800";"669.517.512.528";"674.612.936.720";"9.928.571.369";"9.928.571.192";"99.286";"99.286";"602.084.094";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.499.994";"8.499.999.952";"0";"0";
+"Port //1/4";"608.312.840";"603.816.486";"579.113.823.680";"574.833.294.672";"8.499.999.872";"8.500.000.272";"676.443.878.080";"671.443.932.432";"9.928.571.277";"9.928.571.744";"99.286";"99.286";"608.312.840";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.499.984";"8.499.999.872";"0";"0";
+
+"Port Name";"Total Tx Count (Frames)";"Total Rx Count (Frames)";"Total Tx Count (bits)";"Total Rx Count (bits)";"Total Tx Rate (bps)";"Total Rx Rate (bps)";"Tx L1 Count (bits)";"Rx L1 Count (bits)";"Tx L1 Rate (bps)";"Rx L1 Rate (bps)";"Tx L1 Rate (Percent)";"Rx L1 Rate (Percent)";"Generator Count (Frames)";"Generator Sig Count (Frames)";"Rx Sig Count (Frames)";"Total Tx Rate (fps)";"Total Rx Rate (fps)";"Generator Rate (fps)";"Generator Rate (Bps)";"Generator Rate (bps)";"Generator Sig Rate (fps)";"Rx Sig Rate (fps)";
+"Port //1/1";"692.812.379";"697.479.409";"659.557.384.808";"664.000.397.368";"8.500.000.088";"8.500.000.000";"770.407.365.448";"775.597.102.808";"9.928.571.535";"9.928.571.428";"99.286";"99.286";"692.812.379";"0";"0";"8.928.572";"8.928.572";"8.928.572";"1.062.500.011";"8.500.000.088";"0";"0";
+"Port //1/2";"697.673.187";"695.169.032";"664.184.874.024";"661.800.918.464";"8.500.000.008";"8.500.000.016";"775.812.583.944";"773.027.963.584";"9.928.571.435";"9.928.571.448";"99.286";"99.286";"697.673.187";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.500.001";"8.500.000.008";"0";"0";
+"Port //1/3";"691.367.292";"695.959.106";"658.181.661.984";"662.553.068.912";"8.499.999.832";"8.500.000.048";"768.800.428.704";"773.906.525.872";"9.928.571.236";"9.928.571.483";"99.286";"99.286";"691.367.292";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.499.979";"8.499.999.832";"0";"0";
+"Port //1/4";"697.606.190";"693.108.883";"664.121.092.880";"659.839.656.616";"8.500.000.256";"8.500.000.064";"775.738.083.280";"770.737.077.896";"9.928.571.726";"9.928.571.501";"99.286";"99.286";"697.606.190";"0";"0";"8.928.572";"8.928.571";"8.928.572";"1.062.500.032";"8.500.000.256";"0";"0";
+
+"Port Name";"Total Tx Count (Frames)";"Total Rx Count (Frames)";"Total Tx Count (bits)";"Total Rx Count (bits)";"Total Tx Rate (bps)";"Total Rx Rate (bps)";"Tx L1 Count (bits)";"Rx L1 Count (bits)";"Tx L1 Rate (bps)";"Rx L1 Rate (bps)";"Tx L1 Rate (Percent)";"Rx L1 Rate (Percent)";"Generator Count (Frames)";"Generator Sig Count (Frames)";"Rx Sig Count (Frames)";"Total Tx Rate (fps)";"Total Rx Rate (fps)";"Generator Rate (fps)";"Generator Rate (Bps)";"Generator Rate (bps)";"Generator Sig Rate (fps)";"Rx Sig Rate (fps)";
+"Port //1/1";"746.382.480";"751.049.589";"710.556.120.960";"714.999.208.728";"8.500.000.072";"8.499.999.872";"829.977.317.760";"835.167.142.968";"9.928.571.513";"9.928.571.281";"99.286";"99.286";"746.382.480";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.500.009";"8.500.000.072";"0";"0";
+"Port //1/2";"751.243.196";"748.739.161";"715.183.522.592";"712.799.681.272";"8.500.000.176";"8.500.000.072";"835.382.433.952";"832.597.947.032";"9.928.571.634";"9.928.571.508";"99.286";"99.286";"751.243.196";"0";"0";"8.928.572";"8.928.571";"8.928.572";"1.062.500.022";"8.500.000.176";"0";"0";
+"Port //1/3";"744.937.423";"749.528.841";"709.180.426.696";"713.551.456.632";"8.499.999.696";"8.499.999.856";"828.370.414.376";"833.476.071.192";"9.928.571.078";"9.928.571.257";"99.286";"99.286";"744.937.423";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.499.962";"8.499.999.696";"0";"0";
+"Port //1/4";"751.175.130";"746.669.329";"715.118.723.760";"710.829.201.208";"8.500.000.008";"8.500.000.240";"835.306.744.560";"830.296.293.848";"9.928.571.435";"9.928.571.705";"99.286";"99.286";"751.175.130";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.500.001";"8.500.000.008";"0";"0";
+
+"Port Name";"Total Tx Count (Frames)";"Total Rx Count (Frames)";"Total Tx Count (bits)";"Total Rx Count (bits)";"Total Tx Rate (bps)";"Total Rx Rate (bps)";"Tx L1 Count (bits)";"Rx L1 Count (bits)";"Tx L1 Rate (bps)";"Rx L1 Rate (bps)";"Tx L1 Rate (Percent)";"Rx L1 Rate (Percent)";"Generator Count (Frames)";"Generator Sig Count (Frames)";"Rx Sig Count (Frames)";"Total Tx Rate (fps)";"Total Rx Rate (fps)";"Generator Rate (fps)";"Generator Rate (Bps)";"Generator Rate (bps)";"Generator Sig Rate (fps)";"Rx Sig Rate (fps)";
+"Port //1/1";"808.898.449";"813.548.057";"770.071.323.448";"774.497.750.264";"8.499.999.864";"8.499.999.992";"899.495.075.288";"904.665.439.384";"9.928.571.269";"9.928.571.419";"99.286";"99.286";"808.898.449";"0";"0";"8.928.572";"8.928.571";"8.928.572";"1.062.499.983";"8.499.999.864";"0";"0";
+"Port //1/2";"813.741.756";"811.237.877";"774.682.151.712";"772.298.458.904";"8.500.000.096";"8.499.999.760";"904.880.832.672";"902.096.519.224";"9.928.571.541";"9.928.571.147";"99.286";"99.286";"813.741.756";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.500.012";"8.500.000.096";"0";"0";
+"Port //1/3";"807.446.533";"812.027.778";"768.689.099.416";"773.050.444.656";"8.500.000.128";"8.500.000.064";"897.880.544.696";"902.974.889.136";"9.928.571.580";"9.928.571.503";"99.286";"99.286";"807.446.533";"0";"0";"8.928.572";"8.928.571";"8.928.572";"1.062.500.016";"8.500.000.128";"0";"0";
+"Port //1/4";"813.673.783";"809.177.442";"774.617.441.416";"770.336.924.784";"8.500.000.024";"8.500.000.016";"904.805.246.696";"899.805.315.504";"9.928.571.455";"9.928.571.445";"99.286";"99.286";"813.673.783";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.500.003";"8.500.000.024";"0";"0";
+
+"Port Name";"Total Tx Count (Frames)";"Total Rx Count (Frames)";"Total Tx Count (bits)";"Total Rx Count (bits)";"Total Tx Rate (bps)";"Total Rx Rate (bps)";"Tx L1 Count (bits)";"Rx L1 Count (bits)";"Tx L1 Rate (bps)";"Rx L1 Rate (bps)";"Tx L1 Rate (Percent)";"Rx L1 Rate (Percent)";"Generator Count (Frames)";"Generator Sig Count (Frames)";"Rx Sig Count (Frames)";"Total Tx Rate (fps)";"Total Rx Rate (fps)";"Generator Rate (fps)";"Generator Rate (Bps)";"Generator Rate (bps)";"Generator Sig Rate (fps)";"Rx Sig Rate (fps)";
+"Port //1/1";"907.104.375";"911.750.834";"863.563.365.000";"867.986.793.968";"8.500.000.240";"8.499.999.976";"1.008.700.065.000";"1.013.866.927.408";"9.928.571.706";"9.928.571.402";"99.286";"99.286";"907.104.375";"0";"0";"8.928.572";"8.928.571";"8.928.572";"1.062.500.030";"8.500.000.240";"0";"0";
+"Port //1/2";"911.962.399";"909.440.436";"868.188.203.848";"865.787.295.072";"8.499.999.928";"8.500.000.168";"1.014.102.187.688";"1.011.297.764.832";"9.928.571.349";"9.928.571.619";"99.286";"99.286";"911.962.399";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.499.991";"8.499.999.928";"0";"0";
+"Port //1/3";"905.657.011";"910.230.591";"862.185.474.472";"866.539.522.632";"8.499.999.832";"8.500.000.096";"1.007.090.596.232";"1.012.176.417.192";"9.928.571.230";"9.928.571.539";"99.286";"99.286";"905.657.011";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.499.979";"8.499.999.832";"0";"0";
+"Port //1/4";"911.894.493";"907.400.802";"868.123.557.336";"863.845.563.504";"8.500.000.176";"8.500.000.008";"1.014.026.676.216";"1.009.029.691.824";"9.928.571.633";"9.928.571.433";"99.286";"99.286";"911.894.493";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.500.022";"8.500.000.176";"0";"0";
+
+"Port Name";"Total Tx Count (Frames)";"Total Rx Count (Frames)";"Total Tx Count (bits)";"Total Rx Count (bits)";"Total Tx Rate (bps)";"Total Rx Rate (bps)";"Tx L1 Count (bits)";"Rx L1 Count (bits)";"Tx L1 Rate (bps)";"Rx L1 Rate (bps)";"Tx L1 Rate (Percent)";"Rx L1 Rate (Percent)";"Generator Count (Frames)";"Generator Sig Count (Frames)";"Rx Sig Count (Frames)";"Total Tx Rate (fps)";"Total Rx Rate (fps)";"Generator Rate (fps)";"Generator Rate (Bps)";"Generator Rate (bps)";"Generator Sig Rate (fps)";"Rx Sig Rate (fps)";
+"Port //1/1";"951.725.682";"956.401.660";"906.042.849.264";"910.494.380.320";"8.500.000.168";"8.500.000.024";"1.058.318.958.384";"1.063.518.645.920";"9.928.571.621";"9.928.571.460";"99.286";"99.286";"951.725.682";"0";"0";"8.928.572";"8.928.571";"8.928.572";"1.062.500.021";"8.500.000.168";"0";"0";
+"Port //1/2";"956.595.268";"954.082.132";"910.678.695.136";"908.286.189.664";"8.500.000.096";"8.500.000.080";"1.063.733.938.016";"1.060.939.330.784";"9.928.571.541";"9.928.571.523";"99.286";"99.286";"956.595.268";"0";"0";"8.928.572";"8.928.572";"8.928.572";"1.062.500.012";"8.500.000.096";"0";"0";
+"Port //1/3";"950.298.462";"954.871.973";"904.684.135.824";"909.038.118.296";"8.499.999.936";"8.499.999.816";"1.056.731.889.744";"1.061.817.633.976";"9.928.571.355";"9.928.571.212";"99.286";"99.286";"950.298.462";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.499.992";"8.499.999.936";"0";"0";
+"Port //1/4";"956.527.355";"952.039.355";"910.614.041.960";"906.341.465.960";"8.500.000.144";"8.500.000.032";"1.063.658.418.760";"1.058.667.762.760";"9.928.571.593";"9.928.571.469";"99.286";"99.286";"956.527.355";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.500.018";"8.500.000.144";"0";"0";
+
+"Port Name";"Total Tx Count (Frames)";"Total Rx Count (Frames)";"Total Tx Count (bits)";"Total Rx Count (bits)";"Total Tx Rate (bps)";"Total Rx Rate (bps)";"Tx L1 Count (bits)";"Rx L1 Count (bits)";"Tx L1 Rate (bps)";"Rx L1 Rate (bps)";"Tx L1 Rate (Percent)";"Rx L1 Rate (Percent)";"Generator Count (Frames)";"Generator Sig Count (Frames)";"Rx Sig Count (Frames)";"Total Tx Rate (fps)";"Total Rx Rate (fps)";"Generator Rate (fps)";"Generator Rate (Bps)";"Generator Rate (bps)";"Generator Sig Rate (fps)";"Rx Sig Rate (fps)";
+"Port //1/1";"1.041.027.242";"1.045.676.155";"991.057.934.384";"995.483.699.560";"8.500.000.192";"8.500.000.416";"1.157.622.293.104";"1.162.791.884.360";"9.928.571.654";"9.928.571.915";"99.286";"99.286";"1.041.027.242";"0";"0";"8.928.572";"8.928.572";"8.928.572";"1.062.500.024";"8.500.000.192";"0";"0";
+"Port //1/2";"1.045.887.859";"1.043.365.621";"995.685.241.768";"993.284.071.192";"8.500.000.128";"8.499.999.800";"1.163.027.299.208";"1.160.222.570.552";"9.928.571.574";"9.928.571.195";"99.286";"99.286";"1.045.887.859";"0";"0";"8.928.572";"8.928.571";"8.928.572";"1.062.500.016";"8.500.000.128";"0";"0";
+"Port //1/3";"1.039.582.360";"1.044.155.419";"989.682.406.720";"994.035.958.888";"8.499.999.992";"8.499.999.872";"1.156.015.584.320";"1.161.100.825.928";"9.928.571.423";"9.928.571.279";"99.286";"99.286";"1.039.582.360";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.499.999";"8.499.999.992";"0";"0";
+"Port //1/4";"1.045.821.617";"1.041.305.642";"995.622.179.384";"991.322.971.184";"8.499.999.960";"8.500.000.056";"1.162.953.638.104";"1.157.931.873.904";"9.928.571.382";"9.928.571.491";"99.286";"99.286";"1.045.821.617";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.499.995";"8.499.999.960";"0";"0";
+
+
 *** TODO Resource usage
     ideally also per-component
 ***** TODO FPGA area
@@ -1245,18 +1512,31 @@ would drastically increase my FPGA area usage.
     Apart from the end results themselves, working on these applications would
     also help us improve the code base by challenging our assumptions about
     modularity and generality.
-* [0/1] Conclusion
+* [1/1] Conclusion
   # Bring it back to the big picture. How do your results fit into the current body of knowledge?
   # Most importantly, how can these results help you ask better questions?
-  - high-security Internet protocols, and especially SCION, can feasibly be forwarded at high speeds
-  - we see no major obstacles for implementing a very high throughput thingy
-    (order of Tbps), and the minor things are going to be cleared up with the
-    data plane redesign that incorporates my suggestions
-  - P4 is an adequate language and though not everything is perfect, it is a
-    useful tool that indeed helps achieve a quicker development cycle
-  - we are looking forward to having more mature HW targets and toolchains, and
-    we think there is much promise in continuing this work with those
 
+  Our work has proven that high-security Internet routing protocols, and
+  especially SCION, can feasibly be forwarded at high speeds.
+  We see no major obstacles for implementing a SCION border router with very
+  high throughput (on the order of terabits per second).
+  The minor issues identified, such as defining maximum sizes, fixing the hop field
+  size, avoiding implicit lengths, and considering the trade-offs of MAC
+  chaining, will be addressed by an upcoming data plane redesign that
+  incorporates our suggestions.
+  Therefore, we conclude that SCION is suitable for hardware, and thus can be
+  considered for large-scale deployments.
+
+  This project also shows that FPGA-based programmable data planes can be
+  made to perform at line rate even for relatively complex protocols.
+  Further, P4 is an adequate language for programming such,
+  and though it has some issues, it is a useful tool that
+  simplifies development and maintenance, and thus enables researchers,
+  enthusiasts, and commercial entities to take their ideas into the real world.
+  We are looking forward to further developments in the P4/SDN ecosystem,
+  especially more mature hardware targets and toolchains.
+  Once they are available, we believe that there is much promise in extending
+  this work with those.
 
 #+LATEX: \bibliographystyle{abbrv}
 bibliography:bibliography.bib
@@ -1264,6 +1544,19 @@ bibliography:bibliography.bib
 #+LATEX: \appendix
 
 * Footnotes
+
+[fn:12] This is of course a simplified description, with networked systems and
+parallel programming, as well as the growing ratio of CPU to I/O speeds, being the
+obvious discrepancies.
+However, we believe that fundamentally, this a good, even if not complete,
+picture of how software engineers think about programming, and it is useful to
+contrast this with how to think about FPGAs.
+
+[fn:11] The current version of SCION supports a "continue" flag in the hop field, which indicates that the hop field is longer than 8 bytes. There is no limit on the HF size. Because this causes significant issues in hardware implementations, the next version of SCION will only allow fixed-size hop fields.
+
+[fn:10] https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Workflow-Overview#p4-netfpga-extern-library
+
+[fn:9] Unfortunately, we do not know the original source: we got this implementation from another student without any information despite asking.
 
 [fn:8] For context, the Virtex 7 FPGA present in the NetFPGA is often used for
 prototyping CPUs. To fill it up is a rather unexpected feat.

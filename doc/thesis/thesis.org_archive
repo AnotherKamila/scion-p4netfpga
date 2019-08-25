@@ -1,0 +1,29 @@
+#    -*- mode: org -*-
+
+
+Archived entries from file /home/kamila/u/projects/scion-p4netfpga/doc/thesis/thesis.org
+
+
+
+* [0/4] Aims
+  :PROPERTIES:
+  :UNNUMBERED: t
+  :ARCHIVE_TIME: 2019-08-25 Sun 19:34
+  :ARCHIVE_FILE: ~/u/projects/scion-p4netfpga/doc/thesis/thesis.org
+  :ARCHIVE_CATEGORY: thesis
+  :END:
+TODO maybe I don't even want to have this chapter, but just have the "Contributions"
+section in Introduction.
+Hi reviewers, your opinions on this matter are especially welcome :D
+#+begin_comment Ain't nobody got time for this
+# *** TODO Deployable SCION BR
+#     - forwarding at line rate => with NetFPGA, that is 40Gbps
+#     - usable with real traffic
+#     - integrated with existing SCION infra (control plane, monitoring/metrics)
+# *** TODO SCION as a library
+# *** TODO Guidelines for high-speed P4
+#     or gaining experience or whatevs
+#     Listen to my advice and you too can process packets at high speeds, even if you are not a hardware person.
+# *** TODO Optimising the SCION protocol for HW
+#+end_comment
+
