@@ -554,7 +554,7 @@
       For FPGAs, this is quite a bit more involved.
       This is the outline of the process:
 
-      1. Logic description: writing the source code of your project.
+      1. *Logic description*: writing the source code for the logic of the project.
          The logic of the program is described using a hardware description
          language, such as Verilog or VHDL.
          Compiling from a higher-level language, such as Bluespec TODO cite or,
@@ -567,7 +567,7 @@
          After writing the logic of the program, a /behavioural simulation/ should
          be run to check logic correctness: this simulates the program on a high
          level, with logical inputs and outputs.
-      2. Describing the full design: taking the various modules (including the one/ones
+      2. *Describing the full design*: taking the various modules (including the one/ones
          written in step 1) and connecting them to form the complete system. This
          includes connecting standard components for interacting with "the real
          world" outside of the FPGA.
@@ -577,16 +577,18 @@
          and other communication with control plane.
          The description of modules and connections from this step is usually
          called the "netlist".
-      3. Synthesis: Taking the high-level description of the system from step 2 and
+      3. *Synthesis*: Taking the high-level description of the system from step 2 and
          "compiling" it into gate-level logic. This step includes optimisation
          of the logic. The programmer may set options/hints for the synthetiser,
          but does not fully control the process -- it is similar to how a C
          compiler produces optimised assembly not meant for human eyes.
-      4. Implementation: placing and routing the gate-level logic onto the FPGA.
+      4. *Implementation*: placing and routing the gate-level logic onto the FPGA.
          In this step, physical placement of the various parts is decided, and
          routes for signals are created.
          Thus, this is where the final design, and the exact resource
          consumption, become apparent.
+         The programmer may provide hints or express preferences for various
+         tradeoffs, but this step is largely automated.
          Because this is a difficult optimisation problem, this step usually
          takes a rather long time (for our project, it is about 3-4 hours).
          When we have the final design from this step, signal propagation
@@ -594,7 +596,7 @@
          Once one has the full design, it is a good idea to run a full low-level
          simulation, which simulates the execution on the level of signals and
          circuits.
-      5. Generating the bitfile and flashing it to the FPGA: Creating a binary
+      5. *Generating the bitfile and flashing it onto the FPGA*: Creating a binary
          file in a format specific for the FPGA, and loading it onto the FPGA.
          This file configures the FPGA's cells to the desired circuitry.
 * [1/1] Design overview
@@ -661,7 +663,7 @@
   to upgrade the software router and none of this project's code needs to be
   changed, as long as there are no changes in the forwarding logic (which
   isn't likely to change as often).
-* [1/5] Implementation Challenges
+* [3/5] Implementation Challenges
   The problems we encountered during the implementation were too numerous to
   list completely.
   Therefore, in this section, we present a select few particularly interesting,
@@ -669,11 +671,13 @@
   # originally wanted to divide this into parser, validation, forwarding, etc... but
   # I don't think that makes much sense, as e.g. timing or stupid compiler were a
   # problem across the whole thing
-*** INPR [2/4] Software engineering aspects
+*** DONE [4/4] Software engineering aspects
+    CLOSED: [2019-08-26 Mon 17:48]
     From the software engineering perspective, this project is somewhat on the
     larger side given the modest time and personnel assignment of a single
     Master thesis.
-    Therefore, in order to speed up development, we needed to come up with a few clever ideas.
+    Therefore, in order to speed up development, we needed to do a few
+    interesting things.
     This section introduces those.
 ***** DONE Project building workflow
       CLOSED: [2019-08-16 Fri 14:17]
@@ -707,10 +711,126 @@
       generated, and therefore always up-to-date) tasks and build settings that
       the programmer may need, thereby reducing the need for out-of-band and
       thus inevitably out-of-date workflow documentation.
-***** TODO Modularity and incremental development
-******* fake network interfaces over DMA
-******* control plane
-        twisted => trivially composable => trivial to add new features, mix&match
+***** DONE Modularity and incremental development
+      CLOSED: [2019-08-26 Mon 14:27]
+      Though one may be tempted to just "make things work" as fast as possible,
+      larger projects quickly start to have problems if one does not spend extra
+      effort on thinking about the design of the project.
+      Keeping the code base well thought out may seem like an unnecessary luxury
+      at the beginning, when the project is small and the programmer is excited
+      to see things working.
+      And it can in fact be a good idea to leverage that excitement:
+      in our case, we often first wrote very messy code, as we were figuring out
+      how things work and what approach would be best.
+      Before having a good overview of the possible approaches for different
+      aspects of the project, any design created would not survive contact with
+      reality.
+      However, left unchecked, development of new features without stepping back
+      and re-considering the design will lead to code that is not only difficult
+      to read, but also difficult to modify or extend.
+      Thus, in this project we periodically interleaved development with
+      refactoring and code cleanup.
+      As it goes with academic projects, due to lack of resources, the project's
+      source code could be further improved.
+      However, even the limited efforts to keep the mess under control made a
+      large difference, and ultimately they were the deciding factor that
+      enabled us to go beyond a completely bare-bones implementation.
+******* Modular code base
+        #+NAME:   fig:scion-breakdown
+        #+CAPTION: The major components of the system.
+        [[./img/design-overview.svg]]
+
+        #+NAME:   fig:scion-breakdown-parser
+        #+CAPTION: The sub-parsers of the parser component.
+        [[./img/scion-breakdown-parser.svg]]
+      
+        In order to make it easy to find things, enable or disable different
+        functionality, and ultimately also make our code usable as a library for
+        processing SCION packets in different projects, we separated
+        different features into independent, loosely coupled modules.
+        Thus, the different parts of packet parsing, MAC verification, timestamp
+        validation, routing, overlay handling, and monitoring are separate, and can be mixed
+        and matched as needed and debugged separately.
+        Furthermore, modularity is in many cases a requirement for achieving
+        portability/target independence:
+        for example, the MAC verification routine needs an AES encryption
+        routine, which will be implemented and accessed differently on different
+        platforms.
+        Also, the the HF format can be (within some constraints) chosen by the AS.
+        Thus, the sub-parsers within the packet parser, as well as the HF MAC
+        verification routine, also need to be easily customisable.
+        Figure [[fig:scion-breakdown]] shows the different components of the
+        systems, and figure
+        [[fig:scion-breakdown-parser]] shows the sub-modules of the parser.
+******* SCION as a library
+        #+NAME:   fig:scion-library
+        #+CAPTION: Example use cases for our SCION library: NetFPGA-based network monitoring system (left) and a SmartNIC-enabled end host used for high-throughput data processing (right).
+        [[./img/scion-library.svg]]
+
+        Thanks to the modularity described in the previous section, our project
+        could be easily customised for other use cases.
+        As an example, we could create a SCION-aware in-band network monitoring
+        system by keeping our SCION parser, HF validation (if needed), and deparser, but
+        instead of routing packets (and updating HF and INF offsets in the
+        header), we would collect samples/statistics, and pass the packets
+        through unmodified.
+        This would be easy to achieve, as the different parts of our project do
+        not depend on one another, and thus can be easily swapped out as needed.
+
+        Another example, where the target independence from section [[*Target
+        independence/portability]] also comes into play, would be a
+        special-purpose host that processes large amounts of data that needs to
+        be sent out over a SCION network.
+        Such an end host with a P4-capable SmartNIC could re-use our parser and
+        deparser, add any custom processing needed, and use DMA to
+        transfer data to and from the CPU.
+        Thus, it could achieve extremely high goodput, as not even the SCION
+        headers would need to be created on the host and thus the full DMA
+        bandwidth could be used for application data.
+
+        Figure [[fig:scion-library]] illustrates these example use cases.
+******* Enabling incremental development by sending unhandled traffic to the CPU
+        #+NAME:   fig:scion-dmaifaces
+        #+CAPTION: We map the DMA-based interfaces visible to the host to the physical ports on the NetFPGA.
+        [[./img/scion-dmaifaces.svg]]
+
+        As mentioned in the design overview (section [[*Design overview]]).
+        we chose to present the NetFPGA
+        as a NIC to the host system, run an unmodified software router listening
+        on the NetFPGA's "fake" DMA-based interfaces, and thus be able to transparently
+        send traffic we are unable to process to the CPU.
+        We also directly send out any traffic received on the soft interfaces,
+        thus transparently enabling also IP traffic and ARP (which is relevant
+        for the SCION IP overlay).
+        Figure [[fig:scion-dmaifaces]] illustrates this design.
+
+        Besides simplifying the handling of control packets and errors,
+        this approach also facilitates testing features with real traffic while
+        the system is not yet complete.
+        Thanks to it, we are able to test with real traffic despite not
+        implementing the UP flag (reversed path segments) or any form of error
+        packet generation.
+        Thanks to it we were also able to make sure that MAC checking works on real
+        packets while other features (such as handling the IP overlay) were not
+        ready yet.
+
+        In order to make this approach work with as little effort as possible,
+        we needed to move communication with our control plane (such as
+        configuration and monitoring) out of band -- so that the only packets
+        traversing through the DMA-based interfaces are coming
+        from or intended for the outside world.
+        Thus, we only use registers (memory) accessible from the host through
+        DMA, and no control packets.
+        This simplifies the data plane design, as its responsibilities are reduced:
+        it only needs to assume that the registers contain the right values (or,
+        in the case of monitoring, keep the metrics registers up to date), and
+        not worry about updates.
+        It requires the control plane to run on the physical host rather than
+        remotely, but if needed, it would be possible to only run a thin wrapper
+        on the host and make it "translate" control packets into DMA
+        writes/reads.
+        Thus, this approach provides multiple advantages, and has been very
+        helpful during the development.
 ***** DONE Target independence/portability
       CLOSED: [2019-08-16 Fri 15:56]
       Writing portable bare-metal software is a non-trivial task with no general
@@ -745,46 +865,94 @@
       In order to avoid a combinatorial explosion of different implementations,
       we chose to not depend on targets in our code, but on features.
       In other words, our code's ~#ifdef#~ statements (which conditionally enable
-      or disable code) were not of the form ~#ifdef TARGET_NETFPGA#~, but e.g.
+      or disable code) were not of the form ~#ifdef TARGET_NETFPGA~, but e.g.
       ~#ifdef TARGET_SUPPORTS_VAR_LEN_PARSING~.
       This means that we will not necessarily need to modify existing code when
       we add a new target, we will just need to define the features it supports.
       We provide an easy way to check for features required by the project's
       code, so that adding a new platform requires as little effort as possible:
-      running `make find-all-target-supports` prints all ~TARGET_SUPPORTS_*~
+      running =make find-all-target-supports= prints all ~TARGET_SUPPORTS_*~
       features that the code uses.
 
       In order to accomodate for diverse build processes and supporting files,
       while avoiding duplication where possible, we have created a
       two-level structure in our repository that captures the various types of
-      differences among targets that we anticipate.
-      The supporting files, as well as Makefiles that define the build process,
-      live under either ~platforms/PLATFORM~ if architecture-independent, or
-      ~platforms/PLATFORM/ARCHITECTURE~ if architecture-specific.
+      differences among targets that we anticipate:
+      the supporting files, as well as Makefiles that define the build process,
+      live under either ~platforms/<platform>~ if architecture-independent, or
+      ~platforms/<platform>/<architecture>~ if architecture-specific.
 
       The differences between the software switch and the NetFPGA can be handled
       cleanly with our approach, which proves that it does indeed work in
       reality.
-***** NEXT Control plane
+***** DONE Control plane
+      CLOSED: [2019-08-26 Mon 17:48]
       While the focus of this project is on the data plane, we needed to create
       a minimal control plane, so that we could test the full functionality
       required of the data plane.
       The design of the control plane is also interesting from the modularity
       viewpoint.
-      Therefore, this section presents a brief overview of
+      Therefore, this section presents a brief overview of the design our
+      control plane.
+      
+      As explained in section [[*Design overview]] and shown on figure
+      [[fig:scion-dmaifaces]], we are using the unmodified software SCION router to
+      handle packets we cannot process in the dataplane, as well as any errors.
+      Therefore, this responsibility is taken care of, and our control plane
+      only needs to provide the following simple functions:
+       - *Loading the BR configuration into the NetFPGA*: the AS key for HF
+         verification, the SCION interface ID to physical port mapping, and the
+         IP overlay data for every interface.
+         Also setting the Ethernet address (MAC address) for its interfaces
+         according to the DMA-based host interfaces, so that ARP/NDP can be
+         handled by the host transparently.
+       - *Providing a clock*: as mentioned in section [[*Timestamp validation]], we
+         need to frequently update a register in order to tell the NetFPGA the
+         current time, so that it can validate timestamps in the path's info
+         fields.
+       - *Exporting metrics*: frequently reading registers where the NetFPGA
+         keeps various counters, and making the data available from the outside.
+         We chose to export the data in a format suitable for the Prometheus
+         monitoring system[fn:13], and thus run an HTTP server that, upon
+         request, reads the registers and returns the data.
+       
+       These features are completely independent, but need a level of coordination:
+       the clock needs to be updated periodically, while the metrics need to be
+       read on demand (whenever Prometheus requests the metrics webpage).
+       Thus, a program combining all of these features would either introduce
+       unnecessary coupling between the independent modules (in case of a simple
+       single-threaded program) or introduce unnecessary coupling and
+       add some concurrency bugs (in case of a multi-threaded one).
 
-      independent modules, often complementary to the P4 modules => something
-        something modularity runs across the whole stack
-        Perhaps also TODO have a look at my P4 presentation. Maybe there's
-        something good in it :D // plagiarising myself
-        Design decision: Using registers rather than digest packets so that I
-        can do that transparent software router trick super easily.
-********* What was horrible:
-          existing Python control plane API sucked, so I rolled my own
-          - tables: bugs in interpretation of the values
-          - everything was hard-coded
-          - only 32-bit registers supported, but that goes all the way to the C API and the bus
-*** TODO [1/4] Implementing the parser
+       Thus, in order to keep our modules idependent (unlike in a traditional
+       single-threaded program) and trivially composable (unlike in the case of
+       multi-threaded code that would need locks to protect access to the
+       NetFPGA registers), we chose to use an event-driven single-threaded
+       approach using the Twisted Python framework[fn:14].
+       At the core of Twisted is its event loop, implemented as part of the
+       library and outside of the user's control.
+       The user programs the event handlers needed, in our case e.g. a handler
+       for "half a second has passed, we need to update the clock register" and
+       "a request came to the HTTP server, we need to fetch and return metrics".
+       Twisted uses cooperative multitasking, so only one handler runs at every
+       time, and it hands off control back to Twisted's event loop when done.
+       The event loop keeps track of events, so this way, the handlers can be
+       completely unaware of each other, and no race race conditions or
+       concurrent writes can occur.
+
+       Because this approach allows us to make the modules trivially composable,
+       we were able to keep the various handlers completely independent of each
+       other.
+       This enabled us to trivially add features without worrying about breaking
+       existing ones.
+       Even more interestingly, we have been able to make the modules
+       complementary to the P4 modules, and therefore have kept clean module
+       boundaries across the whole stack.
+       Thus, when changes need to be made, or only a part of this project needs
+       to be used (as in the library paradigm), it is trivial to also reuse the
+       needed parts of the control plane.
+*** DONE [3/3] Implementing the parser
+    CLOSED: [2019-08-27 Tue 17:26]
 ***** DONE Handling the variable-length SCION path
       CLOSED: [2019-08-05 Mon 11:51]
 Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
@@ -905,11 +1073,85 @@ However, this would make actually using the fields very difficult, as I would
 need more preprocessor magic to index into such a struct; and additionally it
 would drastically increase my FPGA area usage.
 
-***** TODO reject behaving contrary to even the NetFPGA devs' expectation
-      can't link to issue because not public :-/
-***** TODO timing
-***** TODO the final design
-      parser state machine diagram
+***** DONE Unexplained packet corruption when handling parser errors
+      CLOSED: [2019-08-26 Mon 18:57]
+      As explained in section [[*Modularity and incremental development]], our
+      parser is composed out of several sub-parsers.
+      Thus, we need a way for errors from the sub-parsers to propagate up
+      through the parent parsers.
+      The traditional way to achieve such error propagation is by using
+      exceptions, but exceptions are problematic in many contexts and are not
+      supported by P4.
+      However, in the case of P4 parsers, a behaviour equivalent to exceptions
+      is available via the ~reject~ keyword:
+      P4 parsers are state machines, and transitioning to the special state
+      ~reject~ causes the parser to immediately finish parsing, including any
+      parent parsers.
+      Therefore, this is the natural way to handle parser errors and we
+      attempted to use this in our project.
+      
+      According to the NetFPGA developers, this is supported and should not
+      cause any problems.
+      However, in our project, which consists of a somewhat deep hierarchy of
+      sub-parser, that was not what we observed: upon encountering the ~reject~
+      keyword, the pipeline would proceed as expected, but on the output, the
+      outgoing packet would get corrupted and contain zeroes instead of the
+      original data.
+      We made sure that it was due to the ~reject~ statement:
+      when we changed our code to exit from subparsers without ~reject~ (i.e. via
+      the ~accept~ special state, which exits the subparser but not the parent
+      parsers) and added manual error propagation, this behaviour was no longer
+      observed.
+      
+      Due to unavailability of the compiler source code and time constraints, we
+      did not investigate this bug further.
+      However, two options come to mind: it is either a problem that manifests
+      only in complex parser hierarchies (which, given the previous section,
+      would not be surprising at all), or it is a bug only present in the
+      experimental ~XilinxStreamSwitch~ architecture (the use of which we
+      explain in the previous section), not the standard ~SimpleSumeSwitch~ one.
+***** DONE The final parser design
+      CLOSED: [2019-08-27 Tue 17:26]
+      #+NAME:   fig:parser-top
+      #+CAPTION: Left: The top-level parser state machine: IP encapsulation and the SCION header. Right: State machine for parsing the SCION header. (The extensions parser is currently unimplemented.)
+      [[./img/parser-top.svg]]
+
+      #+NAME:   fig:parser-encaps
+      #+CAPTION: IP/UDP encapsulation parser state machine.
+      [[./img/parser-encaps.svg]]
+
+      #+NAME:   fig:parser-comm-addr
+      #+CAPTION: Top left: the SCION common header parser. Right: The address header parser. Bottom left: The NetFPGA implementation of a helper for skipping over 0–63 blocks.
+      [[./img/parser-comm-addr.svg]]
+
+      #+NAME:   fig:parser-hostaddr
+      #+CAPTION: The host address parser: branches on address type.
+      [[./img/parser-hostaddr.svg]]
+
+      #+NAME:   fig:parser-packetskipper8
+      #+CAPTION: The NetFPGA implementation of a helper for skipping over 0–7 blocks.
+      [[./img/parser-packetskipper8.svg]]
+
+      #+NAME:   fig:parser-path
+      #+CAPTION: The SCION path parser.
+      [[./img/parser-path.svg]]
+
+      The final design is shown on figures [[fig:parser-top]]–[[fig:parser-path]]:
+      the top-level parser on figure [[fig:parser-top]] simply calls the
+      encapsulation parser (figure [[fig:parser-encaps]]) and the SCION header
+      parser (to the right), and the SCION header parser in
+      turn calls several other sub-parsers as shown on the figures.
+      This hierarchical structure is not only useful from the modularity aspect,
+      but also helps avoid code duplication:
+      the parametric sub-parsers used for skipping bytes,
+      as well as the host address sub-parser,
+      are instantiated multiple times in the design.
+      Most importantly though, it makes it possible for a human to reason about
+      the correctness of the code:
+      the flattened state machine would be impossible to even draw in any
+      reasonable way (we tried).
+      This way, one can abstract away the details of the sub-parsers when
+      looking at the big picture, and thus have a better idea of the system.
 *** DONE Hop field validation
     CLOSED: [2019-08-25 Sun 15:48]
     Before a SCION packet can be forwarded, we need to validate that this path
@@ -984,6 +1226,10 @@ would drastically increase my FPGA area usage.
 ***** Timestamp validation
       In addition to checking that the HF MAC is valid, we also need to check
       that this HF is still current, and not expired.
+      This is done by checking the timestamp and expiry interval encoded in the
+      info field of the path segment.
+      (This timestamp is also included in the MAC calculation, and thereby
+      cannot be changed by the end host in an attempt to use an old path.)
       As the NetFPGA does not have an easily accessible clock, our
       implementation uses a register accessible from the control plane, and
       simply assumes that the control plane writes the current time into it
@@ -994,7 +1240,7 @@ would drastically increase my FPGA area usage.
       router behaves correctly even if the control plane is disconnected for a
       short time.
 
-*** TODO [1/5] Working around compiler/toolchain bugs
+*** TODO [1/6] Working around compiler/toolchain bugs
     Some hurdles are expected when working with cutting-edge technology.
     However, the state of the NetFPGA's P4 toolchain was enough of
     an issue to warrant a separate section in this thesis.
@@ -1003,12 +1249,13 @@ would drastically increase my FPGA area usage.
 
     Note that the parser-related problems (and their solutions, and the problems
     in the solutions) were interesting enough that we discuss them separately in
-    [[*Implementing the parser]].
+    section [[*Implementing the parser]].
     We do not re-iterate those issues here, so see also that section for a
     complete picture.
 
     TODO reorder the sections
-***** TODO the whole thing is stupidly complex
+***** TODO Very high tooling complexity
+      (also alluded to in [[*Project building workflow]]).
 ***** TODO extremely fragile, randomly stops working, and then requires on average 2-3 days to debug
       had a working implementation where I could measure throughput 2 months
       ago, now I can't make the same thing work
@@ -1078,6 +1325,10 @@ would drastically increase my FPGA area usage.
       This way we are able to use tables together with externs without using the
       somewhat expensive dummy table workaround.
 ***** TODO had to write my own reg_write and stuff
+      existing Python control plane API sucked, so I rolled my own
+      - tables: bugs in interpretation of the values
+      - everything was hard-coded
+      - only 32-bit registers supported, but that goes all the way to the C API and the bus
 ***** TODO HW is silly
       and we can't debug it
 ******* sometimes DMA may need an extra reboot?
@@ -1544,6 +1795,10 @@ bibliography:bibliography.bib
 #+LATEX: \appendix
 
 * Footnotes
+
+[fn:14] https://twistedmatrix.com
+
+[fn:13] https://prometheus.io
 
 [fn:12] This is of course a simplified description, with networked systems and
 parallel programming, as well as the growing ratio of CPU to I/O speeds, being the

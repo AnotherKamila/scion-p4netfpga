@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:xhtml="http://www.w3.org/1999/xhtml"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   width="253px"
+   height="354px"
+   viewBox="-0.5 -0.5 253 354"
+   content="&lt;mxfile modified=&quot;2019-08-27T15:06:31.309Z&quot; host=&quot;www.draw.io&quot; agent=&quot;Mozilla/5.0 (X11; FreeBSD amd64; rv:68.0) Gecko/20100101 Firefox/68.0&quot; version=&quot;11.2.3&quot; etag=&quot;stHn8-VTryFLizyon5pA&quot; type=&quot;google&quot; pages=&quot;1&quot;&gt;&lt;diagram id=&quot;cSsZYZk0Vj4EMurnvgqs&quot;&gt;5VdNj5swEP01SLs9rMAGAsckm20P7WqlHNqeKgcccNfByDhf/fUdgwmfUVGVdqWWHGK/scf2ezNjsPByd3ovSZ5+EjHlFrLjk4UfLYSQ7SP408i5QjByKyCRLK4gpwHW7Ac1oG3QPYtp0RmohOCK5V0wEllGI9XBiJTi2B22Fby7ak4SOgDWEeFD9DOLVWpQx7YbwwfKktQsHXjGsCHRayLFPjPrWQhvy6cy70jty4wvUhKLYwvCKwsvpRCqau1OS8o1tzVt1bynK9bLviXN1JQJRqcD4Xtz9Bc4AVXrV5bnVPru3YaL6PVbARLdmy2rc01TeVCqXdkWXhxTpug6J5G2HiEwAEvVjkPPgSbhLMmgHcHWqATgQKViwPncGJTQMy6M6DmR2LHIuE84KQrTNrsGB/R09eTOhU+IUyp2VMkzDDETsBtWU0yIOkEt7rFRHNW6pi2xcQ0SE2XJxXnDNDQM2ePE4wHxFvI5rLCI2QGaiW4Wikh193xfm8BpyzqQA1aABKG/lmLLOF8KLmQ5Dz89rbwwvA2tLsYPXo9YFw2IDZwhr+4NaHVHaO2zlMVzXSJ0KOqQ0gHWJoeemPqi4wzOUfW+tiyPJxOCZefciUca96pKIfYyoh3BQdGEmgP7k8ltMTcWkTUmKSeKHbqbGKPTrPAiGCzcaOegrnIh6klSHchMa5eVvqdZz9Ns1vNU8TDwVOp7Ofgkyb0JkoMwa9MVUqUiERnhqwZdRHt5KAuZ1rkZ8lHomlSC36lSZ3NTkb0S3aDhZEP54lL86+TKRKa9b0WmWvnml89YSZwQR/4wjoLJcTQ5QKbmmz+ljHWulKB1o7wLrpa2gZMHkuf8fKfpera8xczCc9fyHm9eGzv3T69Qrnz9u9H9M3N7yeaM3D/2SLb7N6iTs/8raYJh0oRvlzTBWyUNhqSx/6Wkgfz4i0kTTtGNRBHN1R9+Y1uEK3vu3eiNzUW9NzZkh0NWfTwk9Tfe2KDbfN1Ut33zCYlXPwE=&lt;/diagram&gt;&lt;/mxfile&gt;"
+   id="svg64"
+   sodipodi:docname="parser-packetskipper64.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)">
+  <metadata
+     id="metadata68">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2560"
+     inkscape:window-height="1375"
+     id="namedview66"
+     showgrid="false"
+     inkscape:snap-center="true"
+     inkscape:zoom="2.6666667"
+     inkscape:cx="85.801786"
+     inkscape:cy="198.67125"
+     inkscape:window-x="2160"
+     inkscape:window-y="2225"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg64" />
+  <defs
+     id="defs2" />
+  <rect
+     style="opacity:0.25;fill:#000000;stroke:#000000"
+     id="rect4"
+     height="350"
+     width="250"
+     y="3"
+     x="2" />
+  <rect
+     style="fill:#ffffff;stroke:#000000"
+     id="rect6"
+     pointer-events="none"
+     height="350"
+     width="250"
+     y="0"
+     x="0" />
+  <g
+     id="g12"
+     transform="translate(36.5,7.5)">
+    <switch
+       id="switch10">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="12"
+         width="176"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 177px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">PacketSkipper64(block_size)</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text8"
+         font-size="12px"
+         y="12"
+         x="88">PacketSkipper64(blocksize)</text>
+    </switch>
+  </g>
+  <ellipse
+     style="fill:#ffe599;stroke:#000000"
+     id="ellipse14"
+     pointer-events="none"
+     ry="20"
+     rx="40.5"
+     cy="62"
+     cx="125" />
+  <g
+     id="g20"
+     transform="translate(100.5,55.5)">
+    <switch
+       id="switch18">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="12"
+         width="49"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 50px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>start(N)</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text16"
+         font-size="12px"
+         y="12"
+         x="25">start($N$)</text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path22"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 125,82 v 21.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path24"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 125,108.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path26"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 125,170 q 0,20 0,15 0,-5 0,8.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path28"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 125,198.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <ellipse
+     style="opacity:0.25;fill:#000000;stroke:#000000"
+     id="ellipse30"
+     ry="30"
+     rx="100"
+     cy="143"
+     cx="127" />
+  <ellipse
+     style="fill:#e6e6e6;stroke:#000000"
+     id="ellipse32"
+     pointer-events="none"
+     ry="30"
+     rx="100"
+     cy="140"
+     cx="125" />
+  <g
+     id="g38"
+     transform="translate(33.5,126.5)">
+    <switch
+       id="switch36">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="27"
+         width="182"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 183px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>PacketSkipper8(block_size*8)</xhtml:div>
+            <xhtml:div>.apply(n=N[7:4])</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text34"
+         font-size="12px"
+         y="20"
+         x="91" />
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path40"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 125,260 q 0,20 0,15 0,-5 0,8.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path42"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 125,288.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <ellipse
+     style="opacity:0.25;fill:#000000;stroke:#000000"
+     id="ellipse44"
+     ry="30"
+     rx="100"
+     cy="233"
+     cx="127" />
+  <ellipse
+     style="fill:#e6e6e6;stroke:#000000"
+     id="ellipse46"
+     pointer-events="none"
+     ry="30"
+     rx="100"
+     cy="230"
+     cx="125" />
+  <ellipse
+     style="fill:#b9e0a5;stroke:#000000"
+     id="ellipse54"
+     pointer-events="none"
+     ry="20"
+     rx="31.5"
+     cy="310"
+     cx="125" />
+  <g
+     id="g60"
+     transform="translate(104.5,303.5)">
+    <switch
+       id="switch58">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="12"
+         width="41"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 42px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>accept</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text56"
+         font-size="12px"
+         y="12"
+         x="21">accept</text>
+    </switch>
+  </g>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:12px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+     x="124.92969"
+     y="135.81055"
+     id="text1095"><tspan
+       sodipodi:role="line"
+       x="124.92969"
+       y="135.81055"
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       id="tspan1102">PacketSkipper8($\textrm{blocksize}\cdot 8$)</tspan><tspan
+       sodipodi:role="line"
+       x="124.92969"
+       y="150.81055"
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       id="tspan920">.apply($n=N[7:4]$)</tspan></text>
+  <text
+     id="text926"
+     y="228.81055"
+     x="126.92969"
+     style="font-style:normal;font-weight:normal;font-size:12px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+     xml:space="preserve"><tspan
+       id="tspan922"
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       y="228.81055"
+       x="126.92969"
+       sodipodi:role="line">PacketSkipper8($\textrm{blocksize}$)</tspan><tspan
+       id="tspan924"
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       y="243.81055"
+       x="126.92969"
+       sodipodi:role="line">.apply($n=N[3:0]$)</tspan></text>
+</svg>

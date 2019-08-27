@@ -1,0 +1,918 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:xhtml="http://www.w3.org/1999/xhtml"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   width="966px"
+   height="691px"
+   viewBox="-0.5 -0.5 966 691"
+   content="&lt;mxfile modified=&quot;2019-04-10T15:46:31.627Z&quot; host=&quot;www.draw.io&quot; agent=&quot;Mozilla/5.0 (X11; FreeBSD amd64; rv:66.0) Gecko/20100101 Firefox/66.0&quot; version=&quot;10.6.0&quot; etag=&quot;uPuyS3vHt8h4oe82fvss&quot; type=&quot;device&quot;&gt;&lt;diagram id=&quot;PrT03a4-EaaQRAf_KGvf&quot;&gt;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&lt;/diagram&gt;&lt;/mxfile&gt;"
+   id="svg1587"
+   sodipodi:docname="scion-breakdown-parser.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)">
+  <metadata
+     id="metadata1591">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2560"
+     inkscape:window-height="1375"
+     id="namedview1589"
+     showgrid="false"
+     inkscape:zoom="1.366136"
+     inkscape:cx="485.2342"
+     inkscape:cy="345.5"
+     inkscape:window-x="2160"
+     inkscape:window-y="2225"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g1585" />
+  <defs
+     id="defs1387">
+    <linearGradient
+       x1="0%"
+       y1="0%"
+       x2="0%"
+       y2="100%"
+       id="mx-gradient-fcfcfc-1-ededed-1-s-0">
+      <stop
+         offset="0%"
+         style="stop-color:#FCFCFC"
+         id="stop1382" />
+      <stop
+         offset="100%"
+         style="stop-color:#EDEDED"
+         id="stop1384" />
+    </linearGradient>
+  </defs>
+  <g
+     id="g1585">
+    <rect
+       x="124"
+       y="0"
+       width="720"
+       height="490"
+       fill="url(#mx-gradient-fcfcfc-1-ededed-1-s-0)"
+       stroke="#000000"
+       pointer-events="none"
+       id="rect1389" />
+    <g
+       transform="translate(426.5,7.5)"
+       id="g1395">
+      <switch
+         id="switch1393">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="115"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 116px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">
+              <xhtml:div>NetFPGA</xhtml:div>
+            </xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="58"
+           y="26"
+           font-size="24px"
+           id="text1391"
+           style="font-size:24px;font-family:Lato;text-anchor:middle;fill:#000000">NetFPGA</text>
+      </switch>
+    </g>
+    <rect
+       x="534"
+       y="65"
+       width="160"
+       height="390"
+       fill="#bac8d3"
+       stroke="#23445d"
+       pointer-events="none"
+       id="rect1397" />
+    <g
+       transform="translate(552.5,72.5)"
+       id="g1403">
+      <switch
+         id="switch1401">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="123"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 124px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">PIPELINE</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="62"
+           y="26"
+           fill="#000000"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1399">PIPELINE</text>
+      </switch>
+    </g>
+    <rect
+       x="544"
+       y="115"
+       width="140"
+       height="90"
+       fill="#91daff"
+       stroke="#004c99"
+       pointer-events="none"
+       id="rect1405" />
+    <rect
+       x="614"
+       y="125"
+       width="60"
+       height="70"
+       fill="#cff4ff"
+       stroke="#000000"
+       pointer-events="none"
+       id="rect1407" />
+    <rect
+       x="544"
+       y="215"
+       width="140"
+       height="70"
+       fill="#97d077"
+       stroke="#006600"
+       pointer-events="none"
+       id="rect1409" />
+    <rect
+       x="544"
+       y="295"
+       width="140"
+       height="70"
+       fill="#cc99ff"
+       stroke="#4c0099"
+       pointer-events="none"
+       id="rect1411" />
+    <rect
+       x="544"
+       y="375"
+       width="140"
+       height="70"
+       fill="#e6e6e6"
+       stroke="#4d4d4d"
+       pointer-events="none"
+       id="rect1413" />
+    <rect
+       x="144"
+       y="65"
+       width="350"
+       height="275"
+       fill="#ffd966"
+       stroke="#cc6600"
+       pointer-events="none"
+       id="rect1415" />
+    <g
+       transform="translate(100.5,202.5)rotate(-90,51,0)"
+       id="g1421">
+      <switch
+         id="switch1419">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="102"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(204, 102, 0); line-height: 1.2; vertical-align: top; width: 103px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">PARSER</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="51"
+           y="26"
+           fill="#CC6600"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1417">PARSER</text>
+      </switch>
+    </g>
+    <rect
+       x="734"
+       y="65"
+       width="90"
+       height="275"
+       fill="#ffd966"
+       stroke="#cc6600"
+       pointer-events="none"
+       id="rect1423" />
+    <g
+       transform="translate(709.5,188.5)rotate(-90,69.5,13.5)"
+       id="g1429">
+      <switch
+         id="switch1427">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="139"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(204, 102, 0); line-height: 1.2; vertical-align: top; width: 140px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">DEPARSER</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="70"
+           y="26"
+           fill="#CC6600"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1425">DEPARSER</text>
+      </switch>
+    </g>
+    <path
+       d="M 694 219 L 720.16 219"
+       fill="none"
+       stroke="#f29100"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1431" />
+    <path
+       d="M 728.41 219 L 717.41 224.5 L 720.16 219 L 717.41 213.5 Z"
+       fill="#f29100"
+       stroke="#f29100"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1433" />
+    <path
+       d="M 494 205 L 520.16 205"
+       fill="none"
+       stroke="#f29100"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1435" />
+    <path
+       d="M 528.41 205 L 517.41 210.5 L 520.16 205 L 517.41 199.5 Z"
+       fill="#f29100"
+       stroke="#f29100"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1437" />
+    <g
+       transform="translate(460.5,128.5)rotate(-90,53.5,11)"
+       id="g1443">
+      <switch
+         id="switch1441">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="107"
+           height="22"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 20px; font-family: Helvetica; color: rgb(242, 145, 0); line-height: 1.2; vertical-align: top; width: 108px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">
+              <xhtml:font
+                 style="font-size: 20px"
+                 face="Lato">HEADERS</xhtml:font>
+            </xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="54"
+           y="21"
+           font-size="20px"
+           id="text1439"
+           style="font-size:20px;font-family:Helvetica;text-anchor:middle;fill:#f29100">headers</text>
+      </switch>
+    </g>
+    <g
+       transform="translate(660.5,143.5)rotate(-90,53.5,11)"
+       id="g1449">
+      <switch
+         id="switch1447">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="107"
+           height="22"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 20px; font-family: Helvetica; color: rgb(242, 145, 0); line-height: 1.2; vertical-align: top; width: 108px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">
+              <xhtml:font
+                 style="font-size: 20px"
+                 face="Lato">HEADERS</xhtml:font>
+            </xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="54"
+           y="21"
+           font-size="20px"
+           id="text1445"
+           style="font-size:20px;font-family:Helvetica;text-anchor:middle;fill:#f29100">headers</text>
+      </switch>
+    </g>
+    <path
+       d="M 54 415.5 L 520.16 417.93"
+       fill="none"
+       stroke="#007fff"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1451" />
+    <path
+       d="M 528.41 417.97 L 517.38 423.41 L 520.16 417.93 L 517.44 412.41 Z"
+       fill="#007fff"
+       stroke="#007fff"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1453" />
+    <path
+       d="M 55 212.5 L 55 191.5 L 119.01 191.5 L 119.01 180.5 L 143 202 L 119.01 223.5 L 119.01 212.5 Z"
+       fill="#cc6600"
+       stroke="none"
+       pointer-events="none"
+       id="path1455" />
+    <path
+       d="M 694 415.5 L 900.16 415.03"
+       fill="none"
+       stroke="#007fff"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1457" />
+    <path
+       d="M 908.41 415.01 L 897.42 420.54 L 900.16 415.03 L 897.4 409.54 Z"
+       fill="#007fff"
+       stroke="#007fff"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1459" />
+    <g
+       transform="translate(2.5,159.5)"
+       id="g1465">
+      <switch
+         id="switch1463">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="85"
+           height="22"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 20px; font-family: Lato; color: rgb(204, 102, 0); line-height: 1.2; vertical-align: top; width: 86px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">PACKET</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="43"
+           y="21"
+           fill="#CC6600"
+           text-anchor="middle"
+           font-size="20px"
+           font-family="Lato"
+           id="text1461">PACKET</text>
+      </switch>
+    </g>
+    <path
+       d="M 4 187.5 L 44 187.5 L 44 217.5 L 4 217.5 Z"
+       fill="#cc6600"
+       stroke="#ffffff"
+       stroke-width="2"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1467" />
+    <path
+       d="M 4 187.5 L 24 202.5 L 44 187.5"
+       fill="none"
+       stroke="#ffffff"
+       stroke-width="2"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1469" />
+    <path
+       d="M 15.32 402.05 L 10.47 406.76 L 15.32 411.47 L 15.32 409.11 L 23.42 409.11 L 23.42 404.49 L 15.32 404.49 L 15.32 402.05 Z M 32.83 407.93 L 32.83 410.28 L 24.59 410.28 L 24.59 414.99 L 32.83 414.99 L 32.83 417.36 L 37.45 412.79 L 37.54 412.64 L 32.83 407.93 Z M 15.32 412.64 L 10.47 417.34 L 15.32 422.06 L 15.32 419.7 L 23.42 419.7 L 23.42 414.99 L 15.32 414.99 L 15.32 412.64 Z M 32.83 418.53 L 32.83 420.88 L 24.59 420.88 L 24.59 425.51 L 32.83 425.51 L 32.83 427.94 L 37.45 423.22 L 37.54 423.22 L 32.83 418.53 Z M 12.09 395 C 35.99 395 35.99 395 35.99 395 C 40.41 395 44 398.68 44 403.08 C 44 426.99 44 426.99 44 426.99 C 44 431.39 40.41 435 35.99 435 C 12.09 435 12.09 435 12.09 435 C 7.68 435 4 431.39 4 426.99 C 4 403.08 4 403.08 4 403.08 C 4 398.68 7.68 395 12.09 395 Z"
+       fill="#007fff"
+       stroke="none"
+       pointer-events="none"
+       id="path1471" />
+    <path
+       d="M 935.32 402.05 L 930.47 406.76 L 935.32 411.47 L 935.32 409.11 L 943.42 409.11 L 943.42 404.49 L 935.32 404.49 L 935.32 402.05 Z M 952.83 407.93 L 952.83 410.28 L 944.59 410.28 L 944.59 414.99 L 952.83 414.99 L 952.83 417.36 L 957.45 412.79 L 957.54 412.64 L 952.83 407.93 Z M 935.32 412.64 L 930.47 417.34 L 935.32 422.06 L 935.32 419.7 L 943.42 419.7 L 943.42 414.99 L 935.32 414.99 L 935.32 412.64 Z M 952.83 418.53 L 952.83 420.88 L 944.59 420.88 L 944.59 425.51 L 952.83 425.51 L 952.83 427.94 L 957.45 423.22 L 957.54 423.22 L 952.83 418.53 Z M 932.09 395 C 955.99 395 955.99 395 955.99 395 C 960.41 395 964 398.68 964 403.08 C 964 426.99 964 426.99 964 426.99 C 964 431.39 960.41 435 955.99 435 C 932.09 435 932.09 435 932.09 435 C 927.68 435 924 431.39 924 426.99 C 924 403.08 924 403.08 924 403.08 C 924 398.68 927.68 395 932.09 395 Z"
+       fill="#007fff"
+       stroke="none"
+       pointer-events="none"
+       id="path1473" />
+    <path
+       d="M 924 190 L 964 190 L 964 220 L 924 220 Z"
+       fill="#cc6600"
+       stroke="#ffffff"
+       stroke-width="2"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1475" />
+    <path
+       d="M 924 190 L 944 205 L 964 190"
+       fill="none"
+       stroke="#ffffff"
+       stroke-width="2"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1477" />
+    <g
+       transform="translate(5.5,342.5)"
+       id="g1483">
+      <switch
+         id="switch1481">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="120"
+           height="46"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 20px; font-family: Lato; color: rgb(0, 127, 255); line-height: 1.2; vertical-align: top; width: 120px; white-space: normal; overflow-wrap: normal;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">SWITCH METADATA</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="60"
+           y="33"
+           fill="#007FFF"
+           text-anchor="middle"
+           font-size="20px"
+           font-family="Lato"
+           id="text1479">SWITCH METADATA</text>
+      </switch>
+    </g>
+    <path
+       d="M 825 213 L 825 192 L 889.01 192 L 889.01 181 L 913 202.5 L 889.01 224 L 889.01 213 Z"
+       fill="#cc6600"
+       stroke="none"
+       pointer-events="none"
+       id="path1485" />
+    <rect
+       x="124"
+       y="550"
+       width="720"
+       height="140"
+       fill="url(#mx-gradient-fcfcfc-1-ededed-1-s-0)"
+       stroke="#000000"
+       pointer-events="none"
+       id="rect1489" />
+    <g
+       transform="translate(400.5,658.5)"
+       id="g1495">
+      <switch
+         id="switch1493">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="167"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 168px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">Control plane</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="84"
+           y="26"
+           fill="#000000"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1491">Control plane</text>
+      </switch>
+    </g>
+    <rect
+       x="134"
+       y="560"
+       width="290"
+       height="40"
+       fill="#94ffbb"
+       stroke="#00994d"
+       pointer-events="none"
+       id="rect1497" />
+    <g
+       transform="translate(177.5,566.5)"
+       id="g1503">
+      <switch
+         id="switch1501">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="203"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(0, 153, 77); line-height: 1.2; vertical-align: top; width: 204px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">THIN WRAPPER</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="102"
+           y="26"
+           fill="#00994D"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1499">THIN WRAPPER</text>
+      </switch>
+    </g>
+    <rect
+       x="434"
+       y="560"
+       width="400"
+       height="40"
+       fill="#647687"
+       stroke="#314354"
+       pointer-events="none"
+       id="rect1505" />
+    <g
+       transform="translate(493.5,566.5)"
+       id="g1511">
+      <switch
+         id="switch1509">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="281"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(255, 255, 255); line-height: 1.2; vertical-align: top; width: 282px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">SOFTWARE SCION BR</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="141"
+           y="26"
+           fill="#ffffff"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1507">SOFTWARE SCION BR</text>
+      </switch>
+    </g>
+    <rect
+       x="134"
+       y="610"
+       width="700"
+       height="40"
+       fill="#647687"
+       stroke="#314354"
+       pointer-events="none"
+       id="rect1513" />
+    <g
+       transform="translate(343.5,616.5)"
+       id="g1519">
+      <switch
+         id="switch1517">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="281"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(255, 255, 255); line-height: 1.2; vertical-align: top; width: 282px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">SCION INFRASTRUCTURE</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="141"
+           y="26"
+           fill="#ffffff"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1515">SCION INFRASTRUCTURE</text>
+      </switch>
+    </g>
+    <path
+       d="M 279 546.16 L 279 504.84"
+       fill="none"
+       stroke="#000000"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1521" />
+    <path
+       d="M 279 554.41 L 273.5 543.41 L 279 546.16 L 284.5 543.41 Z"
+       fill="#000000"
+       stroke="#000000"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1523" />
+    <path
+       d="M 279 496.59 L 284.5 507.59 L 279 504.84 L 273.5 507.59 Z"
+       fill="#000000"
+       stroke="#000000"
+       stroke-width="5"
+       stroke-miterlimit="10"
+       pointer-events="none"
+       id="path1525" />
+    <path
+       d="M 645.69 538.83 L 656.69 538.67 L 633.99 559 L 610.7 539.34 L 621.7 539.18 L 621.3 511.96 L 610.3 512.12 L 633.01 492 L 656.3 511.45 L 645.3 511.61 Z"
+       fill="#535b61"
+       stroke="none"
+       pointer-events="none"
+       id="path1527" />
+    <rect
+       x="184"
+       y="75"
+       width="300"
+       height="35"
+       fill="#f0a30a"
+       stroke="#bd7000"
+       pointer-events="none"
+       id="rect1529" />
+    <g
+       transform="translate(318.5,78.5)"
+       id="g1535">
+      <switch
+         id="switch1533">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="31"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(255, 255, 255); line-height: 1.2; vertical-align: top; width: 32px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">L2</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="16"
+           y="26"
+           fill="#ffffff"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1531">L2</text>
+      </switch>
+    </g>
+    <rect
+       x="184"
+       y="119"
+       width="300"
+       height="35"
+       fill="#f0a30a"
+       stroke="#bd7000"
+       pointer-events="none"
+       id="rect1537" />
+    <g
+       transform="translate(221.5,122.5)"
+       id="g1543">
+      <switch
+         id="switch1541">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="225"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(255, 255, 255); line-height: 1.2; vertical-align: top; width: 226px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">ENCAPSULATION</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="113"
+           y="26"
+           fill="#ffffff"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1539">ENCAPSULATION</text>
+      </switch>
+    </g>
+    <rect
+       x="184"
+       y="162.5"
+       width="300"
+       height="35"
+       fill="#f0a30a"
+       stroke="#bd7000"
+       pointer-events="none"
+       id="rect1545" />
+    <g
+       transform="translate(210.5,166.5)"
+       id="g1551">
+      <switch
+         id="switch1549">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="247"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(255, 255, 255); line-height: 1.2; vertical-align: top; width: 248px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">COMMON HEADER</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="124"
+           y="26"
+           fill="#ffffff"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1547">COMMON HEADER</text>
+      </switch>
+    </g>
+    <rect
+       x="184"
+       y="205"
+       width="300"
+       height="35"
+       fill="#f0a30a"
+       stroke="#bd7000"
+       pointer-events="none"
+       id="rect1553" />
+    <g
+       transform="translate(212.5,208.5)"
+       id="g1559">
+      <switch
+         id="switch1557">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="242"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(255, 255, 255); line-height: 1.2; vertical-align: top; width: 243px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">ADDRESS HEADER</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="121"
+           y="26"
+           fill="#ffffff"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1555">ADDRESS HEADER</text>
+      </switch>
+    </g>
+    <rect
+       x="184"
+       y="250"
+       width="300"
+       height="80"
+       fill="#f0a30a"
+       stroke="#bd7000"
+       pointer-events="none"
+       id="rect1561" />
+    <rect
+       x="324"
+       y="260"
+       width="70"
+       height="60"
+       fill="#f0b030"
+       stroke="#bd7000"
+       pointer-events="none"
+       id="rect1563" />
+    <g
+       transform="translate(335.5,276.5)"
+       id="g1569">
+      <switch
+         id="switch1567">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="47"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(255, 255, 255); line-height: 1.2; vertical-align: top; width: 48px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">INF</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="24"
+           y="26"
+           fill="#ffffff"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1565">INF</text>
+      </switch>
+    </g>
+    <rect
+       x="404"
+       y="260"
+       width="70"
+       height="60"
+       fill="#f0b030"
+       stroke="#bd7000"
+       pointer-events="none"
+       id="rect1571" />
+    <g
+       transform="translate(419.5,276.5)"
+       id="g1577">
+      <switch
+         id="switch1575">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="38"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(255, 255, 255); line-height: 1.2; vertical-align: top; width: 39px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">HF</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="19"
+           y="26"
+           fill="#ffffff"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1573">HF</text>
+      </switch>
+    </g>
+    <g
+       transform="translate(205.5,276.5)"
+       id="g1583">
+      <switch
+         id="switch1581">
+        <foreignObject
+           style="overflow:visible;"
+           pointer-events="all"
+           width="67"
+           height="27"
+           requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+          <xhtml:div
+             style="display: inline-block; font-size: 24px; font-family: Lato; color: rgb(255, 255, 255); line-height: 1.2; vertical-align: top; width: 68px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+            <xhtml:div
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">PATH</xhtml:div>
+          </xhtml:div>
+        </foreignObject>
+        <text
+           x="34"
+           y="26"
+           fill="#ffffff"
+           text-anchor="middle"
+           font-size="24px"
+           font-family="Lato"
+           id="text1579">PATH</text>
+      </switch>
+    </g>
+  </g>
+</svg>

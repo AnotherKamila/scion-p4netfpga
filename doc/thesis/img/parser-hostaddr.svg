@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:xhtml="http://www.w3.org/1999/xhtml"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   width="483px"
+   height="349px"
+   viewBox="-0.5 -0.5 483 349"
+   content="&lt;mxfile modified=&quot;2019-08-27T14:34:23.190Z&quot; host=&quot;www.draw.io&quot; agent=&quot;Mozilla/5.0 (X11; FreeBSD amd64; rv:68.0) Gecko/20100101 Firefox/68.0&quot; version=&quot;11.2.3&quot; etag=&quot;9BLP21bqAtWr5Tzu7B4L&quot; type=&quot;google&quot; pages=&quot;1&quot;&gt;&lt;diagram id=&quot;Jchbd4hTmSIhQmW7G5xp&quot;&gt;1VnbbuM2EP0aP1bgXeRj4k26BbZAgBRt86hItK2ubBoSndj9+o4syrpQ2fXKcpo1FlhxyBmJZ85cyMzofL3/NY+2q99NorMZQcl+Rj/NCCFIEPivlBwqCSWsEizzNKlEuBE8pv9qJ0ROuksTXXQWWmMym267wthsNjq2HVmU5+a1u2xhsu5bt9FSe4LHOMp86V9pYldOihFqJj7rdLlyr5bcTTxH8ddlbnYb974ZoYvjr5peR7Utt75YRYl5bYno3YzOc2Ns9bTez3VWYlvDVundvzF7+u5cb+w5Cs5PL1G2c1v/bApbopgkuS6Kylihc/e59lBDdNykLs2gGb19XaVWP26juJx9BVKAbGXXGYwwPEZZutzAcwyfBbbo7YvObQp437gJa0qNExqljvsyWKj3b+4OnzADLmqz1jY/wBKnIJGqVA61AxWvBK+NV5l0vli1HEqZWxg5Ji1Pxhs04cEBOgwu9cCdEZHBG26T9AUel+VjYaPc1nKw2JryMAfzEAH6+3gv0iybm8zkRz16f3/HlZoGU4gB0gWVUOSBKqiPKUOXQ8rOgVTvbR7Fb4DaENsetno8xBNAqYQMeA9L5WOJ6QBBxQRg8gEw+3Bskpsyn5axm0VFkcZdFGCn+eHvMgnATtzwyeWE4+DTvjM61KN9altqMHqqLcJzo1QOap3q43TSS92F2eWx7kQchNRS2w5jzvBKC3I+gHgty3UW2fSl+xFDbnBveDDpxracHtK+01k/MqotOcV29u7Zwoh4xqjqGavA8IwdyXHa/Vl8EecEX67tLt+UjgLeQP65GQ5DiMOy0txANP5xURz2Ux1W82OqG64wUyRA+PX8Fw4FLX+bQpcEbXhxBhxY/9vDC2sV/becNqBZqj0fLDRrbu4576+eqqhN0RBQL+NSKXzn4StlXHmO86I41ttrtwS36g7d8Gu1BCz0+6xrtQTKwzTRi2iXWR8rKB2PbmhyuzJLs4myu0Z6221qmzVfTJk9jjj+o609uBNLtLOmi3IWPevswRSpTU2ZdTK9sK1k9KU3XSWlujvOK2C81PVsrDXrVtWs6+RTp4KOrprMr5riRznwCwrESe3CEgnh54Upx2NrJPYLLg/Pq5GNsXqhWSwK3VkD7VF0aK3YlhrFNzZHeO9QQvtntO9qMHeMaSKk+oqxhb3GthVDVUX4wW6wsLn5qltZBh1/QwfAcbQMz6bl+zRzAnvcEmOJKoTP037Nma6Xq3uYyfsIMa6PwOKnaiSU9BvvoUYCXamRwP7FTYX9ZBE7LkDx+Ui+T4TCEYkEcNDmJJRKMoFoz2tcBkwwJAWFd0rVu/Y5N3iVUgHiTCIWKowU8w5lOOBUcYQRl0wyerWwHrpzek9OhD4n5MejBA5YiBETnCiK5QAlgNxcQUZmFKNwLCUkUAJjyoiUmGLWy+04DJAgTEkB7QgRPeJNSInL78wG1j/+OR+X6MlPlefhrP//nhixf0l3hP6jdWY1yz5QlDO/RPc9cv5Fm2+M9Ru9CUN26KbtPbN4XcY/chpXGLI4gsJLMQm5l1+ZwEFIOaTYkAjG6+kRV6wsAGNUURRKero0P6VxIgIOE1JI6OC9bUzIiaGLv3flxEDUfzROQJyyAIpqiHlZugWWfVKoQCkCtMEcqZCNLO1l6xCECBHwfMjgX6+D4AQFCAnGhAyxFPUV1cWkgGHzp+FqefP3d3r3Hw==&lt;/diagram&gt;&lt;/mxfile&gt;"
+   id="svg3561"
+   sodipodi:docname="parser-hostaddr.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)">
+  <metadata
+     id="metadata3565">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2560"
+     inkscape:window-height="1375"
+     id="namedview3563"
+     showgrid="false"
+     inkscape:snap-center="true"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="190.29284"
+     inkscape:cy="91.650705"
+     inkscape:window-x="2160"
+     inkscape:window-y="2225"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg3561" />
+  <defs
+     id="defs3435" />
+  <rect
+     style="opacity:0.25;fill:#000000;stroke:#000000"
+     id="rect3437"
+     height="345"
+     width="480"
+     y="3"
+     x="2" />
+  <rect
+     style="fill:#ffffff;stroke:#000000"
+     id="rect3439"
+     pointer-events="none"
+     height="345"
+     width="480"
+     y="0"
+     x="0" />
+  <g
+     id="g3445"
+     transform="translate(16.5,7.5)">
+    <switch
+       id="switch3443">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="12"
+         width="126"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 127px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">Host address parser</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text3441"
+         font-size="12px"
+         y="12"
+         x="63">Host address parser</text>
+    </switch>
+  </g>
+  <ellipse
+     style="fill:#ffe599;stroke:#000000"
+     id="ellipse3447"
+     pointer-events="none"
+     ry="20"
+     rx="31.5"
+     cy="55"
+     cx="224.5" />
+  <g
+     id="g3453"
+     transform="translate(209.5,46.378679)">
+    <switch
+       id="switch3451">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="12"
+         width="29"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 30px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>start</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text3449"
+         font-size="12px"
+         y="12"
+         x="15">start</text>
+    </switch>
+  </g>
+  <ellipse
+     style="fill:#ffffff;stroke:#000000"
+     id="ellipse3455"
+     pointer-events="none"
+     ry="30"
+     rx="65"
+     cy="125"
+     cx="224.5" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3463"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="M 224.5,75 V 88.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3465"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 224.5,93.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <ellipse
+     style="fill:#f19c99;stroke:#000000"
+     id="ellipse3467"
+     pointer-events="none"
+     ry="25"
+     rx="67.5"
+     cy="300"
+     cx="369.5" />
+  <ellipse
+     style="fill:#ffffff;stroke:#000000"
+     id="ellipse3475"
+     pointer-events="none"
+     ry="30"
+     rx="55"
+     cy="221"
+     cx="84.5" />
+  <ellipse
+     style="fill:#b9e0a5;stroke:#000000"
+     id="ellipse3483"
+     pointer-events="none"
+     ry="20"
+     rx="31.5"
+     cy="300"
+     cx="224.5" />
+  <g
+     id="g3489"
+     transform="translate(203.5,291.37867)">
+    <switch
+       id="switch3487">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="12"
+         width="41"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 42px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;white-space:normal;">
+            <xhtml:div>accept</xhtml:div>
+          </xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:12px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text3485"
+         font-size="12px"
+         y="12"
+         x="21">accept</text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3491"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 290,125 h 160 v 175 h -6.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3493"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 438.12,300 7,-3.5 -1.75,3.5 1.75,3.5 z" />
+  <g
+     id="g3499"
+     transform="translate(313.5,110.5)">
+    <switch
+       id="switch3497">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="11"
+         width="40"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 11px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: right;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;background-color:#ffffff;">default</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:11px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text3495"
+         font-size="11px"
+         y="11"
+         x="20">default</text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3501"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 188.21,149.89 -64.22,44.03" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3503"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 119.66,196.89 3.79,-6.85 0.54,3.88 3.42,1.9 z" />
+  <g
+     id="g3509"
+     transform="translate(137.79289,154.06497)">
+    <switch
+       id="switch3507">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="11"
+         width="25"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 11px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;background-color:#ffffff;">IPv4</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:11px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text3505"
+         font-size="11px"
+         y="11"
+         x="13">IPv4</text>
+    </switch>
+  </g>
+  <ellipse
+     style="fill:#ffffff;stroke:#000000"
+     id="ellipse3511"
+     pointer-events="none"
+     ry="30"
+     rx="50"
+     cy="221"
+     cx="224.5" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3519"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 224.5,155 v 29.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3521"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 224.5,189.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <g
+     id="g3527"
+     transform="translate(194.06497,159.72183)">
+    <switch
+       id="switch3525">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="11"
+         width="25"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 11px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;background-color:#ffffff;">IPv6</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:11px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text3523"
+         font-size="11px"
+         y="11"
+         x="13">IPv6</text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3529"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 122.86,242.5 72.55,41.08" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3531"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 199.98,286.16 -7.81,-0.4 3.24,-2.18 0.21,-3.91 z" />
+  <ellipse
+     style="fill:#ffffff;stroke:#000000"
+     id="ellipse3533"
+     pointer-events="none"
+     ry="30"
+     rx="55"
+     cy="221"
+     cx="364.5" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3541"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 260.79,149.89 64.22,44.03" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3543"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 329.34,196.89 -7.75,-1.07 3.42,-1.9 0.54,-3.88 z" />
+  <g
+     id="g3549"
+     transform="translate(285.91421,151.23654)">
+    <switch
+       id="switch3547">
+      <foreignObject
+         requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"
+         height="11"
+         width="24"
+         pointer-events="all"
+         style="overflow:visible;">
+        <xhtml:div
+           style="display: inline-block; font-size: 11px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; white-space: nowrap; text-align: center;">
+          <xhtml:div
+             style="display:inline-block;text-align:inherit;text-decoration:inherit;background-color:#ffffff;">SVC</xhtml:div>
+        </xhtml:div>
+      </foreignObject>
+      <text
+         style="font-size:11px;font-family:Helvetica;text-anchor:middle;fill:#000000"
+         id="text3545"
+         font-size="11px"
+         y="11"
+         x="12">SVC</text>
+    </switch>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3551"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 224.5,251 v 22.63" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3553"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 224.5,278.88 -3.5,-7 3.5,1.75 3.5,-1.75 z" />
+  <path
+     style="fill:none;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3555"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 326.14,242.5 -72.55,41.08" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-miterlimit:10"
+     inkscape:connector-curvature="0"
+     id="path3557"
+     pointer-events="none"
+     stroke-miterlimit="10"
+     d="m 249.02,286.16 4.36,-6.49 0.21,3.91 3.24,2.18 z" />
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:12px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+     x="224.45898"
+     y="118.34352"
+     id="text1059"><tspan
+       sodipodi:role="line"
+       id="tspan1057"
+       x="224.45898"
+       y="118.34352"
+       style="font-size:12px;text-align:center;text-anchor:middle">extract</tspan><tspan
+       sodipodi:role="line"
+       x="224.45898"
+       y="133.34352"
+       id="tspan1063"
+       style="font-size:12px;text-align:center;text-anchor:middle">address type</tspan></text>
+  <text
+     id="text4189"
+     y="206.84352"
+     x="224.61719"
+     style="font-style:normal;font-weight:normal;font-size:12px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+     xml:space="preserve"><tspan
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       y="206.84352"
+       x="224.61719"
+       id="tspan4185"
+       sodipodi:role="line">extract</tspan><tspan
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       id="tspan4187"
+       y="221.84352"
+       x="224.61719"
+       sodipodi:role="line">IPv6 address:</tspan><tspan
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       y="236.84352"
+       x="224.61719"
+       sodipodi:role="line"
+       id="tspan4191">16 bytes</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:12px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+     x="84.617188"
+     y="206.84352"
+     id="text4199"><tspan
+       sodipodi:role="line"
+       id="tspan4193"
+       x="84.617188"
+       y="206.84352"
+       style="font-size:12px;text-align:center;text-anchor:middle">extract</tspan><tspan
+       sodipodi:role="line"
+       x="84.617188"
+       y="221.84352"
+       id="tspan4195"
+       style="font-size:12px;text-align:center;text-anchor:middle">IPv4 address:</tspan><tspan
+       id="tspan4197"
+       sodipodi:role="line"
+       x="84.617188"
+       y="236.84352"
+       style="font-size:12px;text-align:center;text-anchor:middle">4 bytes</tspan></text>
+  <text
+     id="text4207"
+     y="206.84352"
+     x="364.61719"
+     style="font-style:normal;font-weight:normal;font-size:12px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+     xml:space="preserve"><tspan
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       y="206.84352"
+       x="364.61719"
+       id="tspan4201"
+       sodipodi:role="line">extract</tspan><tspan
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       id="tspan4203"
+       y="221.84352"
+       x="364.61719"
+       sodipodi:role="line">SVC address:</tspan><tspan
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       y="236.84352"
+       x="364.61719"
+       sodipodi:role="line"
+       id="tspan4205">2 bytes</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:12px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+     x="369.23047"
+     y="293.34357"
+     id="text1095"><tspan
+       sodipodi:role="line"
+       x="369.23047"
+       y="293.34357"
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       id="tspan1102">return error:</tspan><tspan
+       sodipodi:role="line"
+       x="369.23047"
+       y="308.34357"
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       id="tspan4221">BadAddrType</tspan></text>
+</svg>
