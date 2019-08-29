@@ -1360,9 +1360,7 @@ would drastically increase my FPGA area usage.
 ***** TODO Tables
       squishing => but then large table => helps with timing but fills the FPGA
 
-* [0/5] Evaluation
-  Ideally: here are the pictures about how effing fast it is. Also about timing
-  and utilisation and perhaps power consumption.
+* [3/3] Evaluation
   # > What happened (objectively)?
   # > Do not interpret, simply state the facts.
   # > Let's be honest: the first thing most of us do when skimming a paper is look
@@ -1373,31 +1371,135 @@ would drastically increase my FPGA area usage.
   [[*Implementation Challenges]] and especially in [[*Meeting timing constraints]], we
   have not been able to test the full system.
   Therefore, we do not present results for the full design: instead, we show the
-  data for the various components of the design, and we draw conclusions based
-  on these and our knowledge of how composing systems in FPGAs affects
-  performance.
-*** TODO Throughput
-    pretty much my magic dashboard
-    (include queue sizes)
-*** TODO Packet loss
-***** Large packets (1500B):
-      | Load |  time | Avg queue size | Max queue size | Tx frames | Rx frames | Loss |
-      |------+-------+----------------+----------------+-----------+-----------+------|
-      |  20% | 16:18 |                |                |  39094558 |  39094558 |    0 |
-      |  40% | 16:22 |                |                |  79240424 |  79240424 |    0 |
-      |  60% | 16:23 |                |                | 122369587 | 122369587 |    0 |
-      |  80% | 16:16 |                |                | 157131302 | 157131302 |    0 |
-      | 100% | 16:25 |                |                | 198083742 | 198083742 |    0 |
-      #+TBLFM: $7=$6 - $5
+  data for a partial design, and we draw conclusions based on these and our
+  knowledge of how composing systems in FPGAs affects performance.
+*** DONE Method
+    CLOSED: [2019-08-29 Thu 18:23]
+    The aim of the evaluation is to determine the maximum throughput achievable
+    with our system, as well as gain insight into the limitations of the system.
+    In order to do that, we need to generate a large amount of traffic.
+    We first attempted to do this using a host with a 10G NIC (which we had been
+    using for debugging), but the NIC was not able to approach line rate with
+    small frames: we only got about 6.2 Gbps over a direct host-to-host
+    connection with 115B frames.
+    Thus, we used the Spirent TestCenter traffic generator, which (though
+    cumbersome to work with) is able to achieve line rate even with
+    minimum-sized packets.
 
-      seriously though
-      would you believe me if I told you I have zero packet loss?
-      I'm surprised
-      I am willing to believe that maybe it isn't wrong
-      because hardware, and usually you get packet loss because something takes too long, and here nothing takes too long because everything is constant time
-      and because I ensured equal distribution on all output ports, so queues weren't getting full
+    Due to the limitations of the traffic generator, we were only able to use a
+    small set of deterministically pre-generated SCION frames, not complex
+    randomly generated traffic patterns.
+    However, this does not make it "easier" for the NetFPGA, as it processes
+    each packet completely independently (except for queueing).
+    It also ensures measurement reproducibility, and thus can be viewed as a
+    good thing.
 
-******* source data                                                :noexport:
+    As mentioned in section [[*Meeting timing constraints]], the full system does
+    not meet timing constraints and thus cannot be tested in one piece.
+    Therefore, we evaluated two subsets of the full system:
+    a program with everything besides updating the IP overlay (i.e. parsing, HF
+    validation, routing),
+    and a program with everything besides HF MAC validity check (i.e. parsing,
+    HF timestamp check, routing, IP overlay update).
+    The two behaved identically (as can be expected with an FPGA design that
+    meets timing), and thus we only present one set of numbers.
+
+    In all cases, the ingress traffic was sent on all 4 ports, distributed
+    evenly.
+    The output traffic distribution was also even (as determined by
+    the egress interface IDs pre-set in our packets).
+    All of the measurements were performed multiple times and showed consistent
+    results.
+    Each measurement was run for at least 45 seconds (sometimes more, up to 20
+    minutes), and we checked that the throughput was steady for the vast
+    majority of all measurements.
+*** DONE Throughput
+    CLOSED: [2019-08-29 Thu 14:02]
+    #+NAME:   fig:throughput-1500B
+    #+CAPTION: Throughput per port over time, with 1500B frames. Stable at 9.93 Gbps per port, i.e. *39.72 Gbps* in total.
+    [[./img/throughput-1500B.jpg]]
+
+    #+NAME:   fig:throughput-115B
+    #+CAPTION: Throughput per port over time, with 115B frames. Stable at 9.93 Gbps per port, i.e. *39.72 Gbps* in total.
+    [[./img/throughput-115B.jpg]]
+
+    Plots [[fig:throughput-1500B]] and [[fig:throughput-115B]] show the throughput per
+    port, as measured by the traffic generator, for 1500B and 115B frames,
+    respectively.[fn:15]
+    For both frame sizes, after the traffic ramp-up both the transmit and the
+    receive rate stabilised
+    at 9.93 Gbps per port, i.e. *39.72 Gbps* in total.
+*** DONE Queue sizes and packet loss
+    CLOSED: [2019-08-29 Thu 17:37]
+    Our program exports statistics about frame counts and queue sizes, as seen
+    by the NetFPGA.
+    We can use this data to understand whether the system is under load, and
+    whether packet loss is occurring.
+    Tables [[tab:queues-1500B]] and [[tab:queues-115B]], as well as plot [[fig:queues]]
+    show the packet loss and maximum queue sizes observed throughout the duration of the
+    experiments, for 1500B and 115B frames.
+
+    The frame counts as reported by the NetFPGA are consistent with the frame
+    counts reported by the traffic generator.
+    Note that queue size is measured in blocks of 32B, and thus a single large frame
+    may take up more than 1 block.
+
+    #+NAME:   tab:queues-1500B
+    #+CAPTION: Max queue sizes (in blocks of 32B) and packet loss with varying load, with 1500B frames.
+    #+ATTR_LATEX: :align |r|r|r|r|r|
+    |-------------+-----------+-----------+-----------+------|
+    | Load / Gbps | Max queue | Tx frames | Rx frames | Loss |
+    |-------------+-----------+-----------+-----------+------|
+    |           8 |         0 |  39094558 |  39094558 |    0 |
+    |          16 |         1 |  79240424 |  79240424 |    0 |
+    |          24 |         2 | 122369587 | 122369587 |    0 |
+    |          32 |         2 | 157131302 | 157131302 |    0 |
+    |          40 |         3 | 198083742 | 198083742 |    0 |
+    |-------------+-----------+-----------+-----------+------|
+    #+TBLFM: $7=$6 - $5
+
+    #+NAME:   tab:queues-115B
+    #+CAPTION: Max queue sizes (in blocks of 32B) and packet loss with varying load, with 115B frames.
+    #+ATTR_LATEX: :align |r|r|r|r|r|
+    |-------------+-----------+------------+------------+------|
+    | Load / Gbps | Max queue |  Tx frames |  Rx frames | Loss |
+    |-------------+-----------+------------+------------+------|
+    |           8 |         0 |  334798373 |  334798373 |    0 |
+    |          16 |         0 |  674862021 |  674862021 |    0 |
+    |          24 |         1 |  990142312 |  990142312 |    0 |
+    |          32 |         1 | 2125564720 | 2125564720 |    0 |
+    |          40 |         2 | 1631918616 | 1631918616 |    0 |
+    |-------------+-----------+------------+------------+------|
+    #+TBLFM: $7=$6 - $5
+
+    #+NAME: fig:queues
+    #+CAPTION: Queue sizes (in blocks of 32B) depending on load.
+    [[./img/queues.svg]]
+
+    Note that the 0% loss in all measurements may look like an error, but that
+    is not the case -- refer to TODO somewhere in [[*Analysis]] for an explanation.
+***** queues data table                                            :noexport:
+      #+NAME: dat:queues
+      #+CAPTION: Queue sizes (in blocks of 32B) depending on total load.
+      #+PLOT: type:2d script:"queue-size-bar-chart.gnuplot" file:"img/queues.svg"
+      | Load per port / Gbps | 115B | 1500B | xpos115 | xpos1500 |
+      |----------------------+------+-------+---------+----------|
+      |                    2 | 0.03 |  0.03 |    1.65 |     2.35 |
+      |                    4 | 0.03 |     1 |    3.65 |     4.35 |
+      |                    6 |    1 |     2 |    5.65 |     6.35 |
+      |                    8 |    1 |     2 |    7.65 |     8.35 |
+      |                   10 |    2 |     3 |    9.65 |    10.35 |
+      #+TBLFM: $4=$1-0.35::$5=$1+0.35
+
+        seriously though
+        would you believe me if I told you I have zero packet loss?
+        I'm surprised
+        I am willing to believe that maybe it isn't wrong
+        because hardware, and usually you get packet loss because something takes too long, and here nothing takes too long because everything is constant time
+        and because I ensured equal distribution on all output ports, so queues weren't getting full
+
+***** raw data                                                     :noexport:
+******* 1500B
 ********* 20%: 16:18
     | Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Total Tx Count (bits) | Total Rx Count (bits) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
     |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
@@ -1448,19 +1550,10 @@ would drastically increase my FPGA area usage.
     |------------+-------------------------+-------------------------+-----------------------+-----------------------+--------------------+--------------------+--------------------------|
     | sum        |               198083742 |               198083742 |         2304110086944 |         2304110086944 |      2335803485664 |      2335803485664 |                198083742 |
     #+TBLFM: @>$2=vsum(@I..@II)::@6$3=vsum(@I..@II)::@6$4=vsum(@I..@II)::@6$5=vsum(@I..@II)::@6$6=vsum(@I..@II)::@6$7=vsum(@I..@II)::@6$8=vsum(@I..@II)
-***** Small packets (115B):
-start August 23 17:00, doing packet loss and queue sizes depending on amount of data
-at least 45s per measurement
-115B packets
-      | Load |  time | Avg queue size | Max queue size |  Tx frames |  Rx frames | Loss |
-      |------+-------+----------------+----------------+------------+------------+------|
-      |  20% | 17:04 |                |                |  334798373 |  334798373 |    0 |
-      |  40% | 17:05 |                |                |  674862021 |  674862021 |    0 |
-      |  60% | 17:07 |                |                |  990142312 |  990142312 |    0 |
-      |  80% | 17:08 |                |                | 2125564720 | 2125564720 |    0 |
-      | 100% | 17:01 |                |                | 1631918616 | 1631918616 |    0 |
-      #+TBLFM: $7=$6 - $5
-******* raw data:
+******* Small packets (115B):
+        start August 23 17:00, doing packet loss and queue sizes depending on amount of data
+        at least 45s per measurement
+        115B packets
 ********* 20%: 17:04
 | Port Name  | Total Tx Count (Frames) | Total Rx Count (Frames) | Tx L1 Count (bits) | Rx L1 Count (bits) | Generator Count (Frames) |
 |------------+-------------------------+-------------------------+--------------------+--------------------+--------------------------|
@@ -1567,12 +1660,7 @@ also you have pps in prometheus and you know the packet size
 "Port //1/3";"1.039.582.360";"1.044.155.419";"989.682.406.720";"994.035.958.888";"8.499.999.992";"8.499.999.872";"1.156.015.584.320";"1.161.100.825.928";"9.928.571.423";"9.928.571.279";"99.286";"99.286";"1.039.582.360";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.499.999";"8.499.999.992";"0";"0";
 "Port //1/4";"1.045.821.617";"1.041.305.642";"995.622.179.384";"991.322.971.184";"8.499.999.960";"8.500.000.056";"1.162.953.638.104";"1.157.931.873.904";"9.928.571.382";"9.928.571.491";"99.286";"99.286";"1.045.821.617";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.499.995";"8.499.999.960";"0";"0";
 
-
-*** TODO Resource usage
-    ideally also per-component
-***** TODO FPGA area
-***** TODO Power consumption
-* [0/4] Analysis
+* [0/3] Analysis
   # > Results are objective, but science isn't about listing data, it's about
   #   extracting meaning from what we observe.
   Put this paragraph somewhere:
@@ -1588,6 +1676,16 @@ also you have pps in prometheus and you know the packet size
     switch for the switching (i.e. to handle buffering/queueing at high speeds),
     we could in principle scale to very high rates even without creating an ASIC.
 
+    Also this one:
+
+    0% packet loss is surprising, but makes sense:
+    packet loss happens because there is no buffer space for queueing packets
+    on the input or on the output, either due to processing delays or due to
+    uneven distribution of traffic.
+    In our case, there are no processing delays because on the FPGA everything
+    happens in constant time, with the exact number of cycles known at compile
+    time; and in these measurements, the traffic is not generated randomly, and
+    therefore is distributed very evenly both on the input and the output.
 *** TODO Why do we see the results we see?
     TODO what do we see? :D
     Because this is "SCION as a library", I should talk not just about the BR's
@@ -1760,6 +1858,10 @@ bibliography:bibliography.bib
 #+LATEX: \appendix
 
 * Footnotes
+
+[fn:15] We apologise for the low quality of the graphs. Unfortunately, the
+traffic generator we used has no way of exporting time series data, and thus we
+had to resort to screenshots.
 
 [fn:14] https://twistedmatrix.com
 

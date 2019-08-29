@@ -27,3 +27,15 @@ Hi reviewers, your opinions on this matter are especially welcome :D
 # *** TODO Optimising the SCION protocol for HW
 #+end_comment
 
+
+* TODO Resource usage
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2019-08-29 Thu 17:47
+  :ARCHIVE_FILE: ~/u/projects/scion-p4netfpga/doc/thesis/thesis.org
+  :ARCHIVE_OLPATH: Evaluation
+  :ARCHIVE_CATEGORY: thesis
+  :ARCHIVE_TODO: TODO
+  :END:
+  ideally also per-component
+*** TODO FPGA area
+*** TODO Power consumption
