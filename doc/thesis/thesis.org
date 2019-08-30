@@ -43,8 +43,8 @@
 *** DONE Why SCION?
     CLOSED: [2019-07-16 Tue 15:25]
     Today's Internet, based on IP and BGP, was conceived in a very different
-    environment, with very different requirements and very different
-    assumptions. Meant to be a research network, it assumed that
+    environment, with very different requirements and assumptions.
+    Meant to be a research network, it assumed that
     access was not widespread (as only large institutions could afford a
     connection), that all entities connected to it trusted each other (and had
     out-of-band means to deal with misbehaviour),
@@ -125,7 +125,7 @@
     CLOSED: [2019-08-23 Fri 12:15]
     The first contribution of this project is *implementing a proof-of-concept
     border router capable of forwarding SCION packets at line rate*.
-    We target a NetFPGA SUME board, which (in the ideal case) allow us
+    We target a NetFPGA SUME board, which (in the ideal case) allows us
     to forward up to 40Gbps.
     The border router is the crucial building block of the SCION data plane.
     Therefore, having a high-speed prototype will open the doors to large-scale
@@ -138,7 +138,7 @@
     of targets and use-cases.
 
     An implementation targeting an FPGA[fn:1] is a good first step for
-    evaluating the feasibility of building "SCION on chip", as much of the
+    evaluating the feasibility of building a hardware SCION router, as much of the
     design process is the same with FPGAs as with ASICs[fn:2].
     Therefore, the second contribution of this work is
     *confronting SCION with hardware design expertise, and opening the doors for
@@ -223,8 +223,8 @@
 
       Each HF in the path corresponds to an AS-level hop.
       It encodes the ingress and egress interface in its AS,
-      verification information used by the AS to check that the end host is
-      allowed to use this hop,
+      verification information used by the AS to check that the HF has been
+      issued by the AS and has not been modified,
       the expiration time for this HF (which must be checked),
       and some additional information.
       The exact HF format is described in TODO[ref SCION book].
@@ -257,9 +257,9 @@
       dedicated hardware, computing AES can be done very efficiently at line
       rate. TODO[would be great to have something to cite here -- look for what
       Adrian ended up citing when he asked me what to cite :D]
-      Because the forwarding is otherwise rather simple, achieving a
-      sufficiently fast HF verification routine will be one of the more
-      interesting aspects of our implementation.
+      Because the forwarding is otherwise rather computationally inexpensive,
+      achieving a sufficiently fast HF verification routine will be one of the
+      more interesting aspects of our implementation.
 
       #+NAME:   fig:mac-chaining
       #+CAPTION: TODO somebody should write something here.
@@ -270,6 +270,9 @@
 ***** IP overlay
       In order to enable inter-operability with existing networks, SCION packets
       may use an IP/UDP overlay.
+      TODO Steve says I should replace that sentence with: " Scion is primarily
+      an inter-domain protocol; as such it runs as an overlay on top of existing
+      network protocols, such as UDP/IP."
       The software border router currently requires this, as it uses a UDP
       socket to get SCION packets.
       Therefore, our implementation must accept SCION within IP, and must send
@@ -286,13 +289,14 @@
       2. Verify the ingress interface and the incoming IP overlay.
       3. Check that the HF is not expired.
       4. Validate the HF MAC.
-      6. Update the HF offset information.
-      5. Update the IP overlay header.
+      5. Update the HF offset information.
+      6. Update the IP overlay header.
       7. Select the output port corresponding to the egress interface and send the packet out.
+      (Note that for simplicity, handling of traffic from/to the local AS is ommitted here.)
 ***** Related work
-      The reference software router is available at TODO cite scionproto github.
+      The reference software router is available at https://github.com/scionproto/scion/.
       Since this runs in software and is not optimised for performance, it can
-      achieve a few Gbps on normal hardware.
+      only achieve a few Gbps on normal hardware.
 
       We are aware of ongoing work by various groups: one creating a high-speed
       software implementation (several tens of Gbps), and two hardware-based
@@ -302,30 +306,6 @@
       At the time of writing, none of this work has been published.
 *** DONE High-speed packet forwarding
     CLOSED: [2019-07-23 Tue 22:28]
-    TODO this whole section could be replaced with a picture like this:
-    #+begin_src text
-      ^           : can do SCION to the right of this line
-      | * ASIC    :
-    p |      * programmable switch
-    e |           :
-    r |           :
-    f |           :
-    o |           :    * FPGAs
-    r |           :
-    m |           :
-    a |           :
-    n |           :
-    c |           :        * eBPF
-    e |           :         * DPDK
-      |           :            * "normal" SW
-      +-------------------------->
-           flexibility
-    #+end_src
-    Should I just do that and have significantly less text?
-
-    # This section is kinda terrible, because there are too many words in it,
-    # but I'm afraid I don't have enough time to write less.
-
     There are multiple approaches that enable high-speed packet processing.
 
     On the software side, the main approaches are eBPF and DPDK.
@@ -563,7 +543,7 @@
          After writing the logic of the program, a /behavioural simulation/ should
          be run to check logic correctness: this simulates the program on a high
          level, with logical inputs and outputs.
-      2. *Describing the full design*: taking the various modules (including the one/ones
+      2. *Describing the full design*: taking the various modules (including the one(s)
          written in step 1) and connecting them to form the complete system. This
          includes connecting standard components for interacting with "the real
          world" outside of the FPGA.
@@ -611,38 +591,46 @@
   5. Validate the HF MAC.\\
      If incorrect, drop this and generate an SCMP error packet.
   6. If the packet destination is in this AS, forward it according to the intra-AS routing.\\
-     If the HF contains the =FWD_ONLY= flag, drop the packet instead and generate an SCMP error packet.[fn:6]
   7. Update the HF offset information.
   8. Update the IP overlay header according to an egress interface ⇒ IP overlay data table,
      including recomputing IP and UDP checksums.
   9. Select the output port corresponding to the egress interface and send the packet out.
 
-  TODO if I weren't lazy, this could be a fancy flow diagram.
-  Hi reviewers, should it be a fancy flow diagram? (Maybe additionally to this
-  text, because it's a lot of text.)
-
-  Note that the fast path is quite simple, but the error
+  Note that the fast path is the interesting part of this project, while the error
   generation (which needs rate-limiting and may change significantly in the
   future) and local delivery (which needs additional configuration and state on
-  the router for intra-AS routing) are more complicated.
+  the router for intra-AS routing) are extra work not essential to prove the
+  viability of SCION in hardware.
   Therefore, a key design decision is to structure this project as a "really
   smart NIC": all packets which can be completely processed in the FPGA will be
   processed in the FPGA, and any packets which cannot be completely processed
   (for any reason) will be sent to the OS unmodified, through what looks like a
   normal network interface to the OS.
-  The OS-visible interface will, further, pass through any packets sent to it by
-  the OS, so that our implementation does not need to know anything about the
+  Our FPGA will, further, pass through any packets arriving through the
+  OS-visible "fake" interface.
+  Thus, our implementation does not need to know anything about the
   unprocessable packets and any replies.
-  This, together with SCION's stateless design, enables us to run the software
-  SCION router unmodified and completely unaware of the fact that the FPGA
-  taking care of most of the traffic.
+  This, together with SCION's mostly stateless design, enables us to run the
+  software SCION router unmodified and completely unaware of the fact that the FPGA
+  taking care of most of the traffic.[fn:16]
   Thus the code running on the FPGA can be kept relatively simple, as it only
   needs to handle things that must happen at line rate:
-  any SCION control plane messages, error handling, or any of the intra-AS L3
-  packets such as ARP will transparently "just work".
+  any SCION control plane messages, error handling, local delivery, or any of
+  the intra-AS L3 packets such as ARP will transparently "just work".
   Additionally, with this approach, we can start with the very simple "pass
   everything through to the OS" program, and incrementally move more and more
-  functionality into the FPGA, which greatly helps with development speed.
+  functionality into the FPGA.
+  This greatly saves development effort and thus enables us to complete this
+  project within the time scale of a Master thesis.
+
+  With this approach, the control plane for our project consists of two separate
+  programs:
+  the unmodified SW router, to which we sent any unhandled packets but otherwise
+  do not interact with,
+  and a think wrapper that reads the SCION config files and writes the
+  configuration into the NetFPGA, as well as provides a few supporting
+  functions.
+  Details about the control plane can be found in section [[*Control plane]].
 
   #+NAME:   fig:design-overview
   #+CAPTION: TODO somebody should write something here.
@@ -735,7 +723,7 @@
       enabled us to go beyond a completely bare-bones implementation.
 ******* Modular code base
         #+NAME:   fig:scion-breakdown
-        #+CAPTION: The major components of the system.
+        #+CAPTION: The major components of the system. (Same as figure [[fig:design-overview]].)
         [[./img/design-overview.svg]]
 
         #+NAME:   fig:scion-breakdown-parser
@@ -1859,6 +1847,10 @@ bibliography:bibliography.bib
 
 * Footnotes
 
+[fn:16] Note that this would not be quite true in production, due to
+issues like runtime config changes and traffic shaping functionality.
+However, for a proof of concept, this approach works very well.
+
 [fn:15] We apologise for the low quality of the graphs. Unfortunately, the
 traffic generator we used has no way of exporting time series data, and thus we
 had to resort to screenshots.
@@ -1874,20 +1866,21 @@ However, we believe that fundamentally, this a good, even if not complete,
 picture of how software engineers think about programming, and it is useful to
 contrast this with how to think about FPGAs.
 
-[fn:11] The current version of SCION supports a "continue" flag in the hop field, which indicates that the hop field is longer than 8 bytes. There is no limit on the HF size. Because this causes significant issues in hardware implementations, the next version of SCION will only allow fixed-size hop fields.
+[fn:11] The current version of SCION supports a "continue" flag in the hop field,
+which indicates that the hop field is longer than 8 bytes. There is no limit on
+the HF size. Because this causes significant issues in hardware implementations,
+the next version of SCION will only allow fixed-size hop fields.
 
 [fn:10] https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Workflow-Overview#p4-netfpga-extern-library
 
-[fn:9] Unfortunately, we do not know the original source: we got this implementation from another student without any information despite asking.
+[fn:9] Unfortunately, we do not know the original source: we got this
+implementation from another student without any information despite asking.
 
 [fn:8] For context, the Virtex 7 FPGA present in the NetFPGA is often used for
 prototyping CPUs. To fill it up is a rather unexpected feat.
 
 [fn:7] The P4-NetFPGA design includes a full Microblaze microprocessor in the FPGA.
 This alone takes up about 30% of the FPGA area.
-
-[fn:6] The =FWD_ONLY= flag can be used by the AS to indicate that this HF is
-only usable for forwarding to other ASes, not for local packet delivery.
 
 [fn:5] SCION Control Message Protocol: the equivalent of ICMP in SCION.
 These packets should be rate-limited, and in future versions of SCION, they may
