@@ -1259,6 +1259,74 @@ would drastically increase my FPGA area usage.
         by means of a few days of thinking rather than by inspecting the system.
         However, we strongly believe that simplifying the usage of the
         behavioural simulation would be a worthwhile goal.
+***** DONE Packet generation helper script utterly broken
+      CLOSED: [2019-08-30 Fri 17:38]
+      The NetFPGA example repository comes with a sample script for generating
+      packets and metadata and testing the code in the behavioural simulation.
+      This script is completely broken: it does not even produce the right
+      number of bytes.
+      This error has apparently gone unnoticed because other parts of the
+      toolchain pad the bytes in questions with zeroes if there are too few
+      (instead of raising an error in order to make the problem visible),
+      and so one does not notice the problem if testing only the cases
+      where the missing bytes are all zero.
+      Due to the extremely low code quality, attempting to debug and fix the
+      script was very quickly abandoned.
+      There is no documentation for the metadata format, though, and thus we
+      needed to partially reverse engineer the script it in order to find out
+      what exactly it was attempting to do (even if incorrectly).
+      Reading the code in question has left the author with permanent trauma.
+      It would be better to not include buggy example scripts at all,
+      especially when they serve as an excuse for not adding any
+      documentation.
+***** DONE Changes to the code have highly unpredictable effects
+      CLOSED: [2019-08-30 Fri 17:21]
+      Whenever one writes new code for the NetFPGA, the likelihood of
+      encountering a more or less obvious compiler bug is nearly 1.
+      Beyond that, there are no certainties.
+
+      In the good cases, the compiler exits with a "Compiler Bug" message,
+      which can be more or less related to the actual problem (often a notable
+      amount of guesswork and experience with previously encountered compiler
+      bugs is needed to decipher it).
+      An example of this would be the case of attempting to use an "if"
+      statement in the wrong place, which results in the message "Compiler
+      Bug: action_split unimplemented".
+
+      In the bad cases, the program compiles successfully, and then does
+      something surprising in the simulation.
+      This may or may not be caught immediately, as test cases for this
+      particular flavour of surprising may not be present.
+      In that case, the problem may become apparent only several commits
+      later, when another feature depending on it is added.
+      This makes it very difficult to track down problems, and causes constant
+      anxiety for the programmer.
+      As an example, the packet corruption described in [[*Unexplained packet
+      corruption when handling parser errors]] was not visible in the simulation
+      at all, and it took about a week to track down the cause.
+***** DONE Silent failures, no way to detect errors early
+      CLOSED: [2019-08-30 Fri 17:50]
+      Almost every part of the very complex toolchain contains something that
+      fails silently: from device initialisation scripts through scripts that
+      fill tables to the many stages of compilation and simulation.
+      A prime example of this is the HDL compilation step that must be performed
+      at the beginning of the simulation or synthesis:
+      many of the NetFPGA-provided HDL files generate compilation errors, but
+      they are not fatal and somehow, the project works anyway.
+      Thus, in order to let the project build, the NetFPGA build scripts simply
+      silence all failures from the HDL compiler.
+      The consequence of this is that if the HDL code generated from P4 or an
+      extern contains an error, this will not be obvious.
+      The compilation process will continue, either failing 15 minutes later
+      (thus costing the programmer extra time), or in some cases, it will not
+      fail at all, use stale intermediate data instead of the erroneus parts,
+      and do something unexpected, thus causing utter confusion and more wasted
+      time.
+      In order to preserve our own sanity, we ended up replacing all scripts
+      that weren't closely intertwined with other ones.
+      Unfortunately, there were not many of those, and thus we had to train
+      ourselves to distinguish fatal errors from non-fatal ones in several
+      thousand lines of compilation logs.
 ***** DONE Table matching broken under unclear circumstances
       CLOSED: [2019-08-19 Mon 15:42]
       We use a table to match the SCION interface ID with the physical port and
@@ -1308,7 +1376,7 @@ would drastically increase my FPGA area usage.
       using the dummy table, then access the actually relevant table".
 
       However, the extra table costs about 0.1 ns of time, which is a
-      non-negligible amount (see section [[*Meeting timing constraints]] for a detailed
+      non-negligible amount (see section [[*Area and timing constraints]] for a detailed
       discussion).
       Thus, when optimising timing, we switched to a different approach:
       because we are using the ~packet_mod~ deparser described in [[*Implementing
@@ -1324,24 +1392,47 @@ would drastically increase my FPGA area usage.
       in-program packet modifications in the real packet on the wire.
       This way we are able to use tables together with externs without using the
       somewhat expensive dummy table workaround.
-***** TODO had to write my own reg_write and stuff
+***** DONE High difficulty of writing cross-platform code
+      CLOSED: [2019-08-30 Fri 17:19]
+      The NetFPGA only supports a particular subset of P4, and any documentation
+      on P4 support is incomplete.
+      During the work on this project, we encountered several unsupported
+      features not mentioned anywhere, which we added to the NetFPGA
+      documentation[fn:6].
+      Knowing about the unsupported features is only the start, though:
+      the next step is writing code without them.
+      Dancing around the limitations is a non-trivial exercise, and adding
+      workarounds has cost us a lot of effort.
+      Besides the parsing-related ones, in particular error handling and use of
+      externs needed extra code and much trial and error.
+***** TODO Control plane API issues
+      had to write my own reg_write and stuff
       existing Python control plane API sucked, so I rolled my own
       - tables: bugs in interpretation of the values
       - everything was hard-coded
       - only 32-bit registers supported, but that goes all the way to the C API and the bus
-*** TODO Meeting timing constraints
+*** TODO Area and timing constraints
     The various costly workarounds as explained in the previous sections of this
     chapter, together with some questionable design choices in the P4-NetFPGA
     base design[fn:7], take up almost all of the FPGA area.[fn:8]
     Due to this, the place and route step of the design process has difficulty
     satisfying timing constraints.
 
-    Even after more than a month of optimisation, the full design has a negative
-    slack of about 0.08ns: running on a 200MHz clock requires all paths to take no
-    longer than 5.0ns, and in the full design the longest path requires 5.08ns.
-    At this point, the FPGA is too full for any optimisations to help: all of our
-    attempts just shifted the problem from one place to another, but did not solve
-    it.
+    Originally, the critical path in the full design took over 6 nanoseconds.
+    Running on a 200MHz clock requires all paths to take no longer than 5.0 ns
+    (200 MHz ⇒ 5 ns per cycle).
+    After more than a month of optimisation, we have been able to optimise that
+    by a full 1 ns (i.e. 20%).
+    However, we have not been able to cross the threshold: the longest path in
+    the full design still requires 5.08ns.
+    At this point, the FPGA is too full for any further optimisations to help:
+    all of our attempts just shifted the problem from one place to another, but
+    did not solve it.
+    Thus, we have not been able to test our full design on real hardware;
+    however, we have tested it in simulation, and we have tested two designs
+    with a subset of features enabled, as discussed in the analysis in section
+    [[*Analysis]].
+
     Nevertheless, during the optimisation process, we have learned a great deal:
        - TODO example of data dependency graph and how I optimised it
 
@@ -1356,11 +1447,12 @@ would drastically increase my FPGA area usage.
   # with that, and structure your paper around that.
 
   Due to inadequacies in the P4-NetFPGA toolchain as explained in
-  [[*Implementation Challenges]] and especially in [[*Meeting timing constraints]], we
+  [[*Implementation Challenges]] and especially in [[*Area and timing constraints]], we
   have not been able to test the full system.
   Therefore, we do not present results for the full design: instead, we show the
   data for a partial design, and we draw conclusions based on these and our
   knowledge of how composing systems in FPGAs affects performance.
+  TODO does this paragraph make me sound lame?
 *** DONE Method
     CLOSED: [2019-08-29 Thu 18:23]
     The aim of the evaluation is to determine the maximum throughput achievable
@@ -1382,7 +1474,7 @@ would drastically increase my FPGA area usage.
     It also ensures measurement reproducibility, and thus can be viewed as a
     good thing.
 
-    As mentioned in section [[*Meeting timing constraints]], the full system does
+    As mentioned in section [[*Area and timing constraints]], the full system does
     not meet timing constraints and thus cannot be tested in one piece.
     Therefore, we evaluated two subsets of the full system:
     a program with everything besides updating the IP overlay (i.e. parsing, HF
@@ -1648,38 +1740,45 @@ also you have pps in prometheus and you know the packet size
 "Port //1/3";"1.039.582.360";"1.044.155.419";"989.682.406.720";"994.035.958.888";"8.499.999.992";"8.499.999.872";"1.156.015.584.320";"1.161.100.825.928";"9.928.571.423";"9.928.571.279";"99.286";"99.286";"1.039.582.360";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.499.999";"8.499.999.992";"0";"0";
 "Port //1/4";"1.045.821.617";"1.041.305.642";"995.622.179.384";"991.322.971.184";"8.499.999.960";"8.500.000.056";"1.162.953.638.104";"1.157.931.873.904";"9.928.571.382";"9.928.571.491";"99.286";"99.286";"1.045.821.617";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.499.995";"8.499.999.960";"0";"0";
 
-* [0/3] Analysis
-  # > Results are objective, but science isn't about listing data, it's about
-  #   extracting meaning from what we observe.
-  Put this paragraph somewhere:
-
-    A SCION border router does not require any state other than static
-    configuration, so the packet processing can be easily parallelised using
-    multiple FPGAs.
-    The only thing that needs to scale vertically is the switching itself, which
-    can be done with speeds of several hundred Gbps with relatively affordable
-    hardware (as long as we don't require the hardware to be programmable).
-    Therefore, using several higher-throughput FPGA-enabled NICs for
-    the packet verification and update, plus a non-programmable MPLS or IP
-    switch for the switching (i.e. to handle buffering/queueing at high speeds),
-    we could in principle scale to very high rates even without creating an ASIC.
-
-    Also this one:
-
-    0% packet loss is surprising, but makes sense:
-    packet loss happens because there is no buffer space for queueing packets
-    on the input or on the output, either due to processing delays or due to
-    uneven distribution of traffic.
-    In our case, there are no processing delays because on the FPGA everything
-    happens in constant time, with the exact number of cycles known at compile
-    time; and in these measurements, the traffic is not generated randomly, and
-    therefore is distributed very evenly both on the input and the output.
-*** TODO Why do we see the results we see?
-    TODO what do we see? :D
-    Because this is "SCION as a library", I should talk not just about the BR's
-    performance, but also about the characteristics of the parts on their own.
+* [2/3] Analysis
+*** DONE Discussion of the measurements
+    CLOSED: [2019-08-30 Fri 14:37]
+***** Throughput
+      Our measurements show that the various parts of our design, in particular
+      the per-packet cryptographic MAC check, run at line rate (i.e. 40 Gbps).
+      Further, the small maximum queue sizes, which do not grow indefinitely,
+      indicate that the processing is not the bottleneck and our design could
+      handle more traffic with faster network interfaces.
+      Though this is not the full production-ready SCION router design,
+      these results indicate that maximum throughput can be
+      obtained with the full design too: with pipelining,
+      adding independent processing steps does not increase throughput (see
+      section [[*Introduction to designing for FPGAs]]).
+      As the missing steps are independent, and computationally less expensive
+      than the parts we tested, we can be sure that the full design would still
+      run at 40 Gbps.
+      Thus, we conclude that running SCION at line rate can be achieved (and has
+      been achieved by this project for the relevant parts).
+***** Packet loss (or lack thereof)
+      The observed zero packet loss is a surprising result, and when we obtained
+      it, we first thought we had made an experimental error.
+      However, that turned out not to be the case.
+      This result in fact makes sense:
+      in general, packet loss happens because there is no buffer space for
+      queueing packets on the input or on the output, either due to processing
+      delays or due to uneven distribution of traffic.
+      In our case, there are no processing delays because on the FPGA everything
+      happens in constant time, with the exact number of cycles known at compile
+      time.
+      Further, the traffic generator outputs packets evenly and
+      deterministically, not in bursts, and thus on the input, the traffic
+      distribution is very even both in time and per port.
+      Since we pre-set the egress interface IDs in the generated traffic to also
+      be evenly distributed, the output traffic is also distributed evenly.
+      Thus, neither the input nor the output queues get full, and we are able to
+      achieve zero packet loss.
 *** TODO Guidelines for high-speed packet processing
-    see TODO something in [[*Background and Related Work]] for general intro to FPGAs
+    see [[*Introduction to designing for FPGAs]] for general intro to FPGAs
 ***** what's easy and what's hard from the "what you want to do" viewpoint
 ***** insights about P4 => HDL translation
 ******* Timing
@@ -1687,17 +1786,52 @@ also you have pps in prometheus and you know the packet size
         - CAM tables are kinda expensive (~0.1ns)
         - TODO how to find the critical path?
         - example of data dependency graph and optimising it
-*** TODO Implications for the SCION protocol
-    TODO this is a bit complicated... I am providing suggestions, but the actual
-    things that will make it to the next version of SCION aren't my work, they are
-    someone else's work that takes into account my suggestions. How do I put that
-    here?
-***** TODO What SCION does right
-******* Avoiding lookup tables
-        show area of a CAM table
-        and if I have too much free time, do a power consumption measurement
-***** TODO What should be improved
-******* TODO Defining maximum sizes
+*** DONE Implications for the SCION protocol
+    CLOSED: [2019-08-30 Fri 16:47]
+    The information in this section arose through discussion with multiple
+    interested parties.
+    Thus, in this section we summarise the discussion, but do not claim sole
+    credit for the content.
+***** DONE What SCION does right
+      CLOSED: [2019-08-30 Fri 16:47]
+      The most obvious hardware-relevant choice in SCION, and the one that drove
+      much of the design process, is packet-carried forwarding state.
+      Besides avoiding entire classes of problems by eliminating state on routers,
+      this also saves circuit area used for lookup tables.
+      In the current Internet, IP prefix table size is quickly becoming a
+      limiting factor.
+      Equipment able to handle the tens of thousands of prefixes needed for
+      backbone routing is extremely expensive, because large content-matching
+      tables are difficult to manufacture.
+      Further, the large area and number of parallel comparisons needed to match
+      every packet in such huge tables translate into high electricity
+      consumption.
+      Thus, exchanging a large CAM table for a relatively simple AES core is a
+      good decision that is likely to significantly decrease hardware
+      manufacturing costs and power requirements.
+
+      Another very relevant consideration in hardware is avoiding variable sizes.
+      The SCION header is variable-length due to the need to put forwarding
+      state into the packet (so that it does not need to be on the routers, as
+      per the previous paragraph).
+      However, given this fundamental need, it does specify header alignment
+      requirements, which makes this at least somewhat easier to handle.
+      Thus, given that we need a variable-length header, being strict about
+      header alignment is a good idea.
+
+      Thirdly, and perhaps most importantly, despite the variable-length paths,
+      and despite providing path-level authorisation, SCION only requires each
+      border router to only process a constant amount of data.
+      The path authorisation property can be verified by MAC-ing only a constant
+      number of blocks, and the SCION common header contains offsets to the
+      current hop field.
+      Therefore, every border router can immediately jump to that part of the
+      header without parsing or processing the rest of the path.
+      This is absolutely necessary for being able to obtain line rate.
+***** DONE [4/4] What could be improved
+      CLOSED: [2019-08-30 Fri 16:20]
+******* DONE Define maximum sizes
+        CLOSED: [2019-08-30 Fri 15:49]
         Currently, the maximum path length in the packet header is unreasonably
         large (the 8-bit offset fields allow for up to 256*8 = 2kB offset), and
         the hop field length is virtually unlimited (the continue flag signals
@@ -1710,15 +1844,88 @@ also you have pps in prometheus and you know the packet size
         Therefore, these should be limited. We propose the following:
         - limiting the maximum number of hops to some "reasonable" value, such as 64
         - limiting the maximum hop field size to e.g. 16 bytes
-******* TODO Avoiding variable lengths
-        - good: pad to a nice number (currently 8, in the future SCION will pad to 4)
-        - ATM HFs can be any multiple of 8 bytes, in the future (thanks to the
-          change to 4 bytes) SCION will have only 12-byte HFs
-******* TODO Avoiding implicit lengths
-        addr type
-******* TODO Consider re-thinking MAC chaning for peering paths
-        In the case of peering paths, bla TODO bla
-# *** TODO what else have we learned?
+******* DONE Avoid variable lengths
+        CLOSED: [2019-08-30 Fri 15:55]
+        The SCION header contains a large amount of information, and thus, for
+        maximising goodput, it allows for variable lengths in many cases.
+        At the moment, SCION limits the variability to an extent: all header
+        sections, as well as the size of hop fields, must be a multiple of 8
+        bytes.
+        This is a good start.
+        However, not knowing the size of important data structures, such as hop
+        fields, in advance, unnecessarily complicates matters.
+        While there are multiple cases of this issue in the SCION header
+        (another notable one are the host address fields), the hop fields, due
+        to their involvement in the routing and the cryptographic MAC checking,
+        are the most critical case.
+        Thus, we propose that a single size for the hop fields should be selected,
+        instead of allowing multiple options.
+******* DONE Avoid implicit lengths
+        CLOSED: [2019-08-30 Fri 16:02]
+        Because SCION is L3-agnostic, the source and destination end-host
+        addresses are not fixed-size.
+        Currently, the address type field in the header implicitly indicates the
+        length.
+        Though the intermediate routers do not need to understand the end host
+        addresses, they need to know the length, so that they can parse the
+        header correctly.
+        This means that all routers on the path need to have a lookup table that
+        maps all known types to the address length.
+        This table may get unnecessarily large if more address types are added,
+        and, more importantly, whenever a new address type is added, all routers
+        in the network must be upgraded to know about it.
+        Since upgrading equipment, especially hardware, is very expensive, we
+        propose that the address length should be explicitly encoded in the header
+        alongside the type.
+******* DONE Consider re-thinking MAC chaning for peering paths
+        CLOSED: [2019-08-30 Fri 16:09]
+        The MAC chaining in SCION is used in order to ensure path authorisation:
+        a path should only be usable if the on-path ASes have explicitly allowed
+        it.
+        While MAC chaining is an elegant way to achieve this property, it is not
+        the only option.
+        The number of blocks that need to be MAC-ed is a relevant consideration
+        for hardware design, and thus it might be beneficial to evaluate
+        different options for achieving path authorisation, especially those
+        that would result in fewer blocks that need to be MAC-ed.
+        We do not have a strong recommendation in this case, as the security
+        implications of changing the MAC scheme must be carefully considered;
+        however, we do believe that further investigation may prove useful.
+***** DONE A look at the future
+      CLOSED: [2019-08-30 Fri 16:20]
+******* Hardware-based SCION routers
+        A basic SCION border router does not require any state other than
+        configuration, so the packet processing can be easily parallelised using
+        multiple FPGAs.
+        The only thing that needs to scale vertically is the switching itself, which
+        can be done with speeds of several hundred Gbps with relatively affordable
+        hardware (as long as we don't require the hardware to be programmable).
+        Therefore, using several higher-throughput FPGA-enabled NICs for
+        the packet verification and update, plus a non-programmable MPLS or IP
+        switch for the switching (i.e. to handle buffering/queueing at high speeds),
+        we could in principle scale to very high rates even without creating an ASIC.
+        As SCION becomes more prevalent in the real world, this might be of
+        particular interest to Internet exchange points (IXPs).
+******* The SCION protocol
+        An upcoming SCION data plane redesign is currently in the works, and it
+        will incorporate some of our suggestions from the previous section.
+        In particular, we are aware of the following upcoming changes:
+         - The hop field size will be fixed, likely to 12 bytes. (Thus, the
+           alignment requirements will be changed to 4-byte rather than 8-byte
+           alignment.)
+         - A maximum path length will be defined, somewhere on the order of 64 hops.
+           This should be sufficient, as AS-level paths in the current Internet
+           tend to be around 10 hops long.
+           We anticipate that on some platforms, it may be necessary to limit the
+           path length to 32 hops, but future-proofing the specification by
+           settling on 64 is the safer option.
+         - The address length will be included in the header.
+           The current proposals contain a two-bit field (which can encode 4
+           different lengths), and a two-bit field for the address type scoped by
+           the length (so that the address type is uniquely identified by the
+           length + type pair).
+         - Ongoing discussion for about the HF MAC chaining is in progress.
+
 * [3/3] Future work
 *** DONE Completing the feature set / Adjusting for newer SCION versions
     CLOSED: [2019-07-24 Wed 14:28]
@@ -1846,6 +2053,8 @@ bibliography:bibliography.bib
 #+LATEX: \appendix
 
 * Footnotes
+
+[fn:6] https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Workflow-Overview#limitations
 
 [fn:16] Note that this would not be quite true in production, due to
 issues like runtime config changes and traffic shaping functionality.
