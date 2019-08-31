@@ -11,6 +11,7 @@ auto/
 # exported from thesis.org
 thesis.tex
 
-# results
+# including thesis.pdf on purpose
+
+# intermediate
 img/*.pdf
-thesis.pdf
