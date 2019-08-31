@@ -647,7 +647,7 @@
   to upgrade the software router and none of this project's code needs to be
   changed, as long as there are no changes in the forwarding logic (which
   isn't likely to change as often).
-* [3/5] Implementation Challenges
+* [4/5] Implementation Challenges
   The problems we encountered during the implementation were too numerous to
   list completely.
   Therefore, in this section, we present a select few particularly interesting,
@@ -655,6 +655,8 @@
   # originally wanted to divide this into parser, validation, forwarding, etc... but
   # I don't think that makes much sense, as e.g. timing or stupid compiler were a
   # problem across the whole thing
+
+  TODO dear reviewers, is the order of these sections good?
 *** DONE [4/4] Software engineering aspects
     CLOSED: [2019-08-26 Mon 17:48]
     From the software engineering perspective, this project is somewhat on the
@@ -840,7 +842,7 @@
       However, unfortunately (though not surprisingly), in the case of the NetFPGA's
       proof-of-concept toolchain, the limitations and unsupported P4 features
       turned out to be significant
-      (see sections [[*Working around compiler/toolchain bugs]] and
+      (see sections [[*Working around compiler and toolchain bugs]] and
       [[*Implementing the parser]]).
       Therefore, confining ourselves to the subset of P4 supported by both the
       reference compiler and the NetFPGA compiler would not allow us to
@@ -937,6 +939,267 @@
        Thus, when changes need to be made, or only a part of this project needs
        to be used (as in the library paradigm), it is trivial to also reuse the
        needed parts of the control plane.
+*** DONE [7/7] Working around compiler and toolchain bugs
+    CLOSED: [2019-08-31 Sat 12:15]
+    Some hurdles are expected when working with cutting-edge technology.
+    However, the state of the NetFPGA's P4 toolchain was enough of
+    an issue to warrant a separate section in this thesis.
+    Therefore, in this section we unfortunately present a subset of the
+    problems encountered.
+
+    Note that the parser-related problems (and their solutions, and the problems
+    in the solutions), which constituted a large fraction of the problems,
+    were interesting enough that we discuss them separately in
+    section [[*Implementing the parser]].
+    We do not re-iterate those issues here, so see also that section for a
+    complete picture.
+
+    TODO reorder the sections
+***** DONE Very high tooling complexity
+      CLOSED: [2019-08-30 Fri 17:50]
+      The tooling around the P4-NetFPGA project is a jumble of scripts with no
+      rhyme or reason.
+      Besides the extremely complicated build process alluded to in [[*Project
+      building workflow]], there were several other issues. We sumarise them here.
+******* No way to cleanly add a custom extern
+       ED: [2019-08-30 Fri 17:28]
+       NetFPGA scripts expect information about all externs to live in one
+       on file distributed with the NetFPGA repository.
+        assumption is present in several other NetFPGA scripts.
+       , adding a project-specific extern, such as our AES implementation,
+        difficult problem.
+       pent significant effort trying to do it cleanly, but we found no
+        options.
+       ing the issue with the NetFPGA developers got vague agreement, but
+       roposal for a concrete patch did not receive a reply.
+       , building this project still requires modifying a Python file that
+       s with the P4-NetFPGA distribution.
+******* No way to do low-level debugging
+        CLOSED: [2019-08-28 Wed 11:31]
+        There is currently no way to inspect the internal state of the hardware.
+        In theory, it should be mostly unnecessary to debug the hardware, as the
+        whole-system circuit-level simulation, which enables one to look at the
+        signals in the circuit, should reveal the vast majority of problems.
+        In practice, though, due to the very high complexity of the scripts, we
+        were not able to run the whole-system simulation for our design.
+        Luckily, the issues we ran into were either visible in the
+        high-level behavioural simulation, or we were able to solve them
+        by means of a few days of thinking rather than by inspecting the system.
+        However, we strongly believe that simplifying the usage of the
+        behavioural simulation would be a worthwhile goal.
+***** DONE Packet generation helper script utterly broken
+      CLOSED: [2019-08-30 Fri 17:38]
+      The NetFPGA example repository comes with a sample script for generating
+      packets and metadata and testing the code in the behavioural simulation.
+      This script is completely broken: it does not even produce the right
+      number of bytes.
+      This error has apparently gone unnoticed because other parts of the
+      toolchain pad the bytes in questions with zeroes if there are too few
+      (instead of raising an error in order to make the problem visible),
+      and so one does not notice the problem if testing only the cases
+      where the missing bytes are all zero.
+      Due to the extremely low code quality, attempting to debug and fix the
+      script was very quickly abandoned.
+      There is no documentation for the metadata format, though, and thus we
+      needed to partially reverse engineer the script it in order to find out
+      what exactly it was attempting to do (even if incorrectly).
+      Reading the code in question has left the author with permanent trauma.
+      It would be better to not include buggy example scripts at all,
+      especially when they serve as an excuse for not adding any
+      documentation.
+***** DONE Changes to the code have highly unpredictable effects
+      CLOSED: [2019-08-30 Fri 17:21]
+      Whenever one writes new code for the NetFPGA, the likelihood of
+      encountering a more or less obvious compiler bug is nearly 1.
+      Beyond that, there are no certainties.
+
+      In the good cases, the compiler exits with a "Compiler Bug" message,
+      which can be more or less related to the actual problem (often a notable
+      amount of guesswork and experience with previously encountered compiler
+      bugs is needed to decipher it).
+      An example of this would be the case of attempting to use an "if"
+      statement in the wrong place, which results in the message "Compiler
+      Bug: action_split unimplemented".
+
+      In the bad cases, the program compiles successfully, and then does
+      something surprising in the simulation.
+      This may or may not be caught immediately, as test cases for this
+      particular flavour of surprising may not be present.
+      In that case, the problem may become apparent only several commits
+      later, when another feature depending on it is added.
+      This makes it very difficult to track down problems, and causes constant
+      anxiety for the programmer.
+      As an example, an issue with packet corruption (described in [[*Unexplained
+      packet corruption when handling parser errors]]) was not visible in the
+      simulation at all, and, together with the long compilation times, it took
+      about a week to track down the cause.
+***** DONE Silent failures, no way to detect errors early
+      CLOSED: [2019-08-30 Fri 17:50]
+      Almost every part of the very complex toolchain contains something that
+      fails silently: from device initialisation scripts through scripts that
+      fill tables to the many stages of compilation and simulation.
+      A prime example of this is the HDL compilation step that must be performed
+      at the beginning of the simulation or synthesis:
+      many of the NetFPGA-provided HDL files generate compilation errors, but
+      they are not fatal and somehow, the project works anyway.
+      Thus, in order to let the project build, the NetFPGA build scripts simply
+      silence all failures from the HDL compiler.
+      The consequence of this is that if the HDL code generated from P4 or an
+      extern contains an error, this will not be obvious.
+      The compilation process will continue, either failing 15 minutes later
+      (thus costing the programmer extra time), or in some cases, it will not
+      fail at all, use stale intermediate data instead of the erroneus parts,
+      and do something unexpected, thus causing utter confusion and more wasted
+      time.
+      In order to preserve our own sanity, we ended up replacing all scripts
+      that weren't closely intertwined with other ones.
+      Unfortunately, there were not many of those, and thus we had to train
+      ourselves to distinguish fatal errors from non-fatal ones in several
+      thousand lines of compilation logs.
+***** DONE Table matching broken under unclear circumstances
+      CLOSED: [2019-08-19 Mon 15:42]
+      We use a table to match the SCION interface ID with the physical port and
+      the IP overlay settings.
+      We had tested table matching previously in a toy project when getting to
+      know the toolchain, so we did not expect any problems with it.
+      However, during the development, table matching suddenly stopped working.
+      We triple-checked that the keys in the table and in the packet data were
+      correct, but that was not the problem.
+      As a sanity check, we went back to the known working toy project, and made
+      sure that tables still worked there, which they did.
+      Having no indication of what was wrong, we proceeded to copy over parts of
+      our code between the two projects in order to narrow down the possibilities.
+      It was largely by accident that we discovered that if we include an extra
+      dummy table at the beginning of the program, the actually relevant table
+      would magically start working again.
+      In the end we discovered that only the "first" table match was broken:
+      if we included two tables, the one that was accessed first in the control
+      flow of the program would fail to match, and the second one would work.
+
+      We reported this problem to the NetFPGA developers, and worked with them
+      to find out what was going on and why this was only happening in our
+      project.
+
+      Finally, we found out what was going on:
+      it turns out that calling an extern function (i.e.~escaping from P4 into
+      a Verilog/VHDL module) corrupts some state in the P4 module and breaks the
+      following table.
+      Our guess is that the use of the table then restores the corrupted state,
+      and after that the execution proceeds as expected.
+      This behaviour is rather concerning, as the P4 module should in theory be
+      completely independent from other modules, and not even the NetFPGA
+      developers know why this is happening.
+
+      In our case we need to call extern functions in order to validate the HF:
+      as described in section [[*Hop field validation]], we need an extern function
+      to get the current time (needed to validate the timestamp) and to compute
+      AES-128 (in order to check the HF MAC).
+      As we want to send the unmodified packet to the SW if any errors are
+      encountered, these checks should happen as soon as possible.
+      Specifically, we would like to do them before the use of the table, as
+      using the table modifies the packet (in P4, the "match-action", i.e.
+      looking up a key in a table and performing an associated action based on
+      the match, is an atomic operation).
+      Therefore, our first idea was to add the dummy table, so that we could
+      keep the control flow of "first call externs, then fix the corruption
+      using the dummy table, then access the actually relevant table".
+
+      However, the extra table costs about 0.1 ns of time, which is a
+      non-negligible amount (see section [[*Area and timing constraints]] for a detailed
+      discussion).
+      Thus, when optimising timing, we switched to a different approach:
+      because we are using the ~packet_mod~ deparser described in [[*Implementing
+      the parser]], we are able to choose very late in the program (specifically,
+      in the deparser) to either commit to the packet modifications or keep the
+      old data.
+      As such, we are able to use the following approach:
+      First, we access the table (which may modify the in-program representation
+      of the packet, but does not affect the result of the checks).
+      Then we call the externs and depending on the results of the checks, we
+      may or may not set a "can modify" flag.
+      We then check this flag in the deparser before committing to the
+      in-program packet modifications in the real packet on the wire.
+      This way we are able to use tables together with externs without using the
+      somewhat expensive dummy table workaround.
+***** DONE High difficulty of writing cross-platform code
+      CLOSED: [2019-08-30 Fri 17:19]
+      The NetFPGA only supports a particular subset of P4, and any documentation
+      on P4 support is incomplete.
+      During the work on this project, we encountered several unsupported
+      features not mentioned anywhere, which we added to the NetFPGA
+      documentation[fn:6].
+      Knowing about the unsupported features is only the start, though:
+      the next step is writing code without them.
+      Dancing around the limitations is a non-trivial exercise, and adding
+      workarounds has cost us a lot of effort.
+      Besides the parsing-related ones, in particular error handling and use of
+      externs needed extra code and much trial and error.
+***** DONE Control plane API issues
+      CLOSED: [2019-08-31 Sat 12:14]
+      The NetFPGA repository contains a C API for accessing the NetFPGA's tables
+      and registers via DMA, and a Python wrapper for the C API.
+      Both the C API and the Python wrapper have unexpected limitations.
+      
+      In P4, the programmer can define registers of any size.
+      However, the API only supports 32-bit registers, and thus only those can
+      be used for anything that involves the control plane.
+      We attempted to extend the API, but this limitation is in fact deep in the
+      NetFPGA's hardware design, and thus would be very time-consuming to fix.
+      Therefore, we had to change our program to use 32-bit registers only.
+      For example, in the case of the AS key used for HF MAC verification, which is 128 bits
+      long, we had to use 4 32-bit registers, and the key is written and read in parts.
+      While this can be done for our proof of concept implementation, in the
+      real world a non-atomic write of the key would cause problems and thus
+      additional workarounds would be needed.
+      
+      The table API also had issues. In P4, a table is a key-value mapping where
+      the value is an $(action, data)$ pair.
+      The data format is given by the action signature. As an example, a table
+      with 2 actions, ~action1(param1)~ and ~action2(param2, param3)~ should
+      contain values of the "shape" ~action1 | param1~ and ~action2 | param2 |
+      param3~ (where ~|~ stands for concatenation).
+      This is given by the P4 standard and expected by every P4 programmer.
+      However, that is not how the NetFPGA API works:
+      attempting to use the API in this way produces an obscure error message.
+      Instead, the API expects the action data to be a union of all possible
+      action data, with zeroes everywhere but in the relevant fields.
+      For the example above, this means that we need to use ~action1 | param1 |
+      0 | 0~ for action 1 and ~action2 | 0 | param2 | param3~ for action 2.
+      This deviation from the standard is not documented anywhere and, frankly,
+      makes no sense.
+      The order of parameters is also not easy to discover, and even if they
+      internally choose to represent the tables this way (which seems like a
+      waste of precious area), this implementation detail should not leak out
+      and cause a deviation from the expected (and far more reasonable) API.
+      Thus, we wrote our own Python wrapper for the C API, which handles this
+      internally and exposes the standard P4 API.
+
+      The Python wrappers for the C API were not at all usable for our project.
+      They hard-code assumptions about the location of metadata about the P4
+      program (which cannot be satisfied for any sensibly-structured project),
+      and, more importantly, they print an error message to the terminal instead
+      of indicating the error to the caller.
+      Thus, errors from the Python API cannot be handled in any sensible way,
+      and it was easier to completely rewrite it.
+      Further, while the C API only accepts input in "hex string" format (an
+      unusual and error-prone choice for C, it would be much simpler and more
+      natural to take raw bytes),
+      the Python wrapper for the table API attempts to convert common string
+      notations for bytes, such as ~11:22:33:44:55:66~ (MAC address format) and
+      ~1.2.3.4~ (IP address format).
+      However, it does so incorrectly -- it somehow works for 6-byte
+      colon-separated hex digits and 4-byte dot-separated decimal digits, but
+      returns surprising values for other sizes.
+      Thus, we used the opportunity when writing our own wrappers and also added
+      proper parsing.
+
+      Our rewrite implements all of the original Python API's functionality for
+      registers, and enough of the table functionality to be usable by us.
+      It includes dealing with the clumsy non-standard table API described
+      above, proper error handling, correct input parsing, and fewer limiting
+      assumptions.
+      Notably, despite the added functionality, in terms of the number of lines
+      of code, our rewrite is about one third of the original wrappers.
 *** DONE [3/3] Implementing the parser
     CLOSED: [2019-08-27 Tue 17:26]
 ***** DONE Handling the variable-length SCION path
@@ -1226,191 +1489,6 @@ would drastically increase my FPGA area usage.
       router behaves correctly even if the control plane is disconnected for a
       short time.
 
-*** TODO [1/3] Working around compiler/toolchain bugs
-    Some hurdles are expected when working with cutting-edge technology.
-    However, the state of the NetFPGA's P4 toolchain was enough of
-    an issue to warrant a separate section in this thesis.
-    Therefore, in this section we unfortunately present a subset of the problems
-    encountered.
-
-    Note that the parser-related problems (and their solutions, and the problems
-    in the solutions) were interesting enough that we discuss them separately in
-    section [[*Implementing the parser]].
-    We do not re-iterate those issues here, so see also that section for a
-    complete picture.
-
-    TODO reorder the sections
-***** TODO [/] Very high tooling complexity
-      (also alluded to in [[*Project building workflow]]).
-******* TODO extremely fragile, randomly stops working, and then requires on average 2-3 days to debug
-        had a working implementation where I could measure throughput 2 months
-        ago, now I can't make the same thing work
-        and we can't debug it
-******* DONE No way to do low-level debugging
-        CLOSED: [2019-08-28 Wed 11:31]
-        There is currently no way to inspect the internal state of the hardware.
-        In theory, it should be mostly unnecessary to debug the hardware, as the
-        whole-system circuit-level simulation, which enables one to look at the
-        signals in the circuit, should reveal the vast majority of problems.
-        In practice, though, due to the very high complexity of the scripts, we
-        were not able to run the whole-system simulation for our design.
-        Luckily, the issues we ran into were either visible in the
-        high-level behavioural simulation, or we were able to solve them
-        by means of a few days of thinking rather than by inspecting the system.
-        However, we strongly believe that simplifying the usage of the
-        behavioural simulation would be a worthwhile goal.
-***** DONE Packet generation helper script utterly broken
-      CLOSED: [2019-08-30 Fri 17:38]
-      The NetFPGA example repository comes with a sample script for generating
-      packets and metadata and testing the code in the behavioural simulation.
-      This script is completely broken: it does not even produce the right
-      number of bytes.
-      This error has apparently gone unnoticed because other parts of the
-      toolchain pad the bytes in questions with zeroes if there are too few
-      (instead of raising an error in order to make the problem visible),
-      and so one does not notice the problem if testing only the cases
-      where the missing bytes are all zero.
-      Due to the extremely low code quality, attempting to debug and fix the
-      script was very quickly abandoned.
-      There is no documentation for the metadata format, though, and thus we
-      needed to partially reverse engineer the script it in order to find out
-      what exactly it was attempting to do (even if incorrectly).
-      Reading the code in question has left the author with permanent trauma.
-      It would be better to not include buggy example scripts at all,
-      especially when they serve as an excuse for not adding any
-      documentation.
-***** DONE Changes to the code have highly unpredictable effects
-      CLOSED: [2019-08-30 Fri 17:21]
-      Whenever one writes new code for the NetFPGA, the likelihood of
-      encountering a more or less obvious compiler bug is nearly 1.
-      Beyond that, there are no certainties.
-
-      In the good cases, the compiler exits with a "Compiler Bug" message,
-      which can be more or less related to the actual problem (often a notable
-      amount of guesswork and experience with previously encountered compiler
-      bugs is needed to decipher it).
-      An example of this would be the case of attempting to use an "if"
-      statement in the wrong place, which results in the message "Compiler
-      Bug: action_split unimplemented".
-
-      In the bad cases, the program compiles successfully, and then does
-      something surprising in the simulation.
-      This may or may not be caught immediately, as test cases for this
-      particular flavour of surprising may not be present.
-      In that case, the problem may become apparent only several commits
-      later, when another feature depending on it is added.
-      This makes it very difficult to track down problems, and causes constant
-      anxiety for the programmer.
-      As an example, the packet corruption described in [[*Unexplained packet
-      corruption when handling parser errors]] was not visible in the simulation
-      at all, and it took about a week to track down the cause.
-***** DONE Silent failures, no way to detect errors early
-      CLOSED: [2019-08-30 Fri 17:50]
-      Almost every part of the very complex toolchain contains something that
-      fails silently: from device initialisation scripts through scripts that
-      fill tables to the many stages of compilation and simulation.
-      A prime example of this is the HDL compilation step that must be performed
-      at the beginning of the simulation or synthesis:
-      many of the NetFPGA-provided HDL files generate compilation errors, but
-      they are not fatal and somehow, the project works anyway.
-      Thus, in order to let the project build, the NetFPGA build scripts simply
-      silence all failures from the HDL compiler.
-      The consequence of this is that if the HDL code generated from P4 or an
-      extern contains an error, this will not be obvious.
-      The compilation process will continue, either failing 15 minutes later
-      (thus costing the programmer extra time), or in some cases, it will not
-      fail at all, use stale intermediate data instead of the erroneus parts,
-      and do something unexpected, thus causing utter confusion and more wasted
-      time.
-      In order to preserve our own sanity, we ended up replacing all scripts
-      that weren't closely intertwined with other ones.
-      Unfortunately, there were not many of those, and thus we had to train
-      ourselves to distinguish fatal errors from non-fatal ones in several
-      thousand lines of compilation logs.
-***** DONE Table matching broken under unclear circumstances
-      CLOSED: [2019-08-19 Mon 15:42]
-      We use a table to match the SCION interface ID with the physical port and
-      the IP overlay settings.
-      We had tested table matching previously in a toy project when getting to
-      know the toolchain, so we did not expect any problems with it.
-      However, during the development, table matching suddenly stopped working.
-      We triple-checked that the keys in the table and in the packet data were
-      correct, but that was not the problem.
-      As a sanity check, we went back to the known working toy project, and made
-      sure that tables still worked there, which they did.
-      Having no indication of what was wrong, we proceeded to copy over parts of
-      our code between the two projects in order to narrow down the possibilities.
-      It was largely by accident that we discovered that if we include an extra
-      dummy table at the beginning of the program, the actually relevant table
-      would magically start working again.
-      In the end we discovered that only the "first" table match was broken:
-      if we included two tables, the one that was accessed first in the control
-      flow of the program would fail to match, and the second one would work.
-
-      We reported this problem to the NetFPGA developers, and worked with them
-      to find out what was going on and why this was only happening in our
-      project.
-
-      Finally, we found out what was going on:
-      it turns out that calling an extern function (i.e.~escaping from P4 into
-      a Verilog/VHDL module) corrupts some state in the P4 module and breaks the
-      following table.
-      Our guess is that the use of the table then restores the corrupted state,
-      and after that the execution proceeds as expected.
-      This behaviour is rather concerning, as the P4 module should in theory be
-      completely independent from other modules, and not even the NetFPGA
-      developers know why this is happening.
-
-      In our case we need to call extern functions in order to validate the HF:
-      as described in section [[*Hop field validation]], we need an extern function
-      to get the current time (needed to validate the timestamp) and to compute
-      AES-128 (in order to check the HF MAC).
-      As we want to send the unmodified packet to the SW if any errors are
-      encountered, these checks should happen as soon as possible.
-      Specifically, we would like to do them before the use of the table, as
-      using the table modifies the packet (in P4, the "match-action", i.e.
-      looking up a key in a table and performing an associated action based on
-      the match, is an atomic operation).
-      Therefore, our first idea was to add the dummy table, so that we could
-      keep the control flow of "first call externs, then fix the corruption
-      using the dummy table, then access the actually relevant table".
-
-      However, the extra table costs about 0.1 ns of time, which is a
-      non-negligible amount (see section [[*Area and timing constraints]] for a detailed
-      discussion).
-      Thus, when optimising timing, we switched to a different approach:
-      because we are using the ~packet_mod~ deparser described in [[*Implementing
-      the parser]], we are able to choose very late in the program (specifically,
-      in the deparser) to either commit to the packet modifications or keep the
-      old data.
-      As such, we are able to use the following approach:
-      First, we access the table (which may modify the in-program representation
-      of the packet, but does not affect the result of the checks).
-      Then we call the externs and depending on the results of the checks, we
-      may or may not set a "can modify" flag.
-      We then check this flag in the deparser before committing to the
-      in-program packet modifications in the real packet on the wire.
-      This way we are able to use tables together with externs without using the
-      somewhat expensive dummy table workaround.
-***** DONE High difficulty of writing cross-platform code
-      CLOSED: [2019-08-30 Fri 17:19]
-      The NetFPGA only supports a particular subset of P4, and any documentation
-      on P4 support is incomplete.
-      During the work on this project, we encountered several unsupported
-      features not mentioned anywhere, which we added to the NetFPGA
-      documentation[fn:6].
-      Knowing about the unsupported features is only the start, though:
-      the next step is writing code without them.
-      Dancing around the limitations is a non-trivial exercise, and adding
-      workarounds has cost us a lot of effort.
-      Besides the parsing-related ones, in particular error handling and use of
-      externs needed extra code and much trial and error.
-***** TODO Control plane API issues
-      had to write my own reg_write and stuff
-      existing Python control plane API sucked, so I rolled my own
-      - tables: bugs in interpretation of the values
-      - everything was hard-coded
-      - only 32-bit registers supported, but that goes all the way to the C API and the bus
 *** TODO Area and timing constraints
     The various costly workarounds as explained in the previous sections of this
     chapter, together with some questionable design choices in the P4-NetFPGA
