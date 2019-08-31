@@ -424,7 +424,14 @@
     control, P4's focus on a single purpose (packet processing) enables it to
     abstract away many common features of packet processing pipelines, and lets
     the programmer focus on the interesting features.
-    Further, its choices about which features are not supported (such as
+    P4 programs generally consist of a *parser* stage (encoded as a state
+    machine), a *match-action pipeline* (encoded as an imperative program that
+    makes use of *tables*, i.e. structures written by the control plane that
+    look up a key and execute an associated action such as modifying a header or
+    setting the output port), and a *deparser* that outputs the modified packet
+    header.
+
+    P4's choices about which features are not supported (such as
     unbounded loops or arbitrary array access) enable the P4 compiler to
     guarantee line rate processing ("if it compiles, it will run fast").
     Our initial examination of P4 suggests that it provides appropriate
@@ -444,8 +451,8 @@
     because the "new, untested technology" problems will likely get less severe
     in the future, and therefore having a P4 implementation for SCION will become
     more and more useful over time.
-*** DONE [2/2] Introduction to designing for FPGAs
-    CLOSED: [2019-08-25 Sun 19:27]
+*** DONE [3/3] Introduction to designing for FPGAs
+    CLOSED: [2019-08-31 Sat 21:16]
     The design process for an FPGA is very different from software engineering.
     Though this is a difficult task, in this section we attempt to provide a
     *brief* overview of it from the perspective of a software engineer.
@@ -494,7 +501,7 @@
       Thus, pipelining can be used to cheaply increase throughput (and has no
       effect on latency).
       Further, when there are complex steps in the processing, the circuit can
-      often be simply duplicated, so that (with some buffering) the pipeline can
+      often be duplicated, so that (with some buffering) the pipeline can
       keep moving despite the slow step.
       
       From this, it follows that the limiting resource in FPGA design is circuit
@@ -522,7 +529,7 @@
       In return, for many high-performance applications, the flexibility and
       parallel processing power available through wise use of the available
       area is well worth it.
-***** DONE Overview of the process
+***** DONE Overview of the design process
       CLOSED: [2019-08-25 Sun 17:35]
       In software engineering, going from source code to a running program is
       usually a one-step process: one compiles the code and gets a runnable
@@ -531,10 +538,10 @@
       This is the outline of the process:
 
       1. *Logic description*: writing the source code for the logic of the project.
-         The logic of the program is described using a hardware description
-         language, such as Verilog or VHDL.
-         Compiling from a higher-level language, such as Bluespec TODO cite or,
-         in our case, P4, is also an option.
+         The logic of the program is described using a /hardware description
+         language/ (HDL), such as Verilog or VHDL.
+         Compiling from a higher-level language, such as Bluespec cite:bluespec
+         or, in our case, P4, is also an option.
          One can also link various self-contained modules (similarly to using
          libraries in software development) into their logic.
          An example of that in this project is our usage of a generic AES module
@@ -575,6 +582,58 @@
       5. *Generating the bitfile and flashing it onto the FPGA*: Creating a binary
          file in a format specific for the FPGA, and loading it onto the FPGA.
          This file configures the FPGA's cells to the desired circuitry.
+***** DONE The hard problem in FPGA design: Meeting timing
+      CLOSED: [2019-08-31 Sat 21:16]
+      In FPGA design, writing the logic of a program is only the first step.
+      As mentioned in the previous section, it is only after the program has
+      been turned into a circuit (the "implementation" step) that one can be
+      sure that it will work.
+      Often, especially when the program is complicated, one will instead find
+      that the circuit was created, but exhibits timing violations.
+
+      When signal propagates through a circuit, the various elements such as
+      gates and also routes (i.e. "wires") will delay it by a tiny bit: the
+      speed of light is finite, and the gates need a bit of time to stabilise on
+      the correct value.
+      These signal propagation delays accumulate; and if the signal takes too
+      long to arrive on the output, the circuit will not work correctly.
+      This problem is referred to as a timing violation (because the signal
+      delay violates a timing constraint required by other parts of the system),
+      and it is often the most difficult problem when designing an FPGA program.
+      
+      The usual reason for a timing violation is logic which is too complex to
+      execute within one clock cycle.
+      For example, an implementation of a round of AES is a somewhat complex
+      computation that requires quite a few gates, and thus it may add a
+      significant signal propagation delay: for our implementation, this is
+      about 0.4 ns.
+      Thus, if we attempted to run 10 rounds of AES in one cycle, the total
+      delay would be 4ns.
+      If we attempted to run such a circuit at a 300 MHz clock, we would only
+      have 3.3 ns per cycle (frequency 300 MHz = period 3.3 ns) and thus the
+      signal would arrive too late and the circuit would not work.
+      However, running the circuit at 200 MHz, where one clock cycle is 5 ns,
+      would work (and we would have 1 ns left if we needed to fit in some extra
+      operations).
+      Thus, when fixing a timing violation, we have two options: either we
+      reduce the number of operations per cycle, or we lower the clock
+      frequency.
+      Reducing the number of operations per cycle (while not changing the
+      functionality) means that our program will need more cycles and thus will
+      have increased latency (but if we use pipelining, we can avoid
+      losing throughput).
+      Lowering the clock frequency lowers not only the latency, but also the
+      throughput (as fewer bits per second can be processed).
+      Conversely, if our design achieves low delays, we may be able to increase
+      the clock frequency and thus also throughput.
+
+      Timing is a complicated problem and there are no silver bullets.
+      Lowering the delays in one part of the design is often a trade-off, as it
+      may cost more area or even exchange lower delays in one place for higher
+      delays in another place.
+      However, what makes or breaks a design is the worst path (as that is what
+      limits the maximum clock frequency), not the sum, and thus such trade-offs
+      are a useful tool.
 * [1/1] Design overview
   The border router's algorithm, as outlined in section [[*Putting it all together:
   Border router behaviour]], is as follows (more details have been added here):
@@ -627,7 +686,7 @@
   programs:
   the unmodified SW router, to which we sent any unhandled packets but otherwise
   do not interact with,
-  and a think wrapper that reads the SCION config files and writes the
+  and a thin wrapper that reads the SCION config files and writes the
   configuration into the NetFPGA, as well as provides a few supporting
   functions.
   Details about the control plane can be found in section [[*Control plane]].
@@ -641,13 +700,13 @@
   All the highlighted modules in the figure are loosely coupled in order to ease
   maintaining, extending, and building on top of this project.
   Thanks to the idea of transparently passing unprocessed packets to the OS, the
-  processing pipeline can stay simple, and the control plane software can be
+  processing pipeline can stay relatively simple, and the control plane software can be
   just a thin wrapper running alongside the unmodified SCION router.
   Furthermore, if the control plane gets extended or changed, it is sufficient
   to upgrade the software router and none of this project's code needs to be
   changed, as long as there are no changes in the forwarding logic (which
   isn't likely to change as often).
-* [4/5] Implementation Challenges
+* [5/5] Implementation Challenges
   The problems we encountered during the implementation were too numerous to
   list completely.
   Therefore, in this section, we present a select few particularly interesting,
@@ -673,7 +732,7 @@
       multiple steps.
       In the case of this project, it takes over 6 hours to go from source code
       to a binary that can be flashed onto the hardware.
-      (See section [[*Overview of the process]] for background information on why
+      (See section [[*Overview of the design process]] for background information on why
       this is so.)
       Originally, these 6 hours were interleaved with frequent manual checks
       that required opening the FPGA development environment GUI and running
@@ -691,7 +750,7 @@
       numerous NetFPGA scripts make unnecessary and often unsatisfiable
       assumptions about the project's structure.
       However, it was worth it:
-      at the moment, the project can be built simply with ~make build~, which
+      at the moment, the project can be built with ~make build~, which
       requires no manual interaction (nor lengthy documentation).
       This frees the programmer from frequently checking in on the build,
       allowing them to spend those 6 hours more productively.
@@ -887,7 +946,7 @@
       [[fig:scion-dmaifaces]], we are using the unmodified software SCION router to
       handle packets we cannot process in the dataplane, as well as any errors.
       Therefore, this responsibility is taken care of, and our control plane
-      only needs to provide the following simple functions:
+      only needs to provide the following functions:
        - *Loading the BR configuration into the NetFPGA*: the AS key for HF
          verification, the SCION interface ID to physical port mapping, and the
          IP overlay data for every interface.
@@ -912,8 +971,8 @@
        single-threaded program) or introduce unnecessary coupling and
        add some concurrency bugs (in case of a multi-threaded one).
 
-       Thus, in order to keep our modules idependent (unlike in a traditional
-       single-threaded program) and trivially composable (unlike in the case of
+       Thus, in order to keep our modules independent (unlike in a traditional
+       single-threaded program) and easily composable (unlike in the case of
        multi-threaded code that would need locks to protect access to the
        NetFPGA registers), we chose to use an event-driven single-threaded
        approach using the Twisted Python framework[fn:14].
@@ -931,13 +990,13 @@
        Because this approach allows us to make the modules trivially composable,
        we were able to keep the various handlers completely independent of each
        other.
-       This enabled us to trivially add features without worrying about breaking
+       This enabled us to quickly add features without worrying about breaking
        existing ones.
        Even more interestingly, we have been able to make the modules
        complementary to the P4 modules, and therefore have kept clean module
        boundaries across the whole stack.
        Thus, when changes need to be made, or only a part of this project needs
-       to be used (as in the library paradigm), it is trivial to also reuse the
+       to be used (as in the library paradigm), it is possible to also reuse the
        needed parts of the control plane.
 *** DONE [7/7] Working around compiler and toolchain bugs
     CLOSED: [2019-08-31 Sat 12:15]
@@ -961,19 +1020,19 @@
       rhyme or reason.
       Besides the extremely complicated build process alluded to in [[*Project
       building workflow]], there were several other issues. We sumarise them here.
-******* No way to cleanly add a custom extern
-       ED: [2019-08-30 Fri 17:28]
-       NetFPGA scripts expect information about all externs to live in one
-       on file distributed with the NetFPGA repository.
-        assumption is present in several other NetFPGA scripts.
-       , adding a project-specific extern, such as our AES implementation,
-        difficult problem.
-       pent significant effort trying to do it cleanly, but we found no
-        options.
-       ing the issue with the NetFPGA developers got vague agreement, but
-       roposal for a concrete patch did not receive a reply.
-       , building this project still requires modifying a Python file that
-       s with the P4-NetFPGA distribution.
+******* No way to cleanly add a custom module
+        CLOSED: [2019-08-30 Fri 17:28]
+        NetFPGA scripts expect information about all external non-P4 modules to
+        live in one file distributed with the NetFPGA repository.
+        This assumption is also present in several other NetFPGA scripts.
+        Thus, adding a project-specific external module, such as our AES
+        implementation, turned out to be a difficult problem.
+        We spent significant effort trying to do it cleanly, but we found no
+        good options.
+        Raising the issue with the NetFPGA developers got vague agreement, but
+        our proposal for a concrete patch did not receive a reply.
+        Thus, building this project still requires modifying a Python file that
+        ships with the P4-NetFPGA distribution.
 ******* No way to do low-level debugging
         CLOSED: [2019-08-28 Wed 11:31]
         There is currently no way to inspect the internal state of the hardware.
@@ -1211,7 +1270,7 @@ the parser cannot work with any variable-length data: this includes not only
 =varbit<n>= types, but also header unions, and -- most importantly -- header
 stacks.
 Furthermore, it is unable to even skip over variable-length parts of the packet.
-Simply put, all packet offsets must be compile-time constants.
+In summary, all packet offsets must be compile-time constants.
 This poses a problem for SCION: the path in the packet is variable length (it
 can contain any number of hops).[fn:varlen]
 Therefore, the parser cannot easily deal with the path in the SCION
@@ -1342,7 +1401,7 @@ would drastically increase my FPGA area usage.
       According to the NetFPGA developers, this is supported and should not
       cause any problems.
       However, in our project, which consists of a somewhat deep hierarchy of
-      sub-parser, that was not what we observed: upon encountering the ~reject~
+      sub-parsers, that was not what we observed: upon encountering the ~reject~
       keyword, the pipeline would proceed as expected, but on the output, the
       outgoing packet would get corrupted and contain zeroes instead of the
       original data.
@@ -1386,7 +1445,7 @@ would drastically increase my FPGA area usage.
       [[./img/parser-path.svg]]
 
       The final design is shown on figures [[fig:parser-top]]–[[fig:parser-path]]:
-      the top-level parser on figure [[fig:parser-top]] simply calls the
+      the top-level parser on figure [[fig:parser-top]] only calls the
       encapsulation parser (figure [[fig:parser-encaps]]) and the SCION header
       parser (to the right), and the SCION header parser in
       turn calls several other sub-parsers as shown on the figures.
@@ -1403,16 +1462,19 @@ would drastically increase my FPGA area usage.
       looking at the big picture, and thus have a better idea of the system.
 *** DONE Hop field validation
     CLOSED: [2019-08-25 Sun 15:48]
-    Before a SCION packet can be forwarded, we need to validate that this path
-    (specifically, this hop) is allowed.
-    There are two parts to that: we need to check that the hop field used in the
-    path is not expired, and we need to check that it was in fact created (and
-    thereby enabled) by our AS, not a malicious party by checking the HF MAC.
+    Before a SCION packet can be forwarded, we need to validate that this path,
+    specifically using this hop field, is allowed.
+    There are three parts to that: 
+    we need to check that
+    the hop field used in the path is not expired,
+    that the packet arrived at the ingress interface specified in the hop field,
+    and that it was in fact created (and thereby enabled) by our AS, not a
+    malicious party by checking the HF MAC.
     Here we briefly discuss each of those steps.
 ***** MAC verification
       The MAC in SCION HFs is an AES-based MAC over the hop field and the
-      previous hop field (excluding some flags), as outlined in section
-      [[*SCION data plane]] and detailed in cite:scion-book.
+      previous hop field (excluding some flags) plus a timestamp, as outlined in
+      section [[*SCION data plane]] and detailed in cite:scion-book.
       Therefore, to check the MAC, we need to add AES functionality to our P4 program.
 ******* Adding the AES extern
         While implementing AES in P4 would in theory be feasible, in practice such
@@ -1428,7 +1490,7 @@ would drastically increase my FPGA area usage.
         extern modules to work correctly with the P4 compiler was unclear and we
         needed to learn about it by trial and error.
         We did this by implementing a simple no-op module, which we then switched
-        for a simple proof-of-concept AES-128 implementation.[fn:9]
+        for a basic proof-of-concept AES-128 implementation.[fn:9]
         This appeared to work -- the AES encryption result was correct, and
         everything worked in the behavioural simulation.
         However, when deployed on real hardware, the NetFPGA would process the
@@ -1488,35 +1550,52 @@ would drastically increase my FPGA area usage.
       Real-world implementations should include an internal clock, so that the
       router behaves correctly even if the control plane is disconnected for a
       short time.
+*** DONE Area and timing constraints
+    CLOSED: [2019-08-31 Sat 18:44]
+    This section requires a basic understanding of FPGA design.
+    Refer back to section [[*Introduction to designing for FPGAs]] for a brief
+    introduction.
+    TODO is that note needed?
 
-*** TODO Area and timing constraints
     The various costly workarounds as explained in the previous sections of this
     chapter, together with some questionable design choices in the P4-NetFPGA
     base design[fn:7], take up almost all of the FPGA area.[fn:8]
     Due to this, the place and route step of the design process has difficulty
     satisfying timing constraints.
 
-    Originally, the critical path in the full design took over 6 nanoseconds.
-    Running on a 200MHz clock requires all paths to take no longer than 5.0 ns
-    (200 MHz ⇒ 5 ns per cycle).
-    After more than a month of optimisation, we have been able to optimise that
-    by a full 1 ns (i.e. 20%).
-    However, we have not been able to cross the threshold: the longest path in
-    the full design still requires 5.08ns.
+    Originally, in the full design, the longest path executed in one cycle
+    had a delay of over 6 nanoseconds.
+    The P4-generated module runs on a 200MHz clock, which requires all delays to
+    be under 5.0 ns (200 MHz ⇒ 5 ns per cycle).
+    After more than a month of optimisation, we have been able to decrease the
+    delay by a bit over 1 ns (i.e. 20%).
+    However, we have not been able to cross the threshold: the largest delay in
+    the full design is still 5.08 ns.
     At this point, the FPGA is too full for any further optimisations to help:
     all of our attempts just shifted the problem from one place to another, but
     did not solve it.
-    Thus, we have not been able to test our full design on real hardware;
-    however, we have tested it in simulation, and we have tested two designs
-    with a subset of features enabled, as discussed in the analysis in section
-    [[*Analysis]].
 
-    Nevertheless, during the optimisation process, we have learned a great deal:
-       - TODO example of data dependency graph and how I optimised it
+    Note that this problem is more difficult to fix in our situation than in
+    "normal" FPGA design: the P4 compiler decides how to divide the logic into
+    stages, and because we have more logic than is usual due to the various
+    workarounds, the compiler's decisions are not very good for our situation.
+    If we had full control over the design, it would be possible to split the
+    logic on the longest path into two stages, sacrificing a cycle in order to
+    reset the delay (though that would create problems of its own).
+    In other words, the particular difficulty with solving our case arises from
+    the trade-off of using a high-level rather than a low-level language: by
+    using P4, we cannot control the details of the pipeline, but on the other
+    hand, we do not have to control the details of the pipeline.
 
-***** TODO Tables
-      squishing => but then large table => helps with timing but fills the FPGA
+    Due to these issues, we have not been able to test our full design on real
+    hardware; however, we have tested it in simulation, and we have tested two
+    designs with a subset of features enabled, as discussed in the analysis in
+    section [[*Analysis]].
 
+    When attempting to solve this problem, we have learned a great deal about
+    writing P4 code with better timing characteristics.
+    We present some of our insights in section [[*Guidelines for high-speed packet
+    processing]].
 * [3/3] Evaluation
   # > What happened (objectively)?
   # > Do not interpret, simply state the facts.
@@ -1530,7 +1609,6 @@ would drastically increase my FPGA area usage.
   Therefore, we do not present results for the full design: instead, we show the
   data for a partial design, and we draw conclusions based on these and our
   knowledge of how composing systems in FPGAs affects performance.
-  TODO does this paragraph make me sound lame?
 *** DONE Method
     CLOSED: [2019-08-29 Thu 18:23]
     The aim of the evaluation is to determine the maximum throughput achievable
@@ -1591,51 +1669,51 @@ would drastically increase my FPGA area usage.
     CLOSED: [2019-08-29 Thu 17:37]
     Our program exports statistics about frame counts and queue sizes, as seen
     by the NetFPGA.
-    We can use this data to understand whether the system is under load, and
-    whether packet loss is occurring.
-    Tables [[tab:queues-1500B]] and [[tab:queues-115B]], as well as plot [[fig:queues]]
-    show the packet loss and maximum queue sizes observed throughout the duration of the
+    We can use this data to understand whether packet loss is occurring.
+    Tables [[tab:queues-1500B]] and [[tab:queues-115B]]
+    # , as well as plot [[fig:queues]]
+    show the packet loss observed throughout the duration of the
     experiments, for 1500B and 115B frames.
-
     The frame counts as reported by the NetFPGA are consistent with the frame
     counts reported by the traffic generator.
-    Note that queue size is measured in blocks of 32B, and thus a single large frame
-    may take up more than 1 block.
+    # Note that queue size is measured in blocks of 32B, and thus one frame
+    # takes up more than one block.
 
     #+NAME:   tab:queues-1500B
-    #+CAPTION: Max queue sizes (in blocks of 32B) and packet loss with varying load, with 1500B frames.
+    #+CAPTION: Packet loss with varying load, with 1500B frames.
     #+ATTR_LATEX: :align |r|r|r|r|r|
-    |-------------+-----------+-----------+-----------+------|
-    | Load / Gbps | Max queue | Tx frames | Rx frames | Loss |
-    |-------------+-----------+-----------+-----------+------|
-    |           8 |         0 |  39094558 |  39094558 |    0 |
-    |          16 |         1 |  79240424 |  79240424 |    0 |
-    |          24 |         2 | 122369587 | 122369587 |    0 |
-    |          32 |         2 | 157131302 | 157131302 |    0 |
-    |          40 |         3 | 198083742 | 198083742 |    0 |
-    |-------------+-----------+-----------+-----------+------|
-    #+TBLFM: $7=$6 - $5
+    |-------------+-----------+-----------+------|
+    | Load / Gbps | Tx frames | Rx frames | Loss |
+    |-------------+-----------+-----------+------|
+    |           8 |  39094558 |  39094558 |    0 |
+    |          16 |  79240424 |  79240424 |    0 |
+    |          24 | 122369587 | 122369587 |    0 |
+    |          32 | 157131302 | 157131302 |    0 |
+    |          40 | 198083742 | 198083742 |    0 |
+    |-------------+-----------+-----------+------|
+    #+TBLFM: $6=$5 - $4
 
     #+NAME:   tab:queues-115B
-    #+CAPTION: Max queue sizes (in blocks of 32B) and packet loss with varying load, with 115B frames.
+    #+CAPTION: Packet loss with varying load, with 115B frames.
     #+ATTR_LATEX: :align |r|r|r|r|r|
-    |-------------+-----------+------------+------------+------|
-    | Load / Gbps | Max queue |  Tx frames |  Rx frames | Loss |
-    |-------------+-----------+------------+------------+------|
-    |           8 |         0 |  334798373 |  334798373 |    0 |
-    |          16 |         0 |  674862021 |  674862021 |    0 |
-    |          24 |         1 |  990142312 |  990142312 |    0 |
-    |          32 |         1 | 2125564720 | 2125564720 |    0 |
-    |          40 |         2 | 1631918616 | 1631918616 |    0 |
-    |-------------+-----------+------------+------------+------|
-    #+TBLFM: $7=$6 - $5
+    |-------------+------------+------------+------|
+    | Load / Gbps |  Tx frames |  Rx frames | Loss |
+    |-------------+------------+------------+------|
+    |           8 |  334798373 |  334798373 |    0 |
+    |          16 |  674862021 |  674862021 |    0 |
+    |          24 |  990142312 |  990142312 |    0 |
+    |          32 | 2125564720 | 2125564720 |    0 |
+    |          40 | 1631918616 | 1631918616 |    0 |
+    |-------------+------------+------------+------|
+    #+TBLFM: $6=$5 - $4
 
-    #+NAME: fig:queues
-    #+CAPTION: Queue sizes (in blocks of 32B) depending on load.
-    [[./img/queues.svg]]
+    # #+NAME: fig:queues
+    # #+CAPTION: Queue sizes (in blocks of 32B) depending on load.
+    # [[./img/queues.svg]]
 
     Note that the 0% loss in all measurements may look like an error, but that
-    is not the case -- refer to TODO somewhere in [[*Analysis]] for an explanation.
+    is not the case -- refer to section [[*Discussion of the measurements]] for an
+    explanation.
 ***** queues data table                                            :noexport:
       #+NAME: dat:queues
       #+CAPTION: Queue sizes (in blocks of 32B) depending on total load.
@@ -1853,17 +1931,111 @@ also you have pps in prometheus and you know the packet size
       distribution is very even both in time and per port.
       Since we pre-set the egress interface IDs in the generated traffic to also
       be evenly distributed, the output traffic is also distributed evenly.
-      Thus, neither the input nor the output queues get full, and we are able to
+      Thus, neither the input nor the output buffers get full, and we are able to
       achieve zero packet loss.
 *** TODO Guidelines for high-speed packet processing
-    see [[*Introduction to designing for FPGAs]] for general intro to FPGAs
+    This section requires a basic understanding of FPGA design.
+    Refer back to section [[*Introduction to designing for FPGAs]] for a brief
+    introduction.
+    TODO is that note needed?
 ***** what's easy and what's hard from the "what you want to do" viewpoint
-***** insights about P4 => HDL translation
-******* Timing
-        - inout parameters correspond to long paths => timing problems
-        - CAM tables are kinda expensive (~0.1ns)
-        - TODO how to find the critical path?
-        - example of data dependency graph and optimising it
+***** Writing P4 code that meets timing
+      During the optimisation of our code we learned a great deal about writing
+      P4 code that often leads to lower signal propagation delays on the NetFPGA.
+      Since timing is not an exact science, it is difficult to extrapolate this
+      knowledge.
+      Nevertheless, the following sections list some of our insights.
+******* NEXT Finding the critical path
+        something something read the logs
+******* DONE Reducing data dependencies
+        CLOSED: [2019-08-31 Sat 18:44]
+        The structure of a P4 program, and especially the flow of data, has a
+        large effect on the data paths in the resulting hardware design, and thus
+        also on timing.
+        Data processed in many interdependent steps, where the input from a
+        previous step is needed to execute the next step, will accumulate more
+        delays and thus result in tighter timing.
+      
+        This general observation may be enough to hint at concrete ways to improve
+        a P4 program.
+        Additionally, it can also be specifically applied in two common cases:
+        ~inout~ parameters and branches.
+
+        P4 provides several methods for separating large programs into smaller
+        pieces. The most interesting ones are actions, functions, and controls.
+        (Parsers use their own keyword and a different syntax for the body, but
+        for the purposes of structuring P4 programs, they are equivalent to
+        controls.)
+        All of these can accept parameters, which are copied by value.
+        These parameters have a direction: they can be marked ~in~ if they should
+        be copied from the caller scope at the beginning of the block's execution,
+        ~out~ when they should be copied out to the caller at the end, and ~inout~
+        if they should be copied both on the way in and out.
+        While declaring parameters ~inout~ is often quicker, this comes at a cost:
+        it introduces a long path where the same data needs to go into and out
+        of the block, accumulating all the timing delays.
+        When a parameter is only ~in~ or only ~out~, the compiler may find more
+        opportunities for optimising logic, splitting and parallelising a
+        computation, or similar.
+        In our case, we originally had an ~inout~ parameter passed along through
+        all of our sub-parsers, and since the SCION parser is on the critical path,
+        this was causing issues.
+        Cleaning up the sub-parsers to use an ~in~ parameter or an ~out~
+        parameter, and only when really needed, helped us save about 0.2 ns on the
+        critical path, which is quite noticeable.
+
+        The case of branching is quite similar:
+        code that conditionally should or should not execute based on a result of
+        a complex computation needs to wait for that computation, thus
+        accumulating the delays from it.
+        Code like ~if [long computation 1] then [long computation 2]~ is likely to
+        have worse timing results than a rewrite of the form ~[long computation
+        1]; [long computation 2]; [combine the results]~.
+        This may look counter-intuitive: in the first case, ~[long computation 2]~
+        will only be performed when needed, while in the second case, we perform
+        both computations even if we don't need to.
+        However, this thinking only applies in software engineering, not hardware
+        engineering:
+        in P4, if the compiler infers that the two computations are independent,
+        may parallelise them, thus using more FPGA area but not more time.
+        The accumulated timing delays will also be only the maximum of the delays
+        from the long computations plus the delay from the combining, while in the
+        original code, the delay from computation 1 propagated into computation 2
+        and thus the total delay was the sum of the two, not the maximum plus a
+        bit.
+******* DONE P4 tables
+        CLOSED: [2019-08-31 Sat 18:15]
+        Matching against a CAM table (the ~exact~ table type) adds about 0.1 ns.
+        Out of the elementary operations in P4 that we tested, this is the most expensive one.
+        (Note that we have not tested TCAM, i.e. ~lpm~ tables. We assume that
+        those would be even more expensive.)
+        Thus, a design with many tables may run into timing problems.
+        Therefore, it may be worth it to consider "squishing" those tables into one big table:
+        instead of having something like ~table1.apply(); table2.apply();~,
+        consider making one bigger table with a composite key and a composite
+        action that combines the two smaller tables into one.
+        Obviously, this may require restructuring the control flow of the program,
+        which may change other things, so this is not a "one size fits all"
+        solution.
+        Furthermore, the NetFPGA stores action parameters inefficiently: if a
+        table has multiple actions,
+        on the NetFPGA the entry will need as many bytes as the sum of the sizes
+        of parameters of all actions, not the maximum as one would expect.
+        Thus, a table with multiple actions can end up being very large and taking
+        up a lot of FPGA area, thereby making routing more difficult and
+        potentially causing timing issues in other parts of the design.
+******* DONE Externs can be expensive
+        CLOSED: [2019-08-31 Sat 19:04]
+        Obviously, the implementation of an extern affects how much delay it adds:
+        for example, our AES implementation adds about 0.4 ns.
+        Less obviously, even the simpler of the externs included with the
+        P4-NetFPGA repository are more expensive than we had expected.
+        A register write adds about 0.03 ns, which is small but adds up.
+        Thus a program that relies very heavily on even simple externs may run
+        into problems:
+        it is not too hard to imagine a program that uses a register write 20 times,
+        which would add up to a delay of more than 0.5 ns, i.e. more than 10% of
+        the available 5 ns.
 *** DONE Implications for the SCION protocol
     CLOSED: [2019-08-30 Fri 16:47]
     The information in this section arose through discussion with multiple
@@ -1884,7 +2056,7 @@ also you have pps in prometheus and you know the packet size
       Further, the large area and number of parallel comparisons needed to match
       every packet in such huge tables translate into high electricity
       consumption.
-      Thus, exchanging a large CAM table for a relatively simple AES core is a
+      Thus, exchanging a large CAM table for an AES core is a
       good decision that is likely to significantly decrease hardware
       manufacturing costs and power requirements.
 

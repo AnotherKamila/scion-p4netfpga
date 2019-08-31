@@ -24,7 +24,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -42,7 +42,7 @@
      id="namedview140"
      showgrid="false"
      inkscape:zoom="1.9443143"
-     inkscape:cx="417.27647"
+     inkscape:cx="419.28361"
      inkscape:cy="95.99992"
      inkscape:window-x="2160"
      inkscape:window-y="2225"
@@ -126,7 +126,7 @@
          id="text14"
          font-size="16px"
          y="18"
-         x="26">$\textrm{MAC}_B$</text>
+         x="26">$\textrm{MAC}_A$</text>
     </switch>
   </g>
   <rect
@@ -237,7 +237,7 @@
          id="text38"
          font-size="16px"
          y="18"
-         x="19">$\textrm{HF}_B$</text>
+         x="19">$\textrm{HF}_C$</text>
     </switch>
   </g>
   <rect
@@ -272,7 +272,7 @@
          id="text46"
          font-size="16px"
          y="18"
-         x="26">$\textrm{MAC}_B$</text>
+         x="26">$\textrm{MAC}_C$</text>
     </switch>
   </g>
   <circle
