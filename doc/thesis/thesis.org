@@ -712,7 +712,7 @@
   Details about the control plane can be found in section [[*Control plane]].
 
   #+NAME:   fig:design-overview
-  #+CAPTION: TODO somebody should write something here.
+  #+CAPTION: The design overview of the project.
   [[./img/design-overview.svg]]
 
   Figure [[fig:design-overview]] shows the components of our design.
@@ -734,8 +734,6 @@
   # originally wanted to divide this into parser, validation, forwarding, etc... but
   # I don't think that makes much sense, as e.g. timing or stupid compiler were a
   # problem across the whole thing
-
-  TODO dear reviewers, is the order of these sections good?
 *** Software engineering aspects
     CLOSED: [2019-08-26 Mon 17:48]
     From the software engineering perspective, this project is somewhat on the
@@ -1023,7 +1021,7 @@
     Some hurdles are expected when working with cutting-edge technology.
     However, the state of the NetFPGA's P4 toolchain was enough of
     an issue to warrant a separate section in this thesis.
-    Therefore, in this section we unfortunately present a subset of the
+    Therefore, in this section we present a subset of the
     problems encountered.
 
     Note that the parser-related problems (and their solutions, and the problems
@@ -1032,8 +1030,6 @@
     section [[*Implementing the parser]].
     We do not re-iterate those issues here, so see also that section for a
     complete picture.
-
-    TODO reorder the sections
 ***** Very high tooling complexity
       CLOSED: [2019-08-30 Fri 17:50]
       The tooling around the P4-NetFPGA project is a jumble of scripts with no
@@ -1066,26 +1062,25 @@
         by means of a few days of thinking rather than by inspecting the system.
         However, we strongly believe that simplifying the usage of the
         behavioural simulation would be a worthwhile goal.
-***** Packet generation helper script utterly broken
+***** Problems with packet generation helper script
       CLOSED: [2019-08-30 Fri 17:38]
       The NetFPGA example repository comes with a sample script for generating
       packets and metadata and testing the code in the behavioural simulation.
-      This script is completely broken: it does not even produce the right
-      number of bytes.
+      The script has serious issues, such as not producing the correct number of
+      bytes.
       This error has apparently gone unnoticed because other parts of the
       toolchain pad the bytes in questions with zeroes if there are too few
       (instead of raising an error in order to make the problem visible),
       and so one does not notice the problem if testing only the cases
       where the missing bytes are all zero.
-      Due to the extremely low code quality, attempting to debug and fix the
+      Due to the low code quality, attempting to debug and fix the
       script was very quickly abandoned.
       There is no documentation for the metadata format, though, and thus we
       needed to partially reverse engineer the script it in order to find out
       what exactly it was attempting to do (even if incorrectly).
       Reading the code in question has left the author with permanent trauma.
-      It would be better to not include buggy example scripts at all,
-      especially when they serve as an excuse for not adding any
-      documentation.
+      The combination of no documentation and this implementation made working
+      with the NetFPGA toolchain very painful.
 ***** Changes to the code have highly unpredictable effects
       CLOSED: [2019-08-30 Fri 17:21]
       Whenever one writes new code for the NetFPGA, the likelihood of
@@ -1106,8 +1101,8 @@
       particular flavour of surprising may not be present.
       In that case, the problem may become apparent only several commits
       later, when another feature depending on it is added.
-      This makes it very difficult to track down problems, and causes constant
-      anxiety for the programmer.
+      This makes it very difficult to track down problems, and to have confidence in
+      the correctness of the code.
       As an example, an issue with packet corruption (described in [[*Unexplained
       packet corruption when handling parser errors]]) was not visible in the
       simulation at all, and, together with the long compilation times, it took
@@ -1125,12 +1120,12 @@
       silence all failures from the HDL compiler.
       The consequence of this is that if the HDL code generated from P4 or an
       external module contains an error, this will not be obvious.
-      The compilation process will continue, either failing 15 minutes later
-      (thus costing the programmer extra time), or in some cases, it will not
+      The compilation process will continue, either failing 15 minutes later,
+      or in some cases, it will not
       fail at all, use stale intermediate data instead of the erroneous parts,
-      and do something unexpected, thus causing utter confusion and more wasted
-      time.
-      In order to preserve our own sanity, we ended up replacing all scripts
+      and do something unexpected, thus ending up in a
+      non-obviously-inconsistent state.
+      In order to make the toolchain more usable, we ended up replacing all scripts
       that weren't closely intertwined with other ones.
       Unfortunately, there were not many of those, and thus we had to train
       ourselves to distinguish fatal errors from non-fatal ones in several
@@ -1156,14 +1151,12 @@
       flow of the program would fail to match, and the second one would work.
 
       We reported this problem to the NetFPGA developers, and worked with them
-      to find out what was going on and why this was only happening in our
-      project.
-
+      debug the issue.
       Finally, we found out what was going on:
       it turns out that calling an extern function (i.e. escaping from P4 into
       a Verilog/VHDL module) corrupts some state in the P4 module and breaks the
       following table.
-      Our guess is that the use of the table then restores the corrupted state,
+      Our guess is that the use of the table then reverts the corrupted state,
       and after that the execution proceeds as expected.
       This behaviour is rather concerning, as the P4 module should in theory be
       completely independent from other modules, and not even the NetFPGA
@@ -1244,8 +1237,7 @@
       action data, with zeroes everywhere but in the relevant fields.
       For the example above, this means that we need to use ~action1 | param1 |
       0 | 0~ for action 1 and ~action2 | 0 | param2 | param3~ for action 2.
-      This deviation from the standard is not documented anywhere and, frankly,
-      makes no sense.
+      This deviation from the standard is not documented anywhere.
       The order of parameters is also not easy to discover, and even if they
       internally choose to represent the tables this way (which seems like a
       waste of precious area), this implementation detail should not leak out
@@ -1987,7 +1979,6 @@ also you have pps in prometheus and you know the packet size
       This section requires a basic understanding of FPGA design.
       Refer back to section [[*Introduction to designing for FPGAs]] for a brief
       introduction.
-      TODO is that note needed?
 
       During the optimisation of our code we learned a great deal about writing
       P4 code that often leads to lower signal propagation delays on the NetFPGA.
@@ -2306,7 +2297,7 @@ also you have pps in prometheus and you know the packet size
     10G ports.
     If not for that limitation, our design could achieve up to 51
     Gbps without any change (it processes 256 bits per cycle at 200 MHz clock ⇒
-    256*200e6 = 51e9 TODO fix the numbers).
+    $256 \cdot 200\cdot 10^6 = 51\cdot 10^9$).
     If not for the numerous costly workarounds, our design could run at a higher
     frequency, and with greater parallelism.
     Therefore, by porting this project to a faster target with a better
