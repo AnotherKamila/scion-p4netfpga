@@ -1896,7 +1896,7 @@ also you have pps in prometheus and you know the packet size
 "Port //1/3";"1.039.582.360";"1.044.155.419";"989.682.406.720";"994.035.958.888";"8.499.999.992";"8.499.999.872";"1.156.015.584.320";"1.161.100.825.928";"9.928.571.423";"9.928.571.279";"99.286";"99.286";"1.039.582.360";"0";"0";"8.928.571";"8.928.571";"8.928.571";"1.062.499.999";"8.499.999.992";"0";"0";
 "Port //1/4";"1.045.821.617";"1.041.305.642";"995.622.179.384";"991.322.971.184";"8.499.999.960";"8.500.000.056";"1.162.953.638.104";"1.157.931.873.904";"9.928.571.382";"9.928.571.491";"99.286";"99.286";"1.045.821.617";"0";"0";"8.928.571";"8.928.572";"8.928.571";"1.062.499.995";"8.499.999.960";"0";"0";
 
-* [2/3] Analysis
+* [3/3] Analysis
 *** DONE Discussion of the measurements
     CLOSED: [2019-08-30 Fri 14:37]
 ***** Throughput
@@ -1933,20 +1933,45 @@ also you have pps in prometheus and you know the packet size
       be evenly distributed, the output traffic is also distributed evenly.
       Thus, neither the input nor the output buffers get full, and we are able to
       achieve zero packet loss.
-*** TODO Guidelines for high-speed packet processing
-    This section requires a basic understanding of FPGA design.
-    Refer back to section [[*Introduction to designing for FPGAs]] for a brief
-    introduction.
-    TODO is that note needed?
-***** what's easy and what's hard from the "what you want to do" viewpoint
+*** DONE Guidelines for high-speed packet processing
+    CLOSED: [2019-09-01 Sun 10:57]
+***** Types of problems suitable for P4
+      P4 is not a general-purpose language, but it does allow quite general
+      programs for packet processing.
+      P4 programs are expressed as imperative steps for processing a single
+      packet, and thus are best used for tasks where packets are processed
+      mostly independently:
+      state shared among multiple packet is limited to a few primitives, such as
+      register arrays.
+      In order to enable processing at line rate, P4 limits the control flow
+      statements available: there are no loops (i.e. one can only write programs
+      that execute in constant time), no locally-scoped arrays, and even
+      branching statements are only usable in specific places.
+      Thus, P4 is best suited for problems that do not require a complicated
+      control flow or a large amount of state shared between packets.
+      expressed quite simply,
+      and automatically run at line rate (assuming the timing is met -- see
+      below), with the details of the design, such as pipelining, handled by the
+      compiler.
+
+      Of note is that different P4 targets may have different limitations.
+      For example, an FPGA target can (assuming a good toolchain) run a larger
+      set of programs than e.g. an ultra-high-speed P4-programmable switch:
+      although P4 is supposedly target-independent, in reality different targets
+      may have different limitations.
+      Thus, P4 programs handling complex protocols (such as SCION) may be better
+      suited for FPGA-based implementations than programmable switches.
 ***** Writing P4 code that meets timing
+      This section requires a basic understanding of FPGA design.
+      Refer back to section [[*Introduction to designing for FPGAs]] for a brief
+      introduction.
+      TODO is that note needed?
+
       During the optimisation of our code we learned a great deal about writing
       P4 code that often leads to lower signal propagation delays on the NetFPGA.
       Since timing is not an exact science, it is difficult to extrapolate this
       knowledge.
       Nevertheless, the following sections list some of our insights.
-******* NEXT Finding the critical path
-        something something read the logs
 ******* DONE Reducing data dependencies
         CLOSED: [2019-08-31 Sat 18:44]
         The structure of a P4 program, and especially the flow of data, has a
