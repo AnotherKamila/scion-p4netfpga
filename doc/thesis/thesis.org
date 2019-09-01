@@ -107,11 +107,12 @@
     This has enabled rapid development, as well as flexibility, and it will
     continue to be the primary approach until the protocol stabilises.
     However, with the current technologies, a software-based approach cannot
-    achieve throughput above several tens of gigabits per second.
+    achieve throughput above several tens of gigabits per second.[fn:17]
     Therefore, large-scale deployments would require many such routers, which is
     not cost-effective.
     From the research perspective, whether SCION can even in principle run at
-    line rate, and what hurdles must be overcome, are still open questions.
+    very high throughputs, and what hurdles must be overcome, are still open
+    questions.
 
     Especially thanks to the real-world deployments, SCION is now
     mature enough to lend itself to implementing in hardware.
@@ -217,7 +218,7 @@
       the packet header.
       In particular, the user-selected path that the packet needs to take through the
       network is present in the header, as a stack of /hop fields/ (HFs).
-      This means that the packet headers are variable-size and can be somewhat large
+      This means that the packet headers are variable-size and can be quite large
       -- this is the tradeoff SCION makes to avoid large and potentially inconsistent
       routing tables in routers.
 
@@ -1429,7 +1430,7 @@ would drastically increase my FPGA area usage.
       [[./img/parser-encaps.svg]]
 
       #+NAME:   fig:parser-comm-addr
-      #+CAPTION: Top left: the SCION common header parser. Right: The address header parser. Bottom left: The NetFPGA implementation of a helper for skipping over 0–63 blocks.
+      #+CAPTION: Top left: the SCION common header parser. Right: The address header parser. Bottom left: The NetFPGA implementation of a helper for skipping over 0–63 blocks (~blocksize~ is a compile-time parameter).
       [[./img/parser-comm-addr.svg]]
 
       #+NAME:   fig:parser-hostaddr
@@ -1437,7 +1438,7 @@ would drastically increase my FPGA area usage.
       [[./img/parser-hostaddr.svg]]
 
       #+NAME:   fig:parser-packetskipper8
-      #+CAPTION: The NetFPGA implementation of a helper for skipping over 0–7 blocks.
+      #+CAPTION: The NetFPGA implementation of a helper for skipping over 0–7 blocks (~blocksize~ is a compile-time parameter).
       [[./img/parser-packetskipper8.svg]]
 
       #+NAME:   fig:parser-path
@@ -2328,6 +2329,11 @@ bibliography:bibliography.bib
 #+LATEX: \appendix
 
 * Footnotes
+
+[fn:17] For example, the latest performace report of DPDK by Intel
+(http://fast.dpdk.org/doc/perf/DPDK_19_05_Intel_NIC_performance_report.pdf)
+shows a maximum of 20 Gbps in the best case, with highly optimised hardware, for
+a simple LPM-based forwarding algorithm.
 
 [fn:6] https://github.com/NetFPGA/P4-NetFPGA-public/wiki/Workflow-Overview#limitations
 

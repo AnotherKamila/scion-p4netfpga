@@ -47,10 +47,10 @@
      fit-margin-right="0"
      fit-margin-bottom="0"
      inkscape:zoom="1.3409091"
-     inkscape:cx="-30.245836"
+     inkscape:cx="-378.51702"
      inkscape:cy="315.44699"
-     inkscape:window-x="2160"
-     inkscape:window-y="2225"
+     inkscape:window-x="0"
+     inkscape:window-y="65"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg244" />
   <defs
@@ -719,23 +719,18 @@
      xml:space="preserve"
      style="font-style:normal;font-weight:normal;font-size:12px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
      x="161.55762"
-     y="556.12793"
+     y="566.12793"
      id="text1059"><tspan
        sodipodi:role="line"
        x="161.55762"
-       y="556.12793"
-       id="tspan1063"
-       style="font-size:12px;text-align:center;text-anchor:middle">set all</tspan><tspan
+       y="566.12793"
+       style="font-size:12px;text-align:center;text-anchor:middle"
+       id="tspan938">no previous HF,</tspan><tspan
        sodipodi:role="line"
        x="161.55762"
-       y="571.12793"
+       y="581.12793"
        style="font-size:12px;text-align:center;text-anchor:middle"
-       id="tspan1205">previous HF</tspan><tspan
-       sodipodi:role="line"
-       x="161.55762"
-       y="586.12793"
-       style="font-size:12px;text-align:center;text-anchor:middle"
-       id="tspan1207">fields to 0</tspan></text>
+       id="tspan932">treat as 0's</tspan></text>
   <text
      id="text1215"
      y="638.62793"
