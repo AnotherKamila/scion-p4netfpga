@@ -24,14 +24,33 @@
   modular approach.
   Based on this work, we suggest changes to the SCION data plane that allow for
   more efficient processing in hardware.
-* [0/1] Acknowledgements
+* [1/1] Acknowledgements
   :PROPERTIES:
   :UNNUMBERED: t
   :END:
-  TODO
+  I would like to thank my advisors Prof. Dr. Adrian Perrig and Benjamin
+  Rothenberger for both their guidance and their trust in my self-directed work.
+  Their advice and help with connecting me with various experts were invaluable,
+  and necessary for the success of this project.
+
+  This work would not be possible without Prof. Nele Mentens and Jo Vliegen of
+  KU Leuven, who provided us with an optimised AES module,
+  and without David Sidler of the Systems Group at ETH Zurich, who helped to
+  integrate it.
+
+  I am also very grateful to Philip Paeps for tirelessly answering my barrage of
+  hardware-related questions.
+  His help was essential for making progress quickly despite not having previous
+  hardware design experience.
+
+  Many thanks for reviewing the draft of this thesis go to Stephen Shirley.
+  His ever-present criticism was surprisingly constructive.
+
+  Finally, I wish to thank Andrés Hamann for bearing with me and for being an
+  excellent rubber duck. Andrés is awesome.
+
 #+TOC: headlines 1
 #+LATEX: \mainmatter
-
 * [3/3] Introduction
   # [In field X, we still don’t understand Y & Z.]
   # Write a summary of the question(s) you are trying to answer.
