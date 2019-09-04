@@ -1,6 +1,6 @@
 #+TITLE:  FPGA-based line-rate packet forwarding for the SCION future Internet architecture
 #+AUTHOR: Kamila Součková
-#+DATE:   August 31, 2019
+#+DATE:   September 5, 2019
 #+DESCRIPTION: Master Thesis
 #+INCLUDE: thesis-setup.org
 
@@ -28,7 +28,7 @@
   :PROPERTIES:
   :UNNUMBERED: t
   :END:
-  I would like to thank my advisors Prof. Dr. Adrian Perrig and Benjamin
+  I would like to thank my advisors Prof. Dr. Adrian Perrig and Benjamin "Dominik"
   Rothenberger for both their guidance and their trust in my self-directed work.
   Their advice and help with connecting me with various experts were invaluable,
   and necessary for the success of this project.
@@ -46,8 +46,9 @@
   Many thanks for reviewing the draft of this thesis go to Stephen Shirley.
   His ever-present criticism was surprisingly constructive.
 
-  Finally, I wish to thank Andrés Hamann for bearing with me and for being an
-  excellent rubber duck. Andrés is awesome.
+  Finally, I wish to thank Andrés Hamann for reviewing the draft, as well as for
+  generally bearing with me and being an excellent rubber duck.
+  Andrés is awesome.
 
 #+TOC: headlines 1
 #+LATEX: \mainmatter
@@ -61,7 +62,8 @@
   # area this paper is addressing.
 *** Why SCION?
     CLOSED: [2019-07-16 Tue 15:25]
-    Today's Internet, based on IP and BGP, was conceived in a very different
+    Today's Internet, based on the Internet Protocol (IP) and Border Gateway
+    Protocol (BGP), was conceived in a very different
     environment, with very different requirements and assumptions.
     Meant to be a research network, it assumed that
     access was not widespread (as only large institutions could afford a
@@ -69,22 +71,25 @@
     out-of-band means to deal with misbehaviour),
     and that it would not grow large enough for outages to become difficult to
     manage.
-    Considering these facts, it has scaled surprisingly well, but nowadays we
+    Considering these facts, the Internet has scaled surprisingly well, but nowadays we
     are living in a very different world.
 
-    Today, everyone is connected to the Internet and everyone has their data
+    Today, billions of people are connected to the Internet and virtually everyone has their data
     online.
     With the huge number of connected entities, many of which have conflicting
     interests, trust can no longer be global and implicit.
-    Users want control over their data, ISPs want control over their services,
-    and states want to protect their infrastructure from outside actors.
+    Users want control over their data, Internet service providers (ISPs) want
+    control over their services,
+    and states and companies want to protect their infrastructure from outside actors.
     At this scale, convergence after path failure takes too long, and
     large-scale outages due to BGP route leaks are happening almost weekly TODO cite.
-    Furthermore, attacks on the Internet infrastructure, e.g. DDoS attacks or
+    Furthermore, attacks on the Internet infrastructure, e.g. distributed denial
+    of service (DDoS) attacks or
     BGP route hijacks, are becoming more and more common.
     # In today's world, these issues can no longer be tolerated.
 
-    In the future, the Internet will become even more critical. Automation (such
+    In the future, the Internet will become even more critical.
+    Automation (such
     as drones, self-driving cars, or remotely operated robots) will depend on
     the availability and security of the Internet.
     As more and more data moves online, trust will become even more of an issue.
@@ -255,8 +260,8 @@
       border router increments it after processing it, so that a router can find
       its HF without parsing the whole path.
 ***** Hop field verification
-      Allowing the end host to assemble the path is great for giving the end
-      host control, but for various reasons ASes may need to enforce routing
+      Allowing the end host to assemble the path is great for giving control to
+      the end host, but for various reasons ASes may need to enforce routing
       policies.
       Therefore, end hosts must not be allowed to create "any" paths, only ones
       compliant with the policies of the ASes involved.
@@ -346,7 +351,7 @@
 
     To achieve higher efficiency and cost-effectiveness, using a hardware
     approach is often preferred.
-    For mature protocols (i.e. ones that are very unlikely to change), it is
+    For mature protocols (i.e. ones that are very unlikely to change), it is
     preferred to build a custom ASIC, i.e. a chip with the exact circuitry
     required to perform the function.
     Examples of ASICs used in networking are Ethernet controllers (also on
@@ -415,7 +420,7 @@
     of network devices.
     They are FPGA-based devices with several high-speed Ethernet ports.
     Being FPGA-based implies that these devices are fully programmable.
-    Therefore, we will be able to include all the required functionality, such
+    Therefore, we are able to include all the required functionality, such
     as parsing of SCION packets, AES-based MAC computation, timestamp
     validation, and communication with the control plane.
 
@@ -427,10 +432,10 @@
     the NetFPGA SUME, we have chosen to use this hardware for our project.
 *** P4
     CLOSED: [2019-08-01 Thu 12:02]
-    P4 is a programming language for specifying packet processing pipelines.
+    P4 is a programming language for specifying packet forwarding planes.
     Building on previous software-defined networking efforts, it allows switches
     to be reprogrammed by the end user.
-    It is target-independent, and therefore can in principle be used for
+    It is target-independent,[fn:18] and therefore can in principle be used for
     programming anything from software switches to high-performance ASICs with
     minimal changes to the program.
     It is general enough to express the processing of almost any reasonable
@@ -490,15 +495,15 @@
       The typical limiting factor in software engineering is also time: we want
       our programs to run fast, and therefore need to limit the number of
       instructions.[fn:12]
-      This is a useful way to think about software, because a PC has one (or a
+      This is a useful way to think about software, because a computer has one (or a
       few) general-purpose CPUs, which execute different and data-dependent
       instructions in every step.
 
       In contrast, in FPGAs (and hardware design in general), the circuit always
       stays the same.
-      One cannot perform an addition and then a multiplication without
-      moving the data, because an addition circuit always adds, and cannot
-      multiply.
+      One cannot perform an AND operation and then a XOR without
+      moving the data, because an AND gate is always an AND gate, and cannot
+      turn into a XOR.
       The function of each part of the circuit is fixed when programming
       the FPGA, and stays the same during the execution, unable to react to what
       the data might "need".
@@ -508,7 +513,7 @@
       However, in contrast to CPUs performing only one instruction at a time,
       all the different parts of a circuit are available all the
       time, and many different (or the same!) tasks can be performed at
-      the same time without competing for CPU time.
+      the same time without competing for time.
 
       This leads to the idea of /pipelining/: if the data has to move through
       different parts of the circuit for each processing step, it would be a
@@ -527,10 +532,10 @@
       From this, it follows that the limiting resource in FPGA design is circuit
       area: more complex processing does not cost us throughput (and thus, for
       most practical purposes, is not "slower"), but adds area.
-      FPGAs have limited area directly proportional to the cost of the FPGA, and
+      FPGAs have limited area proportional to the cost of the FPGA, and
       thus we need to limit ourselves in area usage.
       Furthermore, large circuit area brings forth issues with signal propagation:
-      the speed of signal propagation is finite, and thus depending on the
+      the speed of signal propagation in the FPGA is finite, and thus depending on the
       physical layout of the circuit, synchronisation and signal timing
       requirements may become difficult to satisfy.
       Problems with satisfying timing requirements require design optimisation
@@ -554,28 +559,31 @@
       In software engineering, going from source code to a running program is
       usually a one-step process: one compiles the code and gets a runnable
       binary.
-      For FPGAs, this is quite a bit more involved.
-      This is the outline of the process:
+      For FPGAs, this is more involved.
+      The details depend on the specific toolchain used, but in general, this is
+      the outline of the process:
 
       1. *Logic description*: writing the source code for the logic of the project.
          The logic of the program is described using a /hardware description
          language/ (HDL), such as Verilog or VHDL.
          Compiling from a higher-level language, such as Bluespec cite:bluespec
          or, in our case, P4, is also an option.
-         One can also link various self-contained modules (similarly to using
-         libraries in software development) into their logic.
+         One can also link various self-contained modules (known as "IP blocks"
+         or "IP cores") into the logic, similarly to using libraries in software
+         development.
          An example of that in this project is our usage of a generic AES module
          (the "library"), which we then employ to check SCION HF MACs (the
          "business logic").
          After writing the logic of the program, a /behavioural simulation/ should
          be run to check logic correctness: this simulates the program on a high
          level, with logical inputs and outputs.
-      2. *Describing the full design*: taking the various modules (including the one(s)
+      2. *Netlist generation*: Describing the full design.
+         Taking the various modules (including the one(s)
          written in step 1) and connecting them to form the complete system. This
          includes connecting standard components for interacting with "the real
          world" outside of the FPGA.
-         In our case, the router code from step 1 handles L1 and up, but connects
-         (over a simple standardised bus) with a module for Ethernet that
+         In our case, the router code from step 1 handles L1 and up, but communicates
+         (over a simple standardised protocol) with a module for Ethernet that
          handles the physical layer, as well as with modules for PCI
          and other communication with control plane.
          The description of modules and connections from this step is usually
@@ -599,9 +607,13 @@
          Once one has the full design, it is a good idea to run a full low-level
          simulation, which simulates the execution on the level of signals and
          circuits.
-      5. *Generating the bitfile and flashing it onto the FPGA*: Creating a binary
-         file in a format specific for the FPGA, and loading it onto the FPGA.
-         This file configures the FPGA's cells to the desired circuitry.
+      5. *Generating the bitfile*: Creating a binary file in a format specific
+         to the FPGA.
+         This file encodes the desired FPGA configuration.
+      6. *Configuring the FPGA*: Loading the bitfile onto the FPGA.
+         When the FPGA is "flashed" (i.e. the file is stored in its flash
+         memory), the FPGA will load it on start-up and configure itself
+         accordingly.
 ***** The hard problem in FPGA design: Meeting timing
       CLOSED: [2019-08-31 Sat 21:16]
       In FPGA design, writing the logic of a program is only the first step.
@@ -613,7 +625,7 @@
 
       When signal propagates through a circuit, the various elements such as
       gates and also routes (i.e. "wires") will delay it by a tiny bit: the
-      speed of light is finite, and the gates need a bit of time to stabilise on
+      speed of signal propagation is finite, and the gates need a bit of time to stabilise on
       the correct value.
       These signal propagation delays accumulate; and if the signal takes too
       long to arrive on the output, the circuit will not work correctly.
@@ -651,12 +663,12 @@
       Lowering the delays in one part of the design is often a trade-off, as it
       may cost more area or even exchange lower delays in one place for higher
       delays in another place.
-      However, what makes or breaks a design is the worst path (as that is what
-      limits the maximum clock frequency), not the sum, and thus such trade-offs
-      are a useful tool.
+      However, what makes or breaks a design is the worst path (also called the
+      /critical path/), not the sum, as that is what limits the maximum clock
+      frequency -- and thus such trade-offs are a useful tool.
 * Design overview
   The border router's algorithm, as outlined in section [[*Putting it all together:
-  Border router behaviour]], is as follows (more details have been added here):
+  Border router behaviour]], with more details added here, is as follows:
 
   1. Identify the packet as SCION and parse the SCION common header.\\
      If the packet is not SCION, send it to software.\\
@@ -781,7 +793,7 @@
       Though one may be tempted to just "make things work" as fast as possible,
       larger projects quickly start to have problems if one does not spend extra
       effort on thinking about the design of the project.
-      Keeping the code base well thought out may seem like an unnecessary luxury
+      Keeping the codebase well thought out may seem like an unnecessary luxury
       at the beginning, when the project is small and the programmer is excited
       to see things working.
       And it can in fact be a good idea to leverage that excitement:
@@ -1025,7 +1037,7 @@
     problems encountered.
 
     Note that the parser-related problems (and their solutions, and the problems
-    in the solutions), which constituted a large fraction of the problems,
+    arising from the solutions), which constituted a large fraction of the challenges,
     were interesting enough that we discuss them separately in
     section [[*Implementing the parser]].
     We do not re-iterate those issues here, so see also that section for a
@@ -1059,7 +1071,7 @@
         were not able to run the whole-system simulation for our design.
         Luckily, the issues we ran into were either visible in the
         high-level behavioural simulation, or we were able to solve them
-        by means of a few days of thinking rather than by inspecting the system.
+        by means of intuition and a few days of thinking rather than by inspecting the system.
         However, we strongly believe that simplifying the usage of the
         behavioural simulation would be a worthwhile goal.
 ***** Problems with packet generation helper script
@@ -1390,9 +1402,9 @@ be significantly more complex, so this is a good trade-off.)
 using the C preprocessor to "unroll" the parser at compile time, and parse the
 path segments into ~struct~'s with fields such as =hop1=, =hop2=, ... (size
 fixed at compile time).
-However, this would make actually using the fields very difficult, as I would
+However, this would make actually using the fields very difficult, as we would
 need more preprocessor magic to index into such a struct; and additionally it
-would drastically increase my FPGA area usage.
+would drastically increase the FPGA area usage.
 
 ***** Unexplained packet corruption when handling parser errors
       CLOSED: [2019-08-26 Mon 18:57]
@@ -1539,7 +1551,7 @@ would drastically increase my FPGA area usage.
         operations for subkey derivation, plus one per block of data.
         In the special case of a single block, we only use the first subkey, so
         single-block AES-CMAC requires only two AES operations.
-        Therefore, my implementation uses two AES cores.
+        Therefore, our implementation uses two AES cores.
 
         Because SCION uses the same key for all HFs of a given AS, it would be
         possible to do the subkey derivation only when updating the key (which
@@ -1678,7 +1690,7 @@ would drastically increase my FPGA area usage.
     For both frame sizes, after the traffic ramp-up both the transmit and the
     receive rate stabilised
     at 9.93 Gbps per port, i.e. *39.72 Gbps* in total.
-*** Queue sizes and packet loss
+*** Packet loss
     CLOSED: [2019-08-29 Thu 17:37]
     Our program exports statistics about frame counts and queue sizes, as seen
     by the NetFPGA.
@@ -1915,8 +1927,8 @@ also you have pps in prometheus and you know the packet size
 ***** Throughput
       Our measurements show that the various parts of our design, in particular
       the per-packet cryptographic MAC check, run at line rate (i.e. 40 Gbps).
-      Further, the small maximum queue sizes, which do not grow indefinitely,
-      indicate that the processing is not the bottleneck and our design could
+      Further, the absence of packet loss
+      indicates that the processing is not the bottleneck and our design could
       handle more traffic with faster network interfaces.
       Though this is not the full production-ready SCION router design,
       these results indicate that maximum throughput can be
@@ -1929,8 +1941,8 @@ also you have pps in prometheus and you know the packet size
       Thus, we conclude that running SCION at line rate can be achieved (and has
       been achieved by this project for the relevant parts).
 ***** Packet loss (or lack thereof)
-      The observed zero packet loss is a surprising result, and when we obtained
-      it, we first thought we had made an experimental error.
+      The observed zero packet loss is a surprising result, and when we first
+      obtained it, we thought we had made an experimental error.
       However, that turned out not to be the case.
       This result in fact makes sense:
       in general, packet loss happens because there is no buffer space for
@@ -1949,8 +1961,8 @@ also you have pps in prometheus and you know the packet size
 *** Guidelines for high-speed packet processing
     CLOSED: [2019-09-01 Sun 10:57]
 ***** Types of problems suitable for P4
-      P4 is not a general-purpose language, but it does allow quite general
-      programs for packet processing.
+      P4 is not a general-purpose language, but it is sufficient for even
+      complex packet processing.
       P4 programs are expressed as imperative steps for processing a single
       packet, and thus are best used for tasks where packets are processed
       mostly independently:
@@ -2045,8 +2057,9 @@ also you have pps in prometheus and you know the packet size
         CLOSED: [2019-08-31 Sat 18:15]
         Matching against a CAM table (the ~exact~ table type) adds about 0.1 ns.
         Out of the elementary operations in P4 that we tested, this is the most expensive one.
-        (Note that we have not tested TCAM, i.e. ~lpm~ tables. We assume that
-        those would be even more expensive.)
+        (Note that we have not tested TCAM, i.e. ~lpm~ tables, as the P4
+        compiler does not support them.
+        We assume that those would be even more expensive.)
         Thus, a design with many tables may run into timing problems.
         Therefore, it may be worth it to consider "squishing" those tables into one big table:
         instead of having something like ~table1.apply(); table2.apply();~,
@@ -2342,6 +2355,13 @@ bibliography:bibliography.bib
 
 * Footnotes
 
+[fn:18] By "target" we mean a hardware or software platform on which to run
+a program, for example a software switch or an FPGA.
+In the context of P4, a target is a platform and /switch architecture/ pair,
+as the same platform may support more than one architecture: for example,
+the NetFPGA SUME platform supports the =SimpleSumeSwitch= and
+=XilinxStreamSwitch= architectures.
+
 [fn:17] For example, the latest performance report of DPDK by Intel
 (http://fast.dpdk.org/doc/perf/DPDK_19_05_Intel_NIC_performance_report.pdf)
 shows a maximum of 20 Gbps in the best case, with highly optimised hardware, for
@@ -2406,19 +2426,6 @@ deployment is needed to offset those.
 [fn:1] Field-Programmable Gate Array: a chip with many programmable logic blocks
 and programmable interconnects that can be used for hardware prototyping.
 
-* [1/3] Glossary
-  meep, do I really need this? and if yes, where do I put it? TODO
-*** TODO FPGA
-*** TODO NIC
-*** DONE target
-    CLOSED: [2019-08-16 Fri 15:45]
-    A hardware or software platform on which to run a program, for example a
-    software switch or an FPGA.
-    In the context of P4, a target is a platform and /switch architecture/ pair,
-    as the same platform may support more than one architecture: for example,
-    the NetFPGA SUME platform supports the =SimpleSumeSwitch= and
-    =XilinxStreamSwitch= architectures.
-    
 # Local Variables:
 # org-confirm-babel-evaluate: (lambda (lang body) (not (string= lang "emacs-lisp")))
 # after-save-hook: org-latex-export-to-latex
