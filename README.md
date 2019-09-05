@@ -2,33 +2,43 @@
 
 Master's thesis project of Kamila Součková
 
+See doc/thesis/thesis.pdf.
+
 ## What can it do?
 
 A P4-based border router for SCION, runnable in software or on the NetFPGA SUME.
 
-Main results (TODO actually deliver them, plus TODO correlate this list with the section in thesis):
+Main results:
 
 * Modular, portable P4 code implementing SCION parsing and forwarding.  
   => You can quickly make improvements to this, or base other SCION-related P4 projects on this.
 * Complete hardware design for the NetFPGA SUME, able to forward at 40Gbps.  
   => You can readily use this with the NetFPGA, either as is, or as a base for other projects.
 * Thin control plane layer that enables integrating this with other SCION infrastructure.  
-  => You can use this in production, at 40Gbps.
 * Workflow and documentation optimised for software engineers.  
   => You can use this without being a hardware person.
 
 ## Quick start
 
 1. Set up your environment: See [Prerequisites](#prerequisites)
-   TODO Right now we also need to edit NetFPGA repo's index of externs, which is terrible. I should figure out how to better handle this and send a patch to NetFPGA. See https://github.com/NetFPGA/P4-NetFPGA-live/issues/24 for the current status.
+   Note: Right now we also need to edit NetFPGA repo's index of externs, which is terrible. I should figure out how to better handle this and send a patch to NetFPGA. See https://github.com/NetFPGA/P4-NetFPGA-live/issues/24 for the current status.
+   For now, add the following to `~/projects/P4-NetFPGA/contrib-projects/sume-sdnet-switch/bin/extern_data.py`:
+   ```
+   "aes128": {"hdl_template_file": "externs/aes128/hdl/EXTERN_aes128_template.v",
+              "replacements": {"@RESULT_WIDTH@": "output_width(result)",
+                               "@MODULE_NAME@": "module_name",
+                               "@EXTERN_NAME@": "extern_name"}
+   },
+
+   ```
 2. Build this: `make` to see help, or `make build` to build everything needed to use this
 3. Flash the NetFPGA:  
    Run **as root** (with the env vars set up):
    1. `make flash`
    2. reboot
    3. `make devinit`
-4. TODO Start controller: How do we deploy this? => start control plane, make it talk to other SCION stuff
-   1. deploy SCION infra, make the SW BR bind to NetFPGA's `nf*` interfaces by configuring them with the IP addresses specified for the BR in its topology.json => see TODO docs
+4. Start controller:
+   1. deploy SCION infra, make the SW BR bind to NetFPGA's `nf*` interfaces by configuring them with the IP addresses specified for the BR in its topology.json.
    2. start NetFPGA controller: `pipenv run python -m controller.main`
 
 More details [below](#building-this-project).
@@ -43,17 +53,20 @@ Master thesis, hardware documentation, etc.
 
 The main contribution of this project.
 
+Note: Due to lack of time, some of the things which should be in `lib/` are instead in `src/main-xilinx_stream_switch.p4`. The author hopes to have the opportunity to clean this up one day.
+
 ### `src/`: Implementation of a SCION/IP border router
 
-A reference border router that uses the components from `lib/`. Runnable on several hardware platforms (see below).
+A reference border router that uses the components from `lib/`.
 
 This reference implementation assumes that the AS uses IP for internal routing. However, it is modular, so it can be modified to support different routing techniques, such as MPLS.
 
 ### `platforms/`: Files that allow the reference router to run on various hardware
 
 Currently supported: Xilinx NetFPGA SUME, with the `XilinxStreamSwitch`
-architecture. In the future, SimpleSumeSwitch might be supported, as well as the `bmv2` software switch.
-We are aiming to make this project easily portable to other platforms.
+architecture.
+In theory, it should be easy to add support for the `bmv2` software switch.
+Our aim was to make this project easily portable to other platforms.
 
 ### `controller/`: The control plane for the router
 
@@ -61,11 +74,7 @@ The control plane program that communicates with the router.
 
 ### `test/`: Packet generators for testing the implementation
 
-things and stuff
-
-### `3rdparty/`: Third party content.
-
-Currently empty.
+`gen_testdata.py` generates packets with specificed properties; `scion_scapy.py` implements a SCION scapy packet
 
 ## Building this project
 
