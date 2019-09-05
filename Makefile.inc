@@ -43,10 +43,10 @@ ENDMARK='-----\033[0m\n'
 help: ## Show this help
 	@$(MAKE) -s _help | column -t -s'|'
 	@echo
-	@echo 'To override the settings, run: make <VARIABLE>=<value> <target>'
+	@echo 'To override the settings, run: make <VARIABLE>=<value> <task>'
 
 _help: _gmake
-	@echo Frequently used targets:
+	@echo Frequently used tasks:
 	@echo
 	@$(MAKE) -s _show-targets | sed 's/^/  /'
 	@echo Settings:
@@ -77,10 +77,10 @@ _root:
 
 ###### Helper targets for humans #############################################
 
-find-all-target-supports: # TODO MOOORE DOCS :D
+find-all-target-supports: ## Prints all TARGET_SUPORTS_* features used by the project's code
 	@find $(TOP) -name '*.p4' | xargs cat | grep -o -E 'TARGET_SUPPORTS_\w+' | sort -u | sed s/TARGET_SUPPORTS_//
 
-target-supports: # TODO :D
+target-supports: ## Shows what features are supported by the selected target (i.e. PLATFORM/ARCH)
 	@[ -n "$(TARGET_SUPPORTS)" ] && echo $(TARGET_SUPPORTS) || $(MAKE) --no-print-directory -C $(TOP)/platforms/$(PLATFORM) target-supports
 
 ###### Common targets needed for actually doing stuff ########################

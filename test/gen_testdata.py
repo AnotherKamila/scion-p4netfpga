@@ -143,8 +143,9 @@ def gen(badmacs=False, num_hfs_per_seg=4):
             payload = UDP(dport=1047, sport=1042) / "hello seg {} hop {}\n".format(s, h)
 
             if not badmacs:
+                ns, nh = (s, h+1) if h < num_hfs_per_seg else (s+1, 0)
                 yield (encaps_there / set_current_inf_hf(s,h,   scion)/payload, ifs[0],
-                       encaps_back  / set_current_inf_hf(s,h+1, scion)/payload, ifs[1],
+                       encaps_back  / set_current_inf_hf(ns,nh, scion)/payload, ifs[1],
                        Digest())
             else:  # send to CPU and note the error
                 yield (encaps_there / set_current_inf_hf(s,h, scion)/payload, ifs[0],

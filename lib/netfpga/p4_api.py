@@ -28,14 +28,14 @@ class P4Table:
     @utils.print_method_call
     def add(self, keys, action_name, action_data):
         key, value = self._poke(keys, action_name, action_data)
-        print("would call cam_add_entry with: ", self.table_id,
+        print("calling cam_add_entry with: ", self.table_id,
                                          bytes('{:X}'.format(key),   'ascii'),
                                          bytes('{:X}'.format(value), 'ascii'))
-        # ret = self.lib.cam.cam_add_entry(self.table_id,
-        #                                  bytes('{:X}'.format(key),   'ascii'),
-        #                                  bytes('{:X}'.format(value), 'ascii'))
-        # err = self.lib.cam.cam_error_decode(ret)
-        # if err: raise TableError(err)
+        ret = self.lib.cam.cam_add_entry(self.table_id,
+                                         bytes('{:X}'.format(key),   'ascii'),
+                                         bytes('{:X}'.format(value), 'ascii'))
+        err = self.lib.cam.cam_error_decode(ret)
+        if err != b'success': raise TableError(err)
 
     def _poke(self, keys, action_name=None, action_data=None):
         # TODO this method is too long for my taste

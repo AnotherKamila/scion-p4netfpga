@@ -105,6 +105,11 @@ control VerifyHF(in  bit<128>          K,
     // SDNet doesn't support calling externs from actions,
     // so this all has to be one big apply block :-/
 
+    // Note that in SCION the AS key is constant, and therefore the key
+    // derivation could be done when setting the AS key, not per packet.
+    // I do it per packet here because that's easier in P4, but we could save an
+    // AES core by not doing that.
+
     bit<56> prev_data = (
         prev.expiry ++           //  8b
         prev.ingress_if ++       // 12b

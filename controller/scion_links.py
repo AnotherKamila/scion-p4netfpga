@@ -95,25 +95,27 @@ class ASLinks:
     def my_settings(self):
         return self.settings.get()  # TODO pass BR ID
 
-    def fill_p4_tables(self):
+    def fill_p4_tables(self, squished=True, overlay=True):
         for iface in self.my_settings.topo.get_all_interfaces():
-            self.reactor.callLater(0, self.add_link, iface)
+            print("will attempt to add IFID for {}".format(iface))
+            self.reactor.callLater(0, self.add_link, iface, squished, overlay)
 
     # TODO support IPv6
     @utils.ensure_deferred_f
-    async def add_link(self, iface):
+    async def add_link(self, iface, squished=True, overlay=True):
         if iface.bind:
             raise NotImplemented("error adding link for interface #{}: bind != public is not implemented".format(iface.if_id))
         addrfamily             = netifaces.AF_INET  
         my_ip, my_port         = str(iface.public[0].addr), iface.public[1]
         remote_ip, remote_port = str(iface.remote[0].addr), iface.public[1]
+        my_device = None
         try:
             my_device = self.ip2iface[addrfamily][my_ip]
         except KeyError:
-            print("WARNING: IFID {} does not have an IPv4 address that is set up on this system, ignoring", file=sys.stderr)
-        if not my_device.startswith('nf'):
+            print("WARNING: IFID {} does not have an IPv4 address that is set up on this system, ignoring".format(iface.if_id), file=sys.stderr)
+        if not my_device or not my_device.startswith('nf'):
             # TODO logging :D
-            print("WARNING: IFID {} is not set up for a NetFPGA interface, ignoring", file=sys.stderr)
+            print("WARNING: IFID {} is not set up for a NetFPGA interface, ignoring".format(iface.if_id), file=sys.stderr)
         my_mac         = netifaces.ifaddresses(my_device)[netifaces.AF_LINK][0]['addr']
         my_nf_eth_port = SUME_IFACE_MAP[my_device.replace('nf', 'eth')]
         remote_mac     = await self.get_mac(remote_ip)
@@ -125,37 +127,42 @@ class ASLinks:
         print("     - remote: {}:{}".format(iface.remote[0], iface.remote[1]))
         print("     - remote MAC addr: {}".format(remote_mac))
 
-        # my MAC address
-        # self.p4switch.table_add('my_mac', [my_nf_eth_port], 'set_src_mac', [my_mac])
+        if not squished:
+            # SCION IFID => port mapping
+            self.p4switch.table_add('egress_ifid_to_port', [iface.if_id],
+                                    'set_dst_port', [my_nf_eth_port])
 
-        # SCION IFID => port mapping
-        # self.p4switch.table_add('egress_ifid_to_port', [iface.if_id],
-        #                         'set_dst_port', [my_nf_eth_port])
+            if overlay:
+                # my MAC address
+                self.p4switch.table_add('my_mac', [my_nf_eth_port], 'set_src_mac', [my_mac])
 
-        # SCION overlay table
-        # self.p4switch.table_add(
-        #     'link_overlay',
-        #     [iface.if_id],
-        #     'set_overlay_udp_v4',
-        #     [my_ip, my_port, remote_ip, remote_port, remote_mac]
-        # )
+                # SCION overlay table
+                self.p4switch.table_add(
+                    'link_overlay',
+                    [iface.if_id],
+                    'set_overlay_udp_v4',
+                    [my_ip, my_port, remote_ip, remote_port, remote_mac]
+                )
 
-        # squished all of the above into one table to save CAM lookups, so here goes that one biiig table
-        self.p4switch.table_add(
-            'squished',
-            [iface.if_id],
-            'all_the_things_overlay_v4',
-            [
-                my_nf_eth_port,
-                my_mac,
-                my_ip, my_port, remote_ip, remote_port,
-                remote_mac,
-            ]
-        )
+        else:
+            # squished all of the above into one table to save CAM lookups, so here goes that one biiig table
+            self.p4switch.table_add(
+                'squished',
+                [iface.if_id],
+                'all_the_things_overlay_v4',
+                [
+                    my_nf_eth_port,
+                    my_mac,
+                    my_ip, my_port, remote_ip, remote_port,
+                    remote_mac,
+                ]
+            )
 
     def set_as_key(self):
         master0 = get_master_key(self.settings.conf_dir, MASTER_KEY_0)
         as_key  = kdf(master0, b"Derive OF Key")
+        print(master0.hex())
+        print(int.from_bytes(as_key, byteorder='big'))
         # TODO this throws because the NetFPGA API only supports 32-bit
         # registers, we need to figure out how to write bigger ones
         self.p4switch.reg_write('as_key', 0, as_key)

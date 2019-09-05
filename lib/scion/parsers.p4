@@ -101,8 +101,6 @@ parser ScionEncapsulationParser(packet_in          packet,
     }
 }
 
-// Note: if I happen to want to increase clock frequency, I should make
-// pos_in_hdr not inout if I run into timing problems
 @brief("Parses the SCION Common Header.")
 @Xilinx_MaxPacketRegion(MTU)
 parser ScionCommonHeaderParser(packet_in            packet, 

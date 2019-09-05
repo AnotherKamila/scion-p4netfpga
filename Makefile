@@ -9,7 +9,7 @@ include $(TOP)/platforms/$(PLATFORM)/$(ARCH)/Makefile.inc
 
 ##### User-visible targets
 
-all: build ## TODO
+all: devinit sim build flash ## Run the simulation, build the project, and flash the program
 
 compiler-test: ## Compile a test program to check support for P4 features
 	@echo $(MARK) "Compiling for PLATFORM=$(PLATFORM), ARCH=$(ARCH)" $(ENDMARK)
@@ -30,10 +30,6 @@ for-all-archs: # Hello, I am a hack!
 			$(MAKE) $(WHAT) --no-print-directory PLATFORM=$$p ARCH=$$a ;  \
 		done ;                                                          \
 	done
-
-# synth: ## Synthesise the something something TODO terminology
-# 	@echo 'Not implemented yet'
-# 	@/bin/false
 
 flash: ## Flash the built program onto the target device
 	make -C platforms/$(PLATFORM) flash ARCH=$(ARCH)

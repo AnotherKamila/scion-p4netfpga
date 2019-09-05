@@ -135,6 +135,11 @@ control TopPipe(inout local_t d,
         s.sume.dst_port = port;
     }
 
+    @description("Meant to be used as a default action if there is no mapping in the IFID => port table.")
+    action set_default_dst_port_from_ifid() {
+        set_dst_port(8w1 << d.hdr.scion.path.current_hf.egress_if[2:0]);
+    }
+
     action set_ptp_link() {
         // TODO this would be better with some well-known SCION_PTP_MCAST_MAC
         // compile-time constant instead of just broadcast
@@ -287,25 +292,26 @@ control TopPipe(inout local_t d,
             if (IS_ERROR(d.err)) { // parser error => give up
                 err_and_pass_to_cpu(d.err);
             } else { // actual SCION packet processing
+                // TODO check incoming port
                 // P4-SDNet is a piece of shit and breaks tables if I call an
                 // extern before applying the table.
                 // Therefore, I have to apply this here, at the beginning of the
                 // control flow, even though I haven't checked MACs yet.
                 // Everything is terrible.
-                squished.apply();
-                // TODO check incoming port
+                // Commented out squished so that this can pass timing, applying
+                // the smaller egress_ifid_to_port instead for the measurements.
+                // squished.apply();
+                egress_ifid_to_port.apply();
 
-                read_wall_clock.apply(now);
-                check_hf_expiry.apply(now,
-                                      d.hdr.scion.path.current_inf.timestamp,
-                                      d.hdr.scion.path.current_hf.expiry,
-                                      hf_expiry_err);
+                // read_wall_clock.apply(now);
+                // check_hf_expiry.apply(now,
+                //                       d.hdr.scion.path.current_inf.timestamp,
+                //                       d.hdr.scion.path.current_hf.expiry,
+                //                       hf_expiry_err);
 
                 // TODO test whether it is better to have a table or a reg for the AS key
 
                 // get_as_key.apply(hf_mac_key);
-                // TODO remove once we can write 128-bit registers (+ sim)
-                // hf_mac_key = 128w289747456937680922868865545818481690095; // *shrug*
                 // hf_mac_key = 128w0x47;
                 verify_current_hf.apply(HF_MAC_KEY,
                                         d.hdr.scion.path.current_inf.timestamp,
