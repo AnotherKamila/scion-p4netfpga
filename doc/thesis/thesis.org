@@ -5,6 +5,7 @@
 #+INCLUDE: thesis-setup.org
 
 #+LATEX: \frontmatter
+#+LATEX: \includepdf[pages={-}]{declaration-of-originality-signed.pdf}
 * Abstract
   CLOSED: [2019-07-15 Mon 15:45]
   :PROPERTIES:
@@ -105,7 +106,7 @@
     and what happens with their data.
 
     There have been may attempts to fix the IP+BGP-based Internet
-    cite:lepinski2015overview,Bush_2014,lepinski2017bgpsec,
+    cite:Bush_2014,lepinski2017bgpsec,
     but patching an architecture designed with entirely different
     assumptions cannot solve all the problems cite:why-u-no-secure-routing.
     Additionally, the IP-based approach also has scalability issues due to
