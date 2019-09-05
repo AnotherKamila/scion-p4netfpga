@@ -82,7 +82,8 @@
     control over their services,
     and states and companies want to protect their infrastructure from outside actors.
     At this scale, convergence after path failure takes too long, and
-    large-scale outages due to BGP route leaks are happening almost weekly TODO cite.
+    large-scale outages due to BGP route leaks are happening almost weekly
+    cite:Labovitz,Kushman_2007.
     Furthermore, attacks on the Internet infrastructure, e.g. distributed denial
     of service (DDoS) attacks or
     BGP route hijacks, are becoming more and more common.
@@ -103,8 +104,9 @@
     and gives the end users as well as institutions control over whom they trust
     and what happens with their data.
 
-    There have been may attempts to fix the IP+BGP-based Internet TODO[cite
-    RPKI, BGPsec], but patching an architecture designed with entirely different
+    There have been may attempts to fix the IP+BGP-based Internet
+    cite:lepinski2015overview,Bush_2014,lepinski2017bgpsec,
+    but patching an architecture designed with entirely different
     assumptions cannot solve all the problems cite:why-u-no-secure-routing.
     Additionally, the IP-based approach also has scalability issues due to
     requiring very large routing tables, and this is bound to get worse with
@@ -116,9 +118,9 @@
     CLOSED: [2019-07-16 Tue 17:16]
     Thanks to a well-thought-out design, as well as "real-life" considerations
     such as deployment, transition strategy, and engagement with industry, SCION
-    is currently running in production in several locations TODO[cite].
+    is currently running in production in several locations.
     Additionally, a planet-wide research network for testing SCION is running
-    thanks to SCIONLab TODO[cite SCIONLab paper].
+    thanks to SCIONLab[fn:19].
     These use cases have proven that SCION is in fact suitable for real-world
     usage.
     In the near future, several ISPs are likely to start offering SCION
@@ -278,26 +280,19 @@
       previously in the path (see figure [[fig:mac-chaining]]), so that the end host
       cannot arbitrarily join multiple valid path segments into a single path if
       it has not been explicitly allowed.
-      The MAC verification is based on AES-CMAC TODO[cite the RFC], because with
+      The MAC verification is based on AES-CMAC cite:aes-cmac, because with
       dedicated hardware, computing AES can be done very efficiently at line
-      rate. TODO[would be great to have something to cite here -- look for what
-      Adrian ended up citing when he asked me what to cite :D]
+      rate cite:low-area-aes. 
       Because the forwarding is otherwise rather computationally inexpensive,
       achieving a sufficiently fast HF verification routine will be one of the
       more interesting aspects of our implementation.
 
       #+NAME:   fig:mac-chaining
-      #+CAPTION: TODO somebody should write something here.
+      #+CAPTION: The hop field MACs are chained in order to cover the whole path rather than just the hop field.
       [[./img/mac-chaining.svg]]
-      # TODO somebody should change the colours so that the whole HF is coloured,
-      # and should copy the fixed version back to the presentation.
-      # (and then should change this picture to render correctly with pdf_tex)
 ***** IP overlay
       In order to enable inter-operability with existing networks, SCION packets
       may use an IP/UDP overlay.
-      TODO Steve says I should replace that sentence with: " Scion is primarily
-      an inter-domain protocol; as such it runs as an overlay on top of existing
-      network protocols, such as UDP/IP."
       The software border router currently requires this, as it uses a UDP
       socket to get SCION packets.
       Therefore, our implementation must accept SCION within IP, and must send
@@ -724,7 +719,7 @@
   Details about the control plane can be found in section [[*Control plane]].
 
   #+NAME:   fig:design-overview
-  #+CAPTION: The design overview of the project.
+  #+CAPTION: Overview of the components of the project.
   [[./img/design-overview.svg]]
 
   Figure [[fig:design-overview]] shows the components of our design.
@@ -1287,10 +1282,9 @@
     CLOSED: [2019-08-27 Tue 17:26]
 ***** Handling the variable-length SCION path
       CLOSED: [2019-08-05 Mon 11:51]
-      TODO remove "P4-SDNet" because that was never introduced, just call it "the compiler" or something
-Unfortunately, the SDNet P4 compiler implements only a subset of P4, which has
+Unfortunately, the NetFPGA's P4 compiler implements only a subset of P4, which has
 created unexpected challenges when implementing the SCION packet parser.
-The biggest issue was that at the time of writing, with P4-SDNet
+The biggest issue was that at the time of writing, with the NetFPGA compiler
 the parser cannot work with any variable-length data: this includes not only
 =varbit<n>= types, but also header unions, and -- most importantly -- header
 stacks.
@@ -1317,7 +1311,7 @@ as anything *after* the last thing we parsed -- so if we skip parsing something
 in the header, it is lost and we are unable to emit it on the output interface.)
 
 The solution on the NetFPGA is to use the non-standard ~packet_mod~ feature of
-P4-SDNet, as this (unlike the standard deparsers) allows to modify the existing
+its compiler, as this (unlike the standard deparsers) allows to modify the existing
 header instead of creating it anew, thereby allowing us to not lose the skipped
 parts of the header.
 The ~packet_mod~ feature mirrors the structure of the parser in the deparser: it
@@ -1329,14 +1323,15 @@ switch to the ~XilinxStreamSwitch~ architecture, as this feature is not
 available in the ~SimpleSumeSwitch~ architecture that is the default on the
 NetFPGA.
 This required modifying the Verilog wrappers provided by the NetFPGA developers,
-which was not trivial: the P4-SDNet compiler is closed-source and the few lines of
-documentation in the wrappers were actively misleading.
+which was not trivial: the compiler is closed-source, so we could not inspect it
+to discover its requirements, and the few lines of
+documentation in the existing wrappers were actively misleading.
 Therefore, much trial and error was required to understand what was going on and
 how to change it.
 
-Obviously, using a non-standard SDNet-only feature means that with this
+Obviously, using a non-standard NetFPGA-only feature means that with this
 approach, the program would not compile on a standard P4 compiler.
-However, standard P4 compilers (unlike the P4-SDNet compiler) tend to implement
+However, standard P4 compilers tend to implement
 parsing variable-length headers.
 Therefore, we are able to emulate ~packet_mod~ for standard compilers by adding
 an extra struct to keep track of the "skipped" parts of the headers, and instead
@@ -1346,20 +1341,20 @@ struct.
 We can use the C preprocessor to hide this difference, thereby keeping our
 code portable while being able to use ~packet_mod~ where available.
 This not only allows us to parse the variable-length SCION packet on the
-currently incomplete P4-SDNet compiler, but also allows us to harness the
+currently incomplete NetFPGA compiler, but also allows us to harness the
 performance benefits of the ~packet_mod~ feature on any target where it is
 available.
 
 To make this approach work, the last step is to turn all packet offsets,
 including the ones used only for skipping, into compile-time constants, so that
-P4-SDNet is willing to compile the code.
+the compiler is willing to accept the code.
 
 Fortunately, SCION hop fields are always multiples of 8 bytes.
 Therefore, the obvious approach is to add a parser loop that skips over 8-byte
 chunks until it gets to the needed place.
-Unfortunately, when attempting to compile this, the P4-SDNet compiler exhibited
+Unfortunately, when attempting to compile this, the compiler exhibited
 a rather curious behaviour: due to what we assume to be an off by one error in
-the compiler, the loop compiled into invalid SDNet code and was not accepted by
+the compiler, the loop compiled into invalid intermediate code and was not accepted by
 the later stages of the build process.
 We attempted to isolate the problem to get a better understanding of it, but the
 compiler bug manifested only in very specific conditions, and thus we were
@@ -1372,7 +1367,7 @@ If we assume a maximum path length $K$, there are
 only $O(K)$ many options for how many different sizes we might need to skip.
 Therefore, we can use the C preprocessor to "unroll" the parser and create
 separate states for skipping $1, 2, ..., K-1$ hop fields.
-This causes an $O(K)$ increase in FPGA area usage, but no latency increase --
+This causes an $O(K)$ increase in FPGA area usage, but no change in latency or throughput --
 our logic becomes wider, but not deeper.
 
 Unfortunately, the FPGA area usage increase comes with an additional problem:
@@ -1580,7 +1575,6 @@ would drastically increase the FPGA area usage.
     This section requires a basic understanding of FPGA design.
     Refer back to section [[*Introduction to designing for FPGAs]] for a brief
     introduction.
-    TODO is that note needed?
 
     The various costly workarounds as explained in the previous sections of this
     chapter, together with some questionable design choices in the P4-NetFPGA
@@ -2354,6 +2348,8 @@ bibliography:bibliography.bib
 #+LATEX: \appendix
 
 * Footnotes
+
+[fn:19] https://www.scionlab.org/
 
 [fn:18] By "target" we mean a hardware or software platform on which to run
 a program, for example a software switch or an FPGA.
