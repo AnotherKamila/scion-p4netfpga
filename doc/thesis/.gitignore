@@ -1,0 +1,17 @@
+.texpadtmp/
+auto/
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.pdf_tex
+
+# exported from thesis.org
+thesis.tex
+
+# including thesis.pdf on purpose
+
+# intermediate
+img/*.pdf

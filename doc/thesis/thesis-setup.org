@@ -1,0 +1,52 @@
+#+NAME: setup
+#+BEGIN_SRC emacs-lisp :results silent :exports results :eval export
+(unless (find "per-file-class" org-latex-classes :key 'car :test 'equal)
+    (add-to-list 'org-latex-classes
+        '("per-file-class"
+          "\\documentclass{scrbook}
+           \\usepackage[AUTO]{inputenc}
+           \\usepackage[T1]{fontenc}
+           \\usepackage[english]{babel}
+          [NO-DEFAULT-PACKAGES]
+          [EXTRA]"
+          ("\\chapter{%s}" . "\\chapter*{%s}")
+          ("\\section{%s}" . "\\section*{%s}")
+          ("\\subsection{%s}" . "\\subsection*{%s}")
+          ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+          ("\\paragraph{%s}" . "\\paragraph*{%s}")
+          ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+
+(setq org-latex-title-command (concat "\\include{title}"))
+
+(setq org-latex-hyperref-template "\\usepackage[plainpages=false,pdfpagelabels,bookmarks=true,backref=false,pagebackref=false]{hyperref}
+  \\hypersetup{
+    pdfauthor={%a},
+    pdftitle={%t},
+    pdfsubject={%d},
+    colorlinks=true,
+    linkcolor={blue!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black},
+    breaklinks=true,
+    pdfhighlight=/I,
+    bookmarksopen=false,
+    bookmarksnumbered=true
+  }
+  ")
+#+END_SRC
+#+LATEX_CLASS: per-file-class
+#+LATEX_CLASS_OPTIONS: [a4paper, toc=index, 12pt, DIV=14, twoside, BCOR=2cm, headsepline, numbers=noenddot, bibliography=totoc]
+#+OPTIONS: toc:nil H:4 num:3 ':t
+#+LATEX_HEADER: \usepackage{titling}
+#+LATEX_HEADER: \usepackage{pdfpages}
+#+LATEX_HEADER: \usepackage{svg}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{00A0}{~}   % replace non-breaking space
+#+LATEX_HEADER: \include{format}
+#+LATEX_HEADER: \newcommand{\thesisType}{Master Thesis}
+#+LATEX_HEADER: \newcommand{\thesisStudentID}{16-932-584}
+#+LATEX_HEADER: \newcommand{\thesisEmail}{skamila@ethz.ch}
+#+LATEX_HEADER: \newcommand{\thesisSemester}{Spring 2019}
+#+LATEX_HEADER: \graphicspath{{./img/}}
+#+LATEX_HEADER: \usepackage{newunicodechar}
+#+LATEX_HEADER: \newunicodechar{→}{$\rightarrow$}
+#+LATEX_HEADER: \newunicodechar{⇒}{$\Rightarrow$}
