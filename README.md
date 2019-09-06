@@ -18,6 +18,8 @@ Main results:
 * Workflow and documentation optimised for software engineers.  
   => You can use this without being a hardware person.
 
+Note that this is academic code: it worked once ;-) However, if you want to use this, contact me, I am happy to help.
+
 ## Quick start
 
 **Note: Because we cannot distribute the AES implementation we used, you need to add your own AES core.** See `platforms/netfpga/hw/externs/aes128/README.md`.
