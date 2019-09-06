@@ -20,8 +20,11 @@ Main results:
 
 ## Quick start
 
+**Note: Because we cannot distribute the AES implementation we used, you need to add your own AES core.** See `platforms/netfpga/hw/externs/aes128/README.md`.
+If you are from ETH, contact me to get access to the version of this repository that contains the AES code.
+
 1. Set up your environment: See [Prerequisites](#prerequisites)
-   Note: Right now we also need to edit NetFPGA repo's index of externs, which is terrible. I should figure out how to better handle this and send a patch to NetFPGA. See https://github.com/NetFPGA/P4-NetFPGA-live/issues/24 for the current status.
+   Note: Right now we also need to edit NetFPGA repo's index of externs, which is terrible. We attempted to solve this problem (see https://github.com/NetFPGA/P4-NetFPGA-live/issues/24 for the current status), but we're not there yet.
    For now, add the following to `~/projects/P4-NetFPGA/contrib-projects/sume-sdnet-switch/bin/extern_data.py`:
    ```
    "aes128": {"hdl_template_file": "externs/aes128/hdl/EXTERN_aes128_template.v",
